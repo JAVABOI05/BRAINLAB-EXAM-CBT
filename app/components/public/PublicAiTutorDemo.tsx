@@ -1,4 +1,5 @@
 "use client";
+import { trackEvent } from "@/app/lib/analytics";
 
 import React, { useState } from "react";
 import Link from "next/link";
@@ -99,6 +100,7 @@ export function PublicAiTutorDemo() {
       }
 
       setSandboxAnswer(data.answer);
+      trackEvent("demo_completed", { demo_type: "ai_tutor_socratic" });
       if (typeof data.remainingGuestQueries === "number") {
         setRemainingQueries(data.remainingGuestQueries);
       }
@@ -117,27 +119,38 @@ export function PublicAiTutorDemo() {
       {/* Honest Pedagogical Boundaries Banner */}
       <div className="mb-6 rounded-2xl border border-amber-300 bg-amber-50/80 p-4 sm:p-5 dark:border-amber-900/60 dark:bg-amber-950/30">
         <div className="flex items-start gap-3">
-          <span className="text-xl sm:text-2xl shrink-0" aria-hidden="true">⚖️</span>
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-amber-200/60 text-amber-900 dark:bg-amber-900/60 dark:text-amber-200">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg>
+          </span>
           <div className="space-y-1.5 text-xs text-amber-950 dark:text-amber-200">
             <h4 className="font-black text-sm uppercase tracking-wide text-amber-900 dark:text-amber-300">
-              Honest Pedagogical Boundaries & Limitations
+              Honest Pedagogical Boundaries &amp; Limitations
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
               <div className="rounded-xl border border-amber-200/80 bg-white/60 p-2.5 dark:border-amber-800/40 dark:bg-slate-900/50">
-                <span className="font-bold block text-slate-900 dark:text-white">⚠️ Verification Required</span>
-                <span className="text-slate-600 dark:text-slate-300 text-[11px] leading-relaxed">
+                <span className="font-bold flex items-center gap-1.5 text-slate-900 dark:text-white">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
+                  <span>Verification Required</span>
+                </span>
+                <span className="text-slate-600 dark:text-slate-300 text-[11px] leading-relaxed block mt-1">
                   Generative models can make arithmetic or conceptual errors. Always cross-check calculations with official syllabus marking schemes.
                 </span>
               </div>
               <div className="rounded-xl border border-amber-200/80 bg-white/60 p-2.5 dark:border-amber-800/40 dark:bg-slate-900/50">
-                <span className="font-bold block text-slate-900 dark:text-white">🧑‍🏫 Not a Teacher Replacement</span>
-                <span className="text-slate-600 dark:text-slate-300 text-[11px] leading-relaxed">
+                <span className="font-bold flex items-center gap-1.5 text-slate-900 dark:text-white">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+                  <span>Not a Teacher Replacement</span>
+                </span>
+                <span className="text-slate-600 dark:text-slate-300 text-[11px] leading-relaxed block mt-1">
                   The AI Tutor is an assistive self-study companion for late-night practice, not a replacement for qualified human educators.
                 </span>
               </div>
               <div className="rounded-xl border border-amber-200/80 bg-white/60 p-2.5 dark:border-amber-800/40 dark:bg-slate-900/50">
-                <span className="font-bold block text-slate-900 dark:text-white">🔒 Locked in Live Exams</span>
-                <span className="text-slate-600 dark:text-slate-300 text-[11px] leading-relaxed">
+                <span className="font-bold flex items-center gap-1.5 text-slate-900 dark:text-white">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                  <span>Locked in Live Exams</span>
+                </span>
+                <span className="text-slate-600 dark:text-slate-300 text-[11px] leading-relaxed block mt-1">
                   To protect academic honesty, the AI Tutor is strictly disabled during active, proctored UTME mock examinations.
                 </span>
               </div>
@@ -162,24 +175,26 @@ export function PublicAiTutorDemo() {
           <button
             type="button"
             onClick={() => setActiveTab("curated")}
-            className={`px-3.5 py-1.5 rounded-lg transition ${
+            className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg transition ${
               activeTab === "curated"
                 ? "bg-white text-purple-700 shadow-xs dark:bg-slate-800 dark:text-purple-300"
                 : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
             }`}
           >
-            📚 Curated Problem Walkthroughs
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M6 6h10"/><path d="M6 10h10"/></svg>
+            <span>Curated Problem Walkthroughs</span>
           </button>
           <button
             type="button"
             onClick={() => setActiveTab("sandbox")}
-            className={`px-3.5 py-1.5 rounded-lg transition ${
+            className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg transition ${
               activeTab === "sandbox"
                 ? "bg-white text-purple-700 shadow-xs dark:bg-slate-800 dark:text-purple-300"
                 : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
             }`}
           >
-            ⚡ Live Guest Sandbox (2 Free)
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            <span>Live Guest Sandbox (2 Free)</span>
           </button>
         </div>
       </div>
@@ -253,7 +268,9 @@ export function PublicAiTutorDemo() {
 
             {/* Examiner Trap Warning */}
             <div className="rounded-xl border border-rose-200 bg-rose-50/70 p-3.5 text-xs dark:border-rose-900/50 dark:bg-rose-950/20 flex items-start gap-2.5">
-              <span className="text-base" aria-hidden="true">🚨</span>
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-rose-200/60 text-rose-800 dark:bg-rose-900/60 dark:text-rose-200" aria-hidden="true">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
+              </span>
               <div>
                 <span className="font-bold text-rose-900 dark:text-rose-300 block">Typical Candidate Trap:</span>
                 <span className="text-rose-800 dark:text-rose-200 text-[11px] leading-relaxed">
@@ -264,7 +281,9 @@ export function PublicAiTutorDemo() {
 
             {/* Socratic Check Question */}
             <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-3.5 text-xs dark:border-emerald-900/50 dark:bg-emerald-950/20 flex items-start gap-2.5">
-              <span className="text-base" aria-hidden="true">💡</span>
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-emerald-200/60 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-200" aria-hidden="true">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a6 6 0 0 0-6 6c0 2.2 1.3 4 3 5v2a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-2c1.7-1 3-2.8 3-5a6 6 0 0 0-6-6Z"/><path d="M9 22h6"/></svg>
+              </span>
               <div>
                 <span className="font-bold text-emerald-900 dark:text-emerald-300 block">Socratic Knowledge Check:</span>
                 <span className="text-emerald-800 dark:text-emerald-200 text-[11px] leading-relaxed">

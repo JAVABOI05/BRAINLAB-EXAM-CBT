@@ -1,0 +1,379 @@
+.demo {
+  width: 100%;
+  max-width: 620px;
+  margin-inline: auto;
+  color: #f8fafc;
+}
+
+.device {
+  overflow: hidden;
+  border: 2px solid #334155;
+  border-radius: 18px 18px 10px 10px;
+  background: #0b1536;
+  box-shadow: 0 24px 55px rgba(2, 8, 23, 0.38);
+  padding: 9px 9px 0;
+}
+
+.camera {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #475569;
+  margin: 0 auto 8px;
+}
+
+.screen {
+  min-height: 330px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 9px 9px 4px 4px;
+  background: linear-gradient(145deg, #101f3d, #071328 72%);
+  padding: clamp(12px, 2.5vw, 20px);
+}
+
+.topbar,
+.brand,
+.examMeta,
+.timer,
+.keypadHeading,
+.launchRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.brand {
+  justify-content: flex-start;
+  min-width: 0;
+}
+
+.brandMark {
+  display: grid;
+  place-items: center;
+  width: 31px;
+  height: 31px;
+  flex: 0 0 auto;
+  border-radius: 9px;
+  background: #1356e8;
+  color: white;
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.brand strong,
+.brand small {
+  display: block;
+}
+
+.brand strong {
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.brand small {
+  margin-top: 2px;
+  color: #94a3b8;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+}
+
+.timer {
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  border: 1px solid rgba(251, 191, 36, 0.28);
+  border-radius: 8px;
+  background: rgba(245, 158, 11, 0.1);
+  padding: 5px 8px;
+  font-variant-numeric: tabular-nums;
+}
+
+.timerLabel {
+  color: #fcd34d;
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.timer strong {
+  color: #fde68a;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+}
+
+.examMeta {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  margin-top: 16px;
+  color: #93c5fd;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.07em;
+}
+
+.demoTag {
+  margin-left: auto;
+  border-radius: 999px;
+  background: rgba(19, 86, 232, 0.22);
+  padding: 3px 7px;
+  color: #bfdbfe;
+}
+
+.question {
+  margin-top: 9px;
+  max-width: 58ch;
+  color: #f8fafc;
+  font-size: clamp(12px, 1.5vw, 15px);
+  font-weight: 650;
+  line-height: 1.5;
+}
+
+.questionWaiting {
+  opacity: 0;
+  transform: translateY(5px);
+}
+
+.questionReveal {
+  animation: question-appear 420ms ease-out both;
+}
+
+.options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+  margin-top: 14px;
+}
+
+.option {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 8px;
+  background: rgba(30, 41, 59, 0.72);
+  padding: 7px;
+  color: #dbeafe;
+  font-size: 10px;
+  transition: none;
+}
+
+.optionKey {
+  display: grid;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 5px;
+  background: #334155;
+  color: white;
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.optionSelected {
+  border-color: rgba(52, 211, 153, 0.7);
+  background: rgba(16, 185, 129, 0.15);
+  color: #d1fae5;
+}
+
+.optionSelected .optionKey {
+  background: #10b981;
+  color: #052e25;
+}
+
+.selectedLabel {
+  margin-left: auto;
+  color: #6ee7b7;
+  font-size: 7px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+}
+
+.keypadBlock {
+  margin-top: 15px;
+  border-top: 1px solid rgba(148, 163, 184, 0.18);
+  padding-top: 10px;
+}
+
+.keypadHeading {
+  color: #94a3b8;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.07em;
+}
+
+.keypad {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 5px;
+  margin-top: 7px;
+}
+
+.key {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 6px;
+  background: rgba(30, 41, 59, 0.85);
+  padding: 5px 2px;
+  color: #cbd5e1;
+}
+
+.key strong {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+}
+
+.key small {
+  overflow: hidden;
+  max-width: 100%;
+  color: #94a3b8;
+  font-size: 6px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.keySelected {
+  border-color: #60a5fa;
+  background: #1356e8;
+  color: white;
+  animation: key-press 520ms cubic-bezier(0.2, 0.75, 0.25, 1) both;
+}
+
+.keySelected small {
+  color: #dbeafe;
+}
+
+.launchRow {
+  align-items: center;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+
+.previewNote {
+  color: #94a3b8;
+  font-size: 8px;
+}
+
+.launchButton {
+  position: relative;
+  display: inline-flex;
+  min-height: 39px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 9px;
+  background: #1356e8;
+  padding: 9px 13px;
+  color: white;
+  font-size: 10px;
+  font-weight: 900;
+  text-decoration: none;
+  isolation: isolate;
+}
+
+.launchButton:focus-visible {
+  outline: 2px solid #93c5fd;
+  outline-offset: 3px;
+}
+
+.launchHighlight::after {
+  position: absolute;
+  z-index: -1;
+  border: 2px solid rgba(147, 197, 253, 0.9);
+  border-radius: 11px;
+  content: "";
+  inset: -4px;
+  pointer-events: none;
+  animation: launch-highlight 760ms ease-out both;
+}
+
+.laptopBase {
+  position: relative;
+  width: 108%;
+  height: 11px;
+  margin-left: -4%;
+  border: 1px solid #475569;
+  border-top: 1px solid #64748b;
+  border-radius: 0 0 14px 14px;
+  background: linear-gradient(#475569, #1e293b);
+  display: flex;
+  justify-content: center;
+}
+
+.laptopBase span {
+  width: 16%;
+  height: 3px;
+  border-radius: 0 0 5px 5px;
+  background: #64748b;
+}
+
+.demoCaption {
+  margin: 12px 0 0;
+  color: #cbd5e1;
+  text-align: center;
+  font-size: 11px;
+}
+
+@keyframes question-appear {
+  0% { opacity: 0; transform: translateY(5px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes key-press {
+  0% { opacity: 0.65; transform: scale(0.94); }
+  65% { opacity: 1; transform: scale(1.04); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes launch-highlight {
+  0% { opacity: 0; transform: scale(0.98); }
+  45% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.035); }
+}
+
+@media (max-width: 480px) {
+  .screen {
+    min-height: 320px;
+    padding: 11px;
+  }
+
+  .keypad {
+    gap: 3px;
+  }
+
+  .key {
+    padding-inline: 1px;
+  }
+
+  .key small {
+    font-size: 6px;
+  }
+
+  .launchRow {
+    align-items: stretch;
+  }
+
+  .launchButton {
+    width: 100%;
+  }
+
+  .laptopBase {
+    width: 100%;
+    margin-left: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .questionReveal,
+  .keySelected,
+  .launchHighlight::after {
+    animation: none !important;
+  }
+}

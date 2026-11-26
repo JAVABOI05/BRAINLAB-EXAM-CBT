@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef, useId, useCallback } from "react";
 import Link from "next/link";
+import { trackEvent } from "@/app/lib/analytics";
 
 interface QuadraticTelemetry {
   equation: string;
@@ -370,7 +371,11 @@ export default function PublicStemDemo() {
                 max="6"
                 step="1"
                 value={b}
-                onChange={(e) => setB(parseFloat(e.target.value))}
+                onChange={(e) => {
+                  const val = parseFloat(e.target.value);
+                  setB(val);
+                  trackEvent("demo_completed", { demo_type: "stem_quadratic", parameter: "b", value: val });
+                }}
                 className="w-full accent-blue-600 cursor-pointer h-2 bg-slate-200 rounded-lg dark:bg-slate-700"
                 aria-label="Quadratic coefficient b"
                 aria-valuenow={b}
@@ -398,7 +403,11 @@ export default function PublicStemDemo() {
                 max="8"
                 step="1"
                 value={c}
-                onChange={(e) => setC(parseFloat(e.target.value))}
+                onChange={(e) => {
+                  const val = parseFloat(e.target.value);
+                  setC(val);
+                  trackEvent("demo_completed", { demo_type: "stem_quadratic", parameter: "c", value: val });
+                }}
                 className="w-full accent-blue-600 cursor-pointer h-2 bg-slate-200 rounded-lg dark:bg-slate-700"
                 aria-label="Quadratic constant c"
                 aria-valuenow={c}

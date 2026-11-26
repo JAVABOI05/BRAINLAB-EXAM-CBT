@@ -225,6 +225,31 @@ export default function LearningResourcesPage() {
             <p className="mt-1 text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-2xl">
               Curated formulas, scientific laws, grammatical concord rules, and syllabus blueprints for JAMB/UTME, WAEC, and NECO revision.
             </p>
+
+            {/* Quick Academic Hub Navigation */}
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <span className="rounded-lg bg-[#012153] px-3 py-1 text-xs font-bold text-white shadow-xs">
+                Formula Guides
+              </span>
+              <Link
+                href="/syllabus"
+                className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-1 text-xs font-bold text-slate-700 dark:text-slate-300 hover:border-blue-300 dark:hover:border-blue-700 transition"
+              >
+                Syllabus Explorer →
+              </Link>
+              <Link
+                href="/resources/exam-calendar"
+                className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-1 text-xs font-bold text-slate-700 dark:text-slate-300 hover:border-blue-300 dark:hover:border-blue-700 transition"
+              >
+                Exam Calendar &amp; Timetable →
+              </Link>
+              <Link
+                href="/cbt"
+                className="rounded-lg border border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950/40 px-3 py-1 text-xs font-bold text-blue-900 dark:text-cyan-300 hover:bg-blue-100 transition"
+              >
+                Sample CBT Practice →
+              </Link>
+            </div>
           </div>
 
           <div className="flex items-center gap-2">
@@ -240,6 +265,29 @@ export default function LearningResourcesPage() {
             >
               Print / Save PDF
             </button>
+          </div>
+        </div>
+
+        {/* Free Plan Entitlements Disclosure (Rule S7 & Prompt 10) */}
+        <div className="rounded-2xl border border-blue-100 bg-blue-50/60 p-4 text-xs text-blue-950 dark:border-blue-900/50 dark:bg-blue-950/20 dark:text-blue-200">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div>
+              <p className="font-bold">
+                <span className="mr-1.5 inline-block rounded-md bg-blue-600 px-2 py-0.5 text-[10px] font-black text-white">
+                  FREE PLAN
+                </span>
+                BrainLab Free Learner Access
+              </p>
+              <p className="mt-1 text-slate-600 dark:text-slate-400">
+                Includes 1 full CBT practice examination per day, 50 AI study buddy hints per month, and unlimited access to the Syllabus Explorer and Formula Cheatsheets.
+              </p>
+            </div>
+            <Link
+              href="/pricing"
+              className="whitespace-nowrap font-bold text-blue-700 hover:underline dark:text-cyan-400"
+            >
+              Compare Plans →
+            </Link>
           </div>
         </div>
 

@@ -151,6 +151,7 @@ html {
   padding: 0;
   overflow-x: clip;
   -webkit-text-size-adjust: 100%;
+  scroll-padding-top: 5rem;
 }
 
 html,
@@ -374,7 +375,9 @@ button:disabled,
 }
 
 .exam-palette-btn {
-  height: 42px;
+  height: 44px;
+  min-height: 44px;
+  min-width: 44px;
   border-radius: 12px;
   border: 1px solid #cbd5e1;
   font-size: 0.9rem;
@@ -1653,6 +1656,80 @@ button:disabled,
   transform: scale(0.98);
 }
 
+/* 3D Showcase Card Motion & Perspective */
+@keyframes bl-float-3d {
+  0%, 100% {
+    transform: translateY(0px) rotateX(0deg);
+  }
+  50% {
+    transform: translateY(-6px) rotateX(1.5deg);
+  }
+}
+
+.animate-bl-float-3d {
+  animation: bl-float-3d 5s ease-in-out infinite;
+}
+
+.bl-perspective-container {
+  perspective: 1200px;
+}
+
+.bl-3d-card-stage {
+  transform-style: preserve-3d;
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s ease;
+}
+
+.bl-3d-card-right:hover {
+  transform: perspective(1200px) rotateY(-3.5deg) rotateX(2deg) translateY(-4px);
+}
+
+.bl-3d-card-left:hover {
+  transform: perspective(1200px) rotateY(3.5deg) rotateX(2deg) translateY(-4px);
+}
+
+/* ==========================================================================
+   STANDARDISED PROGRESSIVE SCROLL-REVEAL SYSTEM
+   Preserves full visibility when JS is off or SSR; enhances with fluid motion
+   when IntersectionObserver is active. Text is always visible (never stuck at 0 opacity).
+   ========================================================================== */
+@keyframes bl-soft-reveal {
+  0% {
+    opacity: 0.35;
+    transform: translateY(14px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.bl-reveal-init {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.bl-reveal-visible {
+  opacity: 1 !important;
+  transform: translateY(0) !important;
+  animation: bl-soft-reveal 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.bl-reveal-stagger-1 {
+  transition-delay: 75ms;
+}
+
+.bl-reveal-stagger-2 {
+  transition-delay: 130ms;
+}
+
+.bl-reveal-stagger-3 {
+  transition-delay: 185ms;
+}
+
+.bl-reveal-stagger-4 {
+  transition-delay: 240ms;
+}
+
 /* Strict prefers-reduced-motion compliance */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -1664,7 +1741,15 @@ button:disabled,
     scroll-behavior: auto !important;
   }
   .bl-interactive-hover:hover,
-  .bl-interactive-hover:active {
+  .bl-interactive-hover:active,
+  .animate-bl-float-3d,
+  .bl-3d-card-stage,
+  .bl-3d-card-right:hover,
+  .bl-3d-card-left:hover,
+  .bl-reveal-init {
     transform: none !important;
+    animation: none !important;
+    opacity: 1 !important;
+    transition: none !important;
   }
 }

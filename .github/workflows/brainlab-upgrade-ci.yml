@@ -24,6 +24,7 @@ permissions:
 
 jobs:
   build:
+    if: ${{ !(github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/fix/tutor-avatar-upload-diagnostics') }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:

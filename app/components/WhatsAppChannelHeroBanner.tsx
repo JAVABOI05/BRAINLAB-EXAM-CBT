@@ -53,56 +53,55 @@ export default function WhatsAppChannelHeroBanner({
 
   const asOf = config.as_of_date || initialAsOfDate || null;
 
-  // CARD VARIANT (FOR DASHBOARD SIDEBAR / MODAL)
+  // CARD VARIANT (FOR DASHBOARD ROW - COMPACT PROFILE MATCHING EXAM COUNTDOWN BANNER)
   if (variant === "card") {
     return (
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-600 via-emerald-700 to-teal-800 p-6 text-white shadow-lg">
-        <div className="flex items-center gap-2 mb-2">
-          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/20" aria-hidden="true">
-            <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2z" />
-            </svg>
-          </span>
-          <span className="text-xs font-black uppercase tracking-wider text-emerald-200">
-            Verified Broadcast Channel
-          </span>
-        </div>
-        <h3 className="text-xl font-black">{channelTitle}</h3>
-        <p className="mt-2 text-xs leading-relaxed text-emerald-100">
-          Get daily syllabus revision questions, national exam timetable alerts, and direct tutor tips.
-        </p>
+      <aside
+        aria-label="Official WhatsApp Broadcast Channel"
+        className="relative overflow-hidden rounded-2xl border border-white/20 bg-gradient-to-r from-emerald-950/90 via-teal-950/80 to-emerald-950/90 dark:from-white/[0.08] dark:via-emerald-950/40 dark:to-white/[0.05] p-3 sm:p-4 text-white shadow-xl backdrop-blur-xl transition-all h-full flex flex-col justify-center"
+      >
+        {/* Ambient subtle light sheen */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 bg-gradient-to-r from-emerald-500/15 via-teal-500/10 to-transparent opacity-80"
+        />
 
-        {formattedCount && (
-          <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-emerald-950/40 px-3 py-1 text-[11px] font-bold text-emerald-200">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-            <span>{formattedCount} Active Candidates</span>
-            {asOf && <span className="text-emerald-300/80 font-normal">({asOf})</span>}
+        <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <span
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 shadow-inner backdrop-blur-md"
+              aria-hidden="true"
+            >
+              <svg className="h-4.5 w-4.5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2z" />
+              </svg>
+            </span>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-300 truncate">
+                  Broadcast Channel
+                </span>
+                <span className="inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400 motion-reduce:animate-none animate-ping" />
+              </div>
+              <h3 className="text-xs sm:text-sm font-black tracking-tight text-white mt-0.5 truncate">
+                {channelTitle}
+              </h3>
+            </div>
           </div>
-        )}
 
-        <div className="mt-5 flex flex-col gap-2">
-          <a
-            href={targetUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-2.5 text-center text-xs font-black text-emerald-800 shadow transition-all hover:bg-emerald-50 active:scale-95"
-          >
-            <span>Join WhatsApp Channel</span>
-            <span aria-hidden="true">&rarr;</span>
-          </a>
-
-          {config.telegram_url && (
+          <div className="flex items-center gap-2 shrink-0">
             <a
-              href={config.telegram_url}
+              href={targetUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-800/80 hover:bg-emerald-800 border border-emerald-400/30 px-4 py-2 text-center text-xs font-bold text-emerald-100 transition-all"
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-500 hover:from-emerald-300 hover:to-teal-200 text-slate-950 font-black px-3.5 py-1.5 text-xs shadow-md transition active:scale-95 shrink-0"
             >
-              <span>Join on Telegram</span>
+              <span>Join Channel</span>
+              <span aria-hidden="true">&rarr;</span>
             </a>
-          )}
+          </div>
         </div>
-      </div>
+      </aside>
     );
   }
 

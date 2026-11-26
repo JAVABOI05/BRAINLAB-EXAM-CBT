@@ -25,6 +25,7 @@ export async function POST(request: NextRequest) {
     }
 
     const normalizedClassId = String(classId).trim().toUpperCase();
+    const isCohortStage = normalizedClassId.startsWith("COHORT-");
     const isOpenStage =
       normalizedClassId === "BL-LIVE-101" ||
       normalizedClassId === "DEMO-CLASS" ||
@@ -37,6 +38,17 @@ export async function POST(request: NextRequest) {
     const supabase = getSupabaseServerClient(token);
     const config = await getLiveClassroomConfig();
     const roomConfig = config.room_configs?.[classId] || config.room_configs?.[normalizedClassId];
+
+    let cohortGroup: { id: string; name: string; owner_id: string } | null = null;
+    if (isCohortStage) {
+      const cohortSlug = normalizedClassId.replace(/^COHORT-/, "").toLowerCase();
+      const { data: cg } = await supabase
+        .from("community_groups")
+        .select("id, name, owner_id")
+        .eq("slug", cohortSlug)
+        .maybeSingle();
+      if (cg) cohortGroup = cg;
+    }
 
     // 1. Resolve staff access from authoritative platform roles, approved tutor
     // profiles, or the explicitly configured individual tutor allowlist.
@@ -67,7 +79,25 @@ export async function POST(request: NextRequest) {
     };
     let liveClass: LiveClass | null = null;
 
-    if (isOpenStage) {
+    if (isCohortStage) {
+      liveClass = {
+        id: classId,
+        title: cohortGroup ? `${cohortGroup.name} — Live Studio Class` : `Cohort Live Stage (${normalizedClassId})`,
+        description: "Cohort-exclusive masterclass with live interactive whiteboard, polls, slides and candidate questions.",
+        tutor_id: cohortGroup?.owner_id || user.id,
+        status: "live",
+        class_format: "interactive",
+        course_id: null,
+        scheduled_start_at: new Date().toISOString(),
+        duration_minutes: 90,
+        student_mic_enabled: true,
+        student_camera_enabled: false,
+        student_screenshare_enabled: false,
+        student_chat_enabled: true,
+        is_recording_enabled: false,
+        waiting_room_enabled: false,
+      };
+    } else if (isOpenStage) {
       let stageTitle = "BrainLab Live Academic Stage";
       if (normalizedClassId === "BL-LIVE-101") {
         stageTitle = "BrainLab Live Academic Stage (BL-LIVE-101)";
@@ -129,8 +159,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "This virtual classroom has not been configured." }, { status: 404 });
     }
     const isHost = isPlatformStaff ||
-      (!isOpenStage && liveClass.tutor_id === user.id) ||
-      (isOpenStage && staffAccess.isStaff &&
+      (isCohortStage && (cohortGroup?.owner_id === user.id || staffAccess.isStaff)) ||
+      (!isOpenStage && !isCohortStage && liveClass.tutor_id === user.id) ||
+      (isOpenStage && !isCohortStage && staffAccess.isStaff &&
         (!roomConfig?.active_host_id || roomConfig.active_host_id === user.id));
 
     if (isHost) {
@@ -139,6 +170,32 @@ export async function POST(request: NextRequest) {
 
     // 4. Student Host Restriction: Students are never allowed to enter as host or start the class
     if (!isHost) {
+      // 4a. Cohort Gating Check: strictly verify active enrollment in cohort
+      if (isCohortStage) {
+        let hasActiveMembership = false;
+        if (cohortGroup?.id) {
+          const { data: member } = await supabase
+            .from("community_group_memberships")
+            .select("id, status")
+            .eq("group_id", cohortGroup.id)
+            .eq("user_id", user.id)
+            .eq("status", "active")
+            .maybeSingle();
+
+          if (member) hasActiveMembership = true;
+        }
+
+        if (!hasActiveMembership) {
+          return NextResponse.json(
+            {
+              error: `Access Restricted: This live studio class is strictly reserved for enrolled candidates of ${cohortGroup?.name || "this cohort"}. Non-members cannot join.`,
+              isCohortGated: true,
+              cohortName: cohortGroup?.name || null,
+            },
+            { status: 403 }
+          );
+        }
+      }
       const isRoomActive =
         isOpenStage ||
         (roomConfig?.is_active ?? true) ||
@@ -170,10 +227,10 @@ export async function POST(request: NextRequest) {
         if (!studentTier.entitlements.classroom_access) {
           return NextResponse.json(
             {
-              error: `Live Academic Classrooms require an active Premium Study, Plus, or Pro subscription. You are currently on the ${studentTier.planName} tier.`,
+              error: `Scheduled live tutorials require an active Apex Cohort enrolment. You are currently in the ${studentTier.planName} category.`,
               requiresSubscription: true,
               currentPlan: studentTier.planName,
-              requiredTier: "Premium Study",
+              requiredTier: "Apex Cohort",
               classDetails: {
                 id: liveClass.id,
                 title: roomConfig?.title || liveClass.title,

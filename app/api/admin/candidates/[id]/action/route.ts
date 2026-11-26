@@ -290,6 +290,35 @@ export async function POST(
       });
     }
 
+    // ------------------------------------------------------------------------
+    // ACTION 5: MANUALLY VERIFY EMAIL ADDRESS (1-CLICK BYPASS FOR UNCONFIRMED)
+    // ------------------------------------------------------------------------
+    if (action === "verify_email") {
+      const { error: verifyError } = await supabase.auth.admin.updateUserById(candidateId, {
+        email_confirm: true,
+      });
+
+      if (verifyError) {
+        return NextResponse.json({ ok: false, error: verifyError.message }, { status: 400 });
+      }
+
+      try {
+        await supabase.from("configuration_audit_logs").insert({
+          admin_email: admin.email,
+          entity_type: "candidate_auth",
+          entity_id: candidateId,
+          action: "updated",
+          new_value: { action: "email_manually_confirmed", email: candidate.email },
+          change_reason: `Admin manually verified email for ${candidate.email}`,
+        });
+      } catch {}
+
+      return NextResponse.json({
+        ok: true,
+        message: `Candidate email (${candidate.email}) has been marked as verified.`,
+      });
+    }
+
     return NextResponse.json({ ok: false, error: "Unrecognized administrative action" }, { status: 400 });
   } catch (err) {
     return NextResponse.json(

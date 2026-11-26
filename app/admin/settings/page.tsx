@@ -33,6 +33,7 @@ const SETTINGS: { heading: string; links: SettingLink[] }[] = [
     { title: "Coupons & Campaigns", description: "Manage existing promotional campaign tools.", href: "/admin/coupons", allowed: (u,a) => platformAdmin(u) || a["finance.billing.manage"] === true },
     { title: "Refund Queue", description: "Review refund requests using the existing workflow.", href: "/admin/refunds", allowed: (u,a) => platformAdmin(u) || a["finance.billing.manage"] === true },
     { title: "Schools & Organisations", description: "Open institutional access and school management.", href: "/admin/schools", allowed: (u,a) => platformAdmin(u) || a["institution.manage"] === true },
+    { title: "Tutor Applications", description: "Review educator vetting submissions and credentials.", href: "/admin/tutors", allowed: (u,a) => platformAdmin(u) || a["learning.content.review"] === true },
   ]},
   { heading: "Security & administration", links: [
     { title: "Administrator Roles", description: "Review role assignment tools (super administrators only).", href: "/admin/users", allowed: (u) => u.role === "super_admin" },

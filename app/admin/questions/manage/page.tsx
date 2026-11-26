@@ -38,13 +38,17 @@ export default function AdminQuestionManagerPage() {
 
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
   const [questions, setQuestions] = useState<QuestionRow[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
   const [bulkLoading, setBulkLoading] = useState(false);
+  const [canDelete, setCanDelete] = useState(false);
   const [message, setMessage] = useState("");
 
   const [subjectFilter, setSubjectFilter] = useState("All");
   const [sectionFilter, setSectionFilter] = useState("All");
+  const [statusFilter, setStatusFilter] = useState<"All" | "Active" | "Inactive">("All");
   const [searchText, setSearchText] = useState("");
 
   useEffect(() => {
@@ -58,6 +62,8 @@ export default function AdminQuestionManagerPage() {
         return;
       }
       setAdminUser(admin);
+      const hasDeletePermission = await adminHasPermission("cbt.questions.delete");
+      if (active) setCanDelete(hasDeletePermission);
       await loadQuestions();
     }
     void init().catch(() => { if (active) { setMessage("Could not verify administrator access."); setLoading(false); } });
@@ -68,22 +74,61 @@ export default function AdminQuestionManagerPage() {
     setLoading(true);
     setMessage("");
 
-    const { data, error } = await supabase
-      .from("questions")
-      .select(
-        "id, source_question_id, subject, section, category, question, option_a, option_b, option_c, option_d, option_e, correct_answer, marks, difficulty, is_active"
-      )
-      .order("id", { ascending: false })
-      .range(0, 4999);
+    // Fetch the full bank in bounded requests. The table itself is rendered
+    // in small UI pages below so thousands of rows never enter the DOM at once.
+    const fetchPageSize = 500;
+    const columns =
+      "id, source_question_id, subject, section, category, question, option_a, option_b, option_c, option_d, option_e, correct_answer, marks, difficulty, is_active";
+    const allQuestions: QuestionRow[] = [];
+    let lastId: number | null = null;
 
-    if (error) {
-      setMessage(`Failed to load questions: ${error.message}`);
+    try {
+      while (true) {
+        let query = supabase
+          .from("questions")
+          .select(columns)
+          .order("id", { ascending: false })
+          .limit(fetchPageSize);
+
+        if (lastId !== null) {
+          query = query.lt("id", lastId);
+        }
+
+        const { data, error } = await query;
+
+        if (error) {
+          setQuestions(allQuestions);
+          setCurrentPage(1);
+          setMessage(
+            `Question loading stopped after ${allQuestions.length} records: ${error.message}. The records already loaded are still available; refresh to retry.`
+          );
+          return;
+        }
+
+        const page = (data || []) as QuestionRow[];
+        allQuestions.push(...page);
+
+        if (page.length < fetchPageSize) break;
+
+        // Primary-key cursor prevents overlap and offset drift as new rows arrive.
+        lastId = page[page.length - 1].id;
+      }
+
+      setQuestions(allQuestions);
+      setCurrentPage(1);
+      if (allQuestions.length === 0) {
+        setMessage("The database returned no questions for this administrator session. Check the question-bank access policy and refresh.");
+      }
+    } catch (error) {
+      setQuestions(allQuestions);
+      setCurrentPage(1);
+      const detail = error instanceof Error ? error.message : "Unexpected network error";
+      setMessage(
+        `Could not finish loading the question bank after ${allQuestions.length} records: ${detail}. Please refresh to retry.`
+      );
+    } finally {
       setLoading(false);
-      return;
     }
-
-    setQuestions((data || []) as QuestionRow[]);
-    setLoading(false);
   }
 
   async function toggleQuestionStatus(question: QuestionRow) {
@@ -171,6 +216,122 @@ export default function AdminQuestionManagerPage() {
     }
   }
 
+  async function deleteSingleQuestion(question: QuestionRow) {
+    if (question.is_active) {
+      setMessage("Active questions cannot be deleted. Deactivate the question first.");
+      return;
+    }
+
+    const preview = question.question.replace(/<[^>]+>/g, "").slice(0, 70);
+    const confirmed = window.confirm(
+      `PERMANENT DELETION:\n\nAre you sure you want to permanently delete Question #${question.id}?\n\nSubject: ${question.subject}\nSnippet: "${preview}..."\n\nThis action CANNOT be undone.`
+    );
+    if (!confirmed) return;
+
+    try {
+      setDeletingId(question.id);
+      setMessage("");
+
+      const session = (await supabase.auth.getSession()).data.session;
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (session?.access_token) {
+        headers["Authorization"] = `Bearer ${session.access_token}`;
+      }
+
+      const res = await fetch("/api/admin/questions/delete", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ questionId: question.id }),
+      });
+
+      const resData = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        // Direct client Supabase fallback
+        const { error: directError } = await supabase
+          .from("questions")
+          .delete()
+          .eq("id", question.id)
+          .eq("is_active", false);
+
+        if (directError) {
+          setMessage(`Delete failed: ${resData.message || directError.message}`);
+          return;
+        }
+      }
+
+      setQuestions((prev) => prev.filter((q) => q.id !== question.id));
+      setMessage(`Question #${question.id} has been permanently deleted.`);
+    } catch (err: unknown) {
+      const detail = err instanceof Error ? err.message : "Deletion failed";
+      setMessage(`Delete error: ${detail}`);
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
+  async function deleteFilteredDeactivatedQuestions() {
+    const deactivatedQuestions = filteredQuestions.filter((q) => !q.is_active);
+    if (deactivatedQuestions.length === 0) {
+      setMessage("No deactivated questions found in current filter to delete.");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `PERMANENT BATCH DELETION WARNING:\n\nYou are about to permanently delete all ${deactivatedQuestions.length} DEACTIVATED question(s) matching your current filter.\n\nActive questions will NOT be touched.\nThis operation CANNOT be undone.\n\nDo you want to proceed?`
+    );
+    if (!confirmed) return;
+
+    try {
+      setBulkLoading(true);
+      setMessage("");
+
+      const ids = deactivatedQuestions.map((q) => q.id);
+      const session = (await supabase.auth.getSession()).data.session;
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (session?.access_token) {
+        headers["Authorization"] = `Bearer ${session.access_token}`;
+      }
+
+      const res = await fetch("/api/admin/questions/delete", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ questionIds: ids }),
+      });
+
+      const resData = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        // Direct client Supabase batch fallback
+        let hadError = false;
+        for (let i = 0; i < ids.length; i += 500) {
+          const batch = ids.slice(i, i + 500);
+          const { error: directError } = await supabase
+            .from("questions")
+            .delete()
+            .in("id", batch)
+            .eq("is_active", false);
+
+          if (directError) {
+            setMessage(`Batch delete failed: ${resData.message || directError.message}`);
+            hadError = true;
+            break;
+          }
+        }
+        if (hadError) return;
+      }
+
+      const deletedSet = new Set(ids);
+      setQuestions((prev) => prev.filter((q) => !deletedSet.has(q.id)));
+      setMessage(`Successfully deleted ${ids.length} deactivated question(s).`);
+    } catch (err: unknown) {
+      const detail = err instanceof Error ? err.message : "Batch deletion failed";
+      setMessage(`Batch delete error: ${detail}`);
+    } finally {
+      setBulkLoading(false);
+    }
+  }
+
   function exportQuestionsToCsv() {
     if (filteredQuestions.length === 0) {
       setMessage("No questions to export.");
@@ -247,6 +408,10 @@ export default function AdminQuestionManagerPage() {
       const sectionMatch =
         sectionFilter === "All" || q.section === sectionFilter;
 
+      const statusMatch =
+        statusFilter === "All" ||
+        (statusFilter === "Active" ? q.is_active : !q.is_active);
+
       const search = searchText.trim().toLowerCase();
       const searchMatch =
         search === "" ||
@@ -254,9 +419,21 @@ export default function AdminQuestionManagerPage() {
         (q.category || "").toLowerCase().includes(search) ||
         (q.source_question_id || "").toLowerCase().includes(search);
 
-      return subjectMatch && sectionMatch && searchMatch;
+      return subjectMatch && sectionMatch && statusMatch && searchMatch;
     });
-  }, [questions, subjectFilter, sectionFilter, searchText]);
+  }, [questions, subjectFilter, sectionFilter, statusFilter, searchText]);
+
+  const tablePageSize = 50;
+  const totalPages = Math.max(1, Math.ceil(filteredQuestions.length / tablePageSize));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const visibleQuestions = useMemo(() => {
+    const start = (safeCurrentPage - 1) * tablePageSize;
+    return filteredQuestions.slice(start, start + tablePageSize);
+  }, [filteredQuestions, safeCurrentPage]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [subjectFilter, sectionFilter, statusFilter, searchText]);
 
   const activeCount = filteredQuestions.filter((q) => q.is_active).length;
   const inactiveCount = filteredQuestions.length - activeCount;
@@ -372,6 +549,21 @@ export default function AdminQuestionManagerPage() {
               </select>
             </div>
 
+            <div className="admin-setting-box">
+              <label className="admin-label">Status</label>
+              <select
+                value={statusFilter}
+                onChange={(e) =>
+                  setStatusFilter(e.target.value as "All" | "Active" | "Inactive")
+                }
+                className="admin-input"
+              >
+                <option value="All">All Statuses</option>
+                <option value="Active">Active Only</option>
+                <option value="Inactive">Deactivated Only</option>
+              </select>
+            </div>
+
             <div className="admin-setting-box" style={{ gridColumn: "1 / -1" }}>
               <label className="admin-label">Search</label>
               <input
@@ -405,10 +597,28 @@ export default function AdminQuestionManagerPage() {
               {bulkLoading ? "Processing..." : "Deactivate All Filtered"}
             </button>
 
+            {canDelete && inactiveCount > 0 && (
+              <button
+                onClick={deleteFilteredDeactivatedQuestions}
+                disabled={bulkLoading || inactiveCount === 0}
+                className="admin-btn-light"
+                style={{
+                  borderColor: "#f43f5e",
+                  color: "#e11d48",
+                  backgroundColor: "#fff1f2",
+                  fontWeight: 600,
+                }}
+                title="Permanently delete deactivated questions currently filtered"
+              >
+                {bulkLoading ? "Processing..." : `🗑️ Delete Deactivated (${inactiveCount})`}
+              </button>
+            )}
+
             <button
               onClick={() => {
                 setSubjectFilter("All");
                 setSectionFilter("All");
+                setStatusFilter("All");
                 setSearchText("");
               }}
               className="admin-btn-light"
@@ -423,7 +633,10 @@ export default function AdminQuestionManagerPage() {
         <section className="admin-section admin-card">
           <h2 className="admin-card-title">Question Bank</h2>
           <p className="admin-card-text">
-            Showing {filteredQuestions.length} question(s).
+            Showing {filteredQuestions.length} question(s) across the complete loaded bank.
+            {filteredQuestions.length > 0 && (
+              <> Displaying {((safeCurrentPage - 1) * tablePageSize) + 1}–{Math.min(safeCurrentPage * tablePageSize, filteredQuestions.length)}.</>
+            )}
           </p>
 
           {loading ? (
@@ -446,10 +659,11 @@ export default function AdminQuestionManagerPage() {
                     <th>Status</th>
                     <th>Action</th>
                     <th>Edit</th>
+                    {canDelete && <th>Delete</th>}
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredQuestions.map((question) => (
+                  {visibleQuestions.map((question) => (
                     <tr key={question.id}>
                       <td>{question.id}</td>
                       <td>{question.source_question_id || "-"}</td>
@@ -491,10 +705,68 @@ export default function AdminQuestionManagerPage() {
                           Edit
                         </button>
                       </td>
+                      {canDelete && (
+                        <td>
+                          {!question.is_active ? (
+                            <button
+                              onClick={() => deleteSingleQuestion(question)}
+                              disabled={
+                                deletingId === question.id ||
+                                updatingId === question.id
+                              }
+                              className="admin-btn-light"
+                              style={{
+                                padding: "8px 12px",
+                                borderColor: "#fda4af",
+                                color: "#e11d48",
+                                backgroundColor: "#fff1f2",
+                                fontWeight: 600,
+                                fontSize: "12px",
+                              }}
+                              title="Permanently delete this deactivated question"
+                            >
+                              {deletingId === question.id
+                                ? "Deleting..."
+                                : "🗑️ Delete"}
+                            </button>
+                          ) : (
+                            <span
+                              className="text-xs text-slate-400"
+                              style={{ fontStyle: "italic" }}
+                              title="Active questions cannot be deleted. Deactivate first."
+                            >
+                              Active
+                            </span>
+                          )}
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+          {!loading && filteredQuestions.length > tablePageSize && (
+            <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                disabled={safeCurrentPage <= 1}
+                className="admin-btn-light"
+              >
+                Previous
+              </button>
+              <span className="text-sm" aria-live="polite">
+                Page {safeCurrentPage} of {totalPages}
+              </span>
+              <button
+                type="button"
+                onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+                disabled={safeCurrentPage >= totalPages}
+                className="admin-btn-light"
+              >
+                Next
+              </button>
             </div>
           )}
         </section>

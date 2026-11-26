@@ -12,6 +12,9 @@ export interface NotificationPreferences {
   sms_alerts: boolean;
   unsubscribed_all: boolean;
   unsubscribed_at?: string | null;
+  quiet_hours_start?: string;
+  quiet_hours_end?: string;
+  timezone?: string;
   updated_at?: string;
 }
 
@@ -24,6 +27,9 @@ export const DEFAULT_NOTIFICATION_PREFERENCES: Omit<NotificationPreferences, "em
   sms_alerts: true,
   unsubscribed_all: false,
   unsubscribed_at: null,
+  quiet_hours_start: "22:00",
+  quiet_hours_end: "07:00",
+  timezone: "Africa/Lagos",
 };
 
 const SECRET = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXTAUTH_SECRET || "brainlab-notif-secret-2026";
@@ -65,6 +71,45 @@ export function verifyUnsubscribeToken(token: string): string | null {
 }
 
 /**
+ * Checks if a given time falls within the student's designated quiet hours.
+ */
+export function isInQuietHours(prefs: NotificationPreferences, checkDate: Date = new Date()): boolean {
+  try {
+    const tz = prefs.timezone || "Africa/Lagos";
+    const startStr = prefs.quiet_hours_start || "22:00";
+    const endStr = prefs.quiet_hours_end || "07:00";
+
+    const formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone: tz,
+      hour: "numeric",
+      minute: "numeric",
+      hour12: false,
+    });
+
+    const parts = formatter.formatToParts(checkDate);
+    const hour = parseInt(parts.find((p) => p.type === "hour")?.value || "0", 10);
+    const minute = parseInt(parts.find((p) => p.type === "minute")?.value || "0", 10);
+    const currentMinutes = hour * 60 + minute;
+
+    const [startH, startM] = startStr.split(":").map(Number);
+    const [endH, endM] = endStr.split(":").map(Number);
+
+    const startMinutes = (startH || 0) * 60 + (startM || 0);
+    const endMinutes = (endH || 0) * 60 + (endM || 0);
+
+    // If quiet hours span midnight (e.g. 22:00 to 07:00)
+    if (startMinutes > endMinutes) {
+      return currentMinutes >= startMinutes || currentMinutes < endMinutes;
+    }
+
+    // Normal day window (e.g. 13:00 to 15:00)
+    return currentMinutes >= startMinutes && currentMinutes < endMinutes;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Fetches notification preferences for a candidate or subscriber by email or userId.
  */
 export async function getPreferences(
@@ -101,6 +146,9 @@ export async function getPreferences(
         sms_alerts: Boolean(data.sms_alerts),
         unsubscribed_all: Boolean(data.unsubscribed_all),
         unsubscribed_at: data.unsubscribed_at,
+        quiet_hours_start: data.quiet_hours_start || "22:00",
+        quiet_hours_end: data.quiet_hours_end || "07:00",
+        timezone: data.timezone || "Africa/Lagos",
         updated_at: data.updated_at,
       };
     }
@@ -142,6 +190,10 @@ export async function savePreferences(
   if (updates.assignments !== undefined) payload.assignments = updates.assignments;
   if (updates.marketing_announcements !== undefined) payload.marketing_announcements = updates.marketing_announcements;
   if (updates.sms_alerts !== undefined) payload.sms_alerts = updates.sms_alerts;
+  if (updates.quiet_hours_start !== undefined) payload.quiet_hours_start = updates.quiet_hours_start;
+  if (updates.quiet_hours_end !== undefined) payload.quiet_hours_end = updates.quiet_hours_end;
+  if (updates.timezone !== undefined) payload.timezone = updates.timezone;
+
   if (updates.unsubscribed_all !== undefined) {
     payload.unsubscribed_all = updates.unsubscribed_all;
     payload.unsubscribed_at = unsubscribedAt;
@@ -177,6 +229,9 @@ export async function savePreferences(
         sms_alerts: Boolean(data.sms_alerts),
         unsubscribed_all: Boolean(data.unsubscribed_all),
         unsubscribed_at: data.unsubscribed_at,
+        quiet_hours_start: data.quiet_hours_start || "22:00",
+        quiet_hours_end: data.quiet_hours_end || "07:00",
+        timezone: data.timezone || "Africa/Lagos",
         updated_at: data.updated_at,
       };
     }

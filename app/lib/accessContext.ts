@@ -9,12 +9,21 @@ export type AccessSessionRole = {
   role_name: string;
   resource_scope: Record<string, unknown>;
   expires_at: string | null;
+  permissions?: string[];
+};
+
+export type AccessScopedPermission = {
+  assignment_id: string;
+  role_key: string;
+  resource_scope: Record<string, unknown>;
+  permissions: string[];
 };
 
 export type AccessSessionContext = {
   user_id: string;
   roles: AccessSessionRole[];
   permissions: string[];
+  scoped_permissions?: AccessScopedPermission[];
 };
 
 export async function getAccessSessionContext(): Promise<AccessSessionContext | null> {
@@ -38,5 +47,18 @@ export async function getAccessSessionContext(): Promise<AccessSessionContext | 
   });
 
   const permissions = value.permissions.filter((item): item is string => typeof item === "string");
-  return { user_id: value.user_id, roles, permissions };
+
+  const scoped_permissions = Array.isArray(value.scoped_permissions)
+    ? (value.scoped_permissions.filter((item): item is AccessScopedPermission => {
+        if (!item || typeof item !== "object") return false;
+        const scoped = item as Record<string, unknown>;
+        return typeof scoped.assignment_id === "string"
+          && typeof scoped.role_key === "string"
+          && !!scoped.resource_scope
+          && typeof scoped.resource_scope === "object"
+          && Array.isArray(scoped.permissions);
+      }))
+    : [];
+
+  return { user_id: value.user_id, roles, permissions, scoped_permissions };
 }

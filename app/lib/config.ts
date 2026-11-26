@@ -1,6 +1,6 @@
 export const CONFIG = {
-  whatsappNumber: "2349074310204",
-  supportNumbers: ["0907 431 0204", "0902 111 8231"],
+  whatsappNumber: "2348089267399",
+  supportNumbers: ["+234 808 926 7399", "+234 808 926 7399"],
   accessCodeMessage:
     "Good day BRAINLAB TUTORIALS, I would like to get my access code for the CBT exam. Please can I get more information on the registration and access process?",
   revisionMessage:

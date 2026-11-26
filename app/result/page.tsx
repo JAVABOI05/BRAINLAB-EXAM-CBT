@@ -6,6 +6,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { getPublicSettings, isError, lookupResult as fetchLookup } from "../lib/examApi";
 import VerificationQRCode from "../components/VerificationQRCode";
+import { resolveCutoffScore, type UniversityCutoff } from "../lib/universityCutoffs";
+import { trackEvent } from "../lib/analytics";
+import { awardStudentXp } from "../lib/gamification";
+import { NigerianInstitutionSelect } from "../components/ui/NigerianInstitutionSelect";
+import { NigerianCourseSelect } from "../components/ui/NigerianCourseSelect";
 
 type Candidate = {
   name: string;
@@ -13,6 +18,8 @@ type Candidate = {
   subject: string;
   subjects?: string[];
   code?: string;
+  dreamSchool?: string;
+  targetCourse?: string;
 };
 
 type SavedResultRow = {
@@ -25,6 +32,7 @@ type SavedResultRow = {
 
 type Summary = {
   result_id: string;
+  session_id?: string;
   score: number;
   total: number;
   subject_scores: Record<string, number>;
@@ -57,6 +65,11 @@ export default function ResultPage() {
   const [lookupResult, setLookupResult] = useState<SavedResultRow | null>(null);
   const [chiefProctorName, setChiefProctorName] = useState("Chief Examination Proctor");
   const [chiefProctorTitle, setChiefProctorTitle] = useState("BrainLab CBT Directorate");
+  const [dreamCutoff, setDreamCutoff] = useState<UniversityCutoff | null>(null);
+  const [benchmarkSchool, setBenchmarkSchool] = useState<string>("University of Lagos (UNILAG)");
+  const [benchmarkCourse, setBenchmarkCourse] = useState<string>("Computer Science & AI");
+  const [isCustomizingBenchmark, setIsCustomizingBenchmark] = useState(false);
+  const [xpAwarded, setXpAwarded] = useState<number | null>(null);
 
   useEffect(() => {
     async function loadPage() {
@@ -77,6 +90,32 @@ export default function ResultPage() {
       try {
         const parsedSummary = JSON.parse(savedSummary) as Summary;
         setSummary(parsedSummary);
+
+        // Award and synchronize XP for CBT mock completion
+        try {
+          const resultId = parsedSummary.result_id || "mock_" + Date.now();
+          const sessionKey = `bl_xp_awarded_${resultId}`;
+          const existingAward = sessionStorage.getItem(sessionKey);
+          if (existingAward) {
+            setXpAwarded(parseInt(existingAward, 10));
+          } else {
+            const rawScore = parsedSummary.score ?? 0;
+            const maxScore = parsedSummary.total || 400;
+            const percentageVal = Math.min(100, Math.max(0, Math.round((rawScore / maxScore) * 100)));
+            const earnedXp = Math.round(50 + (percentageVal * 0.75)); // 50 to 125 XP
+
+            void awardStudentXp({
+              activityType: "exam_complete",
+              referenceId: resultId,
+              amount: earnedXp,
+              description: `CBT Mock Exam - Score ${rawScore}/${maxScore} (${percentageVal}%)`,
+              scorePercent: percentageVal,
+            }).then((res) => {
+              sessionStorage.setItem(sessionKey, String(res.awarded_xp));
+              setXpAwarded(res.awarded_xp);
+            });
+          }
+        } catch {}
         let activeCandidate: Candidate = {
           name: "Verified Candidate",
           phone: "080-BrainLab",
@@ -91,6 +130,42 @@ export default function ResultPage() {
           }
         }
         setCandidate(activeCandidate);
+
+        // --- Cut-off Margin Engine: resolve dream school from localStorage candidate/profile ---
+        try {
+          const profileRaw = localStorage.getItem("brainlab_student_profile");
+          const metaRaw = localStorage.getItem("brainlab_user_metadata");
+          let dreamSchool: string | null = activeCandidate.dreamSchool ?? null;
+          let targetCourse: string | null = activeCandidate.targetCourse ?? null;
+          if (!dreamSchool && profileRaw) {
+            const profile = JSON.parse(profileRaw) as { dreamSchool?: string; targetCourse?: string };
+            dreamSchool = profile.dreamSchool ?? null;
+            if (!targetCourse && profile.targetCourse) targetCourse = profile.targetCourse;
+          }
+          if (!dreamSchool && metaRaw) {
+            const meta = JSON.parse(metaRaw) as { dream_school?: string; target_course?: string };
+            dreamSchool = meta.dream_school ?? null;
+            if (!targetCourse && meta.target_course) targetCourse = meta.target_course;
+          }
+          const schoolToUse = dreamSchool || "University of Lagos (UNILAG)";
+          const courseToUse = targetCourse || "Computer Science & AI";
+          setBenchmarkSchool(schoolToUse);
+          setBenchmarkCourse(courseToUse);
+
+          const cutoff = resolveCutoffScore(schoolToUse, courseToUse);
+          if (cutoff) {
+            setDreamCutoff(cutoff);
+            const computedScore = Math.min(400, Math.max(0, parsedSummary.score ?? 0));
+            trackEvent("result_margin_computed", {
+              institution: cutoff.shortName,
+              targetScore: cutoff.cutoffScore,
+              candidateScore: computedScore,
+              margin: computedScore - cutoff.cutoffScore,
+            });
+          }
+        } catch {
+          // Profile read failure is non-fatal; margin badge simply hidden
+        }
 
         if (!isResultsReleased || parsedSummary.show_results === false) {
           setHeldForReview(true);
@@ -107,6 +182,21 @@ export default function ResultPage() {
   const totalScore = Math.min(400, Math.max(0, summary?.score ?? 0));
   const totalPossible = 400;
   const percentage = Math.min(100, Math.max(0, Math.round((totalScore / 400) * 100)));
+
+  function updateBenchmark(school: string, course: string) {
+    setBenchmarkSchool(school);
+    setBenchmarkCourse(course);
+    const resolved = resolveCutoffScore(school, course);
+    setDreamCutoff(resolved);
+    if (resolved) {
+      trackEvent("result_margin_computed", {
+        institution: resolved.shortName,
+        targetScore: resolved.cutoffScore,
+        candidateScore: totalScore,
+        margin: totalScore - resolved.cutoffScore,
+      });
+    }
+  }
 
   // Diagnostic calculations
   const subjectEntries = Object.entries(subjectScores);
@@ -139,10 +229,36 @@ export default function ResultPage() {
     window.print();
   };
 
+  const [certDownloading, setCertDownloading] = useState(false);
+
+  const handleDownloadCertificate = async () => {
+    const targetResultId = summary?.result_id || (typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("id") : null);
+    if (!targetResultId) return;
+    setCertDownloading(true);
+    try {
+      const res = await fetch("/api/certificates/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          result_id: targetResultId,
+          session_id: summary?.session_id,
+        }),
+      });
+      const data = await res.json();
+      if (data?.certificate?.id) {
+        window.open(`/api/certificates/download/${data.certificate.id}`, "_blank");
+      }
+    } catch (err) {
+      console.error("Failed to generate digital certificate:", err);
+    } finally {
+      setCertDownloading(false);
+    }
+  };
+
   // Handle WhatsApp Share
   const handleShareWhatsApp = () => {
     const text = encodeURIComponent(
-      `🎯 BrainLab UTME Mock Scorecard\nCandidate: ${candidate?.name || "Student"}\nTotal Score: ${totalScore}/${totalPossible} (${percentage}%)\nStrongest Subject: ${bestSubject ? `${bestSubject[0]} (${bestSubject[1]}/100)` : "General"}\nCheck verified scores at https://www.brainlabacademy.com.ng/result`
+      `[BrainLab UTME Mock Scorecard]\nCandidate: ${candidate?.name || "Student"}\nTotal Score: ${totalScore}/${totalPossible} (${percentage}%)\nStrongest Subject: ${bestSubject ? `${bestSubject[0]} (${bestSubject[1]}/100)` : "General"}\nCheck verified scores at https://www.brainlabacademy.com.ng/result`
     );
     window.open(`https://wa.me/?text=${text}`, "_blank");
   };
@@ -436,6 +552,20 @@ export default function ResultPage() {
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
+              onClick={handleDownloadCertificate}
+              disabled={certDownloading}
+              className="inline-flex items-center gap-2 rounded-xl bg-purple-600 hover:bg-purple-500 px-4 py-2 text-xs font-bold text-white shadow-sm active:scale-95 transition disabled:opacity-50"
+            >
+              <span>{certDownloading ? "Generating..." : "Download Verifiable Certificate (PDF)"}</span>
+            </button>
+            <Link
+              href="/student/exams"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition"
+            >
+              <span>Exam History</span>
+            </Link>
+            <button
+              type="button"
               onClick={handlePrint}
               className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-blue-500 active:scale-95 transition"
             >
@@ -533,6 +663,96 @@ export default function ResultPage() {
                   ? "Competitive Pass (Above National Cutoff)"
                   : "Revision Pass (Targeted Practice Needed)"}
               </div>
+
+              {xpAwarded !== null && (
+                <div className="mt-2.5 flex items-center justify-center gap-1.5 rounded-full bg-gradient-to-r from-amber-500/15 via-purple-500/20 to-cyan-500/15 border border-amber-500/30 px-3 py-1 text-xs font-black text-amber-900 dark:text-amber-300 shadow-xs">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="text-amber-500" aria-hidden="true">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                  </svg>
+                  <span>+{xpAwarded} XP Earned</span>
+                  <span className="text-[10px] opacity-75 font-medium">• Streak Protected</span>
+                </div>
+              )}
+
+              {/* Dream School Cut-off Margin Badge */}
+              {dreamCutoff && (
+                <div
+                  className={`mt-4 rounded-xl border p-3 text-left transition-all ${
+                    totalScore >= dreamCutoff.cutoffScore
+                      ? "border-emerald-500/40 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-950 dark:text-emerald-200"
+                      : totalScore >= dreamCutoff.cutoffScore - 15
+                      ? "border-amber-500/40 bg-amber-50 dark:bg-amber-950/40 text-amber-950 dark:text-amber-200"
+                      : "border-rose-500/40 bg-rose-50 dark:bg-rose-950/40 text-rose-950 dark:text-rose-200"
+                  }`}
+                  data-testid="cutoff-margin-badge"
+                >
+                  <div className="flex items-center justify-between gap-1.5 flex-wrap">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                      <span className="inline-flex items-center gap-1"><svg className="h-3 w-3 text-cyan-600 dark:text-cyan-400 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" /></svg>{dreamCutoff.shortName} Target</span>
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setIsCustomizingBenchmark(!isCustomizingBenchmark)}
+                        className="text-[10px] font-bold text-blue-700 dark:text-cyan-400 hover:underline cursor-pointer"
+                      >
+                        {isCustomizingBenchmark ? "Close" : "Change Institution / Course"}
+                      </button>
+                      <span
+                        className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
+                          totalScore >= dreamCutoff.cutoffScore
+                            ? "bg-emerald-600 text-white"
+                            : totalScore >= dreamCutoff.cutoffScore - 15
+                            ? "bg-amber-600 text-white"
+                            : "bg-rose-600 text-white"
+                        }`}
+                      >
+                        {totalScore >= dreamCutoff.cutoffScore
+                          ? "Above Target"
+                          : totalScore >= dreamCutoff.cutoffScore - 15
+                          ? "On Target"
+                          : "Below Target"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="mt-1.5 flex items-baseline justify-between gap-2">
+                    <span className="text-xs font-bold text-slate-900 dark:text-white">
+                      {dreamCutoff.courseName ? `${dreamCutoff.courseName}: ` : ""}Merit: {dreamCutoff.cutoffScore} / 400
+                    </span>
+                    <span className="text-xs font-extrabold">
+                      {totalScore - dreamCutoff.cutoffScore >= 0
+                        ? `+${totalScore - dreamCutoff.cutoffScore} pts margin`
+                        : `${totalScore - dreamCutoff.cutoffScore} pts margin`}
+                    </span>
+                  </div>
+
+                  <p className="mt-1 text-[11px] leading-tight text-slate-600 dark:text-slate-300">
+                    {totalScore >= dreamCutoff.cutoffScore
+                      ? `Clears ${dreamCutoff.shortName}'s competitive merit benchmark for ${dreamCutoff.courseName || "high-demand faculties"}.`
+                      : totalScore >= dreamCutoff.cutoffScore - 15
+                      ? `Within 15 marks of ${dreamCutoff.shortName}'s merit threshold (${dreamCutoff.cutoffScore}). Target weak topics to bridge the gap.`
+                      : `Requires ${dreamCutoff.cutoffScore - totalScore} more marks to meet ${dreamCutoff.shortName}'s merit standard (${dreamCutoff.cutoffScore}).`}
+                  </p>
+
+                  {isCustomizingBenchmark && (
+                    <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-800 space-y-2.5">
+                      <NigerianInstitutionSelect
+                        value={benchmarkSchool}
+                        onChange={(val) => updateBenchmark(val, benchmarkCourse)}
+                        label="Compare Against Any Institution (500+ Universities & Polytechnics)"
+                        placeholder="Search any university or polytechnic..."
+                      />
+                      <NigerianCourseSelect
+                        value={benchmarkCourse}
+                        onChange={(val) => updateBenchmark(benchmarkSchool, val)}
+                        label="Compare Academic Course (100+ Accredited Degree Programmes)"
+                        placeholder="Select degree course..."
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Diagnostic Metrics (7 cols) */}

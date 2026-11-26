@@ -4,6 +4,8 @@ import { useState, useRef } from "react";
 import Papa from "papaparse";
 import type { WhiteboardPage, WhiteboardElement } from "./SmartWhiteboard";
 import { detectDocumentAspectRatio } from "./classroom/whiteboard/pdfService";
+import { CURATED_MOLECULES, type CuratedMolecule } from "./stem/Molecular3DViewer";
+import { generateMoleculeSvgDataUrl } from "./stem/molecularSvgExport";
 
 export interface LessonAttachment {
   id: string;
@@ -33,7 +35,11 @@ export default function ClassroomMaterialImporter({
   onRemoveAttachment,
   authToken = "",
 }: ClassroomMaterialImporterProps) {
-  const [activeTab, setActiveTab] = useState<"csv" | "slides" | "outline" | "handouts">("csv");
+  const [activeTab, setActiveTab] = useState<"csv" | "slides" | "outline" | "handouts" | "stem_models">("csv");
+
+  // STEM 3D Molecular Bank State
+  const [selectedStemCategory, setSelectedStemCategory] = useState<string>("All");
+  const [selectedStemMolecule, setSelectedStemMolecule] = useState<CuratedMolecule>(CURATED_MOLECULES[0]);
 
   // CSV State
   const [csvFile, setCsvFile] = useState<File | null>(null);
@@ -439,6 +445,48 @@ export default function ClassroomMaterialImporter({
     }
   }
 
+  // --------------------------------------------------------------------------
+  // 5. STEM 3D MOLECULAR SLIDE GENERATOR
+  // --------------------------------------------------------------------------
+  function generatePageFromStemMolecule(m: CuratedMolecule) {
+    const svgDataUrl = generateMoleculeSvgDataUrl(m);
+    const element: any = {
+      id: `stem-mol-${Date.now()}`,
+      type: "image",
+      startX: 560,
+      startY: 290,
+      endX: 1360,
+      endY: 790,
+      width: 800,
+      height: 500,
+      imageUrl: svgDataUrl,
+      color: "#ffffff",
+    };
+
+    const newPage: WhiteboardPage = {
+      id: `stem-mol-page-${Date.now()}`,
+      title: `[STEM 3D] ${m.name} (${m.formula})`,
+      aspectRatio: "16 / 9",
+      backgroundMode: "blackboard",
+      elements: [element],
+    };
+
+    onAddPages([newPage], replaceExisting);
+
+    if (onAddAttachment) {
+      onAddAttachment({
+        id: `att-mol-${Date.now()}`,
+        name: `${m.name} (${m.formula}) - 3D Molecular Model`,
+        size: 4096,
+        url: `/classroom/stem/molecular-3d-explorer?model=${m.id}`,
+        type: "application/stem-model",
+        uploadedAt: new Date().toISOString(),
+      });
+    }
+
+    onClose();
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-xs">
       <div className="relative flex max-h-[90vh] w-full max-w-3xl flex-col rounded-3xl border border-white/10 bg-[#0B1536] text-white shadow-2xl overflow-hidden">
@@ -505,6 +553,16 @@ export default function ClassroomMaterialImporter({
             }`}
           >
             📎 Class Handouts ({attachments.length})
+          </button>
+          <button
+            onClick={() => setActiveTab("stem_models")}
+            className={`py-3 px-3 transition border-b-2 ${
+              activeTab === "stem_models"
+                ? "border-cyan-400 text-cyan-300 font-black"
+                : "border-transparent text-slate-400 hover:text-white"
+            }`}
+          >
+            🔬 3D Molecular Bank (12)
           </button>
         </div>
 
@@ -732,6 +790,116 @@ export default function ClassroomMaterialImporter({
             </div>
           )}
 
+          {/* TAB 5: STEM 3D MOLECULAR BANK */}
+          {activeTab === "stem_models" && (
+            <div className="space-y-4">
+              <div className="rounded-2xl border border-cyan-500/20 bg-cyan-950/20 p-4 text-xs text-cyan-200">
+                <span className="font-bold">🔬 WAEC &amp; JAMB Curated Molecular Bank:</span>
+                <p className="mt-1">
+                  Select a syllabus-aligned molecule to stamp as an interactive educational whiteboard slide. Includes
+                  bond angle calculations, VSEPR geometries, and high-yield exam takeaways.
+                </p>
+              </div>
+
+              {/* Category Filter Pills */}
+              <div className="flex flex-wrap gap-2 text-xs font-bold">
+                {["All", "Inorganic", "Hydrocarbon", "Bio-Organic", "Macromolecules"].map((cat) => (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => setSelectedStemCategory(cat)}
+                    className={`px-3 py-1.5 rounded-xl transition ${
+                      selectedStemCategory === cat
+                        ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40"
+                        : "bg-white/5 text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+
+              {/* Molecule Grid */}
+              <div className="grid gap-2 grid-cols-2 sm:grid-cols-4 max-h-56 overflow-y-auto pr-1">
+                {CURATED_MOLECULES.filter((m) => {
+                  if (selectedStemCategory === "All") return true;
+                  if (selectedStemCategory === "Macromolecules") return m.type === "macromolecule";
+                  return m.category === selectedStemCategory;
+                }).map((m) => {
+                  const isSelected = m.id === selectedStemMolecule.id;
+                  return (
+                    <button
+                      key={m.id}
+                      type="button"
+                      onClick={() => setSelectedStemMolecule(m)}
+                      className={`p-3 rounded-xl border text-left transition ${
+                        isSelected
+                          ? "border-cyan-400 bg-cyan-950/60 shadow-lg ring-1 ring-cyan-400/50"
+                          : "border-white/10 bg-white/5 hover:bg-white/10 text-slate-300"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-mono font-bold text-xs text-white truncate">{m.formula}</span>
+                        <span className="text-[9px] px-1 rounded bg-white/10 text-slate-300 uppercase">
+                          {m.type === "small_molecule" ? "3D" : "PDB"}
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-slate-400 mt-1 truncate">{m.name}</div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Selected Model Preview Card */}
+              <div className="rounded-2xl border border-white/10 bg-[#071127] p-4 space-y-3">
+                <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-cyan-300 font-extrabold text-sm">{selectedStemMolecule.formula}</span>
+                    <span className="text-slate-400 text-xs">· {selectedStemMolecule.name}</span>
+                  </div>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 font-mono">
+                    {selectedStemMolecule.type === "small_molecule"
+                      ? selectedStemMolecule.geometry
+                      : selectedStemMolecule.pdbId}
+                  </span>
+                </div>
+
+                {selectedStemMolecule.type === "small_molecule" ? (
+                  <div className="grid grid-cols-3 gap-2 text-xs">
+                    <div className="rounded-xl bg-white/5 p-2">
+                      <span className="text-[10px] text-slate-400 block font-bold">Bond Angle</span>
+                      <span className="text-emerald-300 font-bold">{selectedStemMolecule.bondAngle}</span>
+                    </div>
+                    <div className="rounded-xl bg-white/5 p-2">
+                      <span className="text-[10px] text-slate-400 block font-bold">Hybridization</span>
+                      <span className="text-indigo-300 font-bold">{selectedStemMolecule.hybridization}</span>
+                    </div>
+                    <div className="rounded-xl bg-white/5 p-2">
+                      <span className="text-[10px] text-slate-400 block font-bold">Molar Mass</span>
+                      <span className="text-white font-bold">{selectedStemMolecule.molarMass} g/mol</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="rounded-xl bg-white/5 p-2">
+                      <span className="text-[10px] text-slate-400 block font-bold">Class</span>
+                      <span className="text-cyan-300 font-bold truncate block">{selectedStemMolecule.structuralClass}</span>
+                    </div>
+                    <div className="rounded-xl bg-white/5 p-2">
+                      <span className="text-[10px] text-slate-400 block font-bold">Syllabus Focus</span>
+                      <span className="text-emerald-300 font-bold truncate block">{selectedStemMolecule.keyResidueFocus}</span>
+                    </div>
+                  </div>
+                )}
+
+                <div className="rounded-xl bg-blue-950/30 border border-blue-500/20 p-2.5 text-xs text-blue-200">
+                  <span className="font-bold text-cyan-300">🎯 Syllabus Note: </span>
+                  {selectedStemMolecule.examTakeaway}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Replacement Toggle (for tabs 1, 2, 3) */}
           {activeTab !== "handouts" && (
             <label className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer pt-2">
@@ -791,6 +959,15 @@ export default function ClassroomMaterialImporter({
               className="rounded-xl bg-emerald-600 hover:bg-emerald-500 px-6 py-2.5 text-xs font-bold text-white shadow transition"
             >
               Done &amp; Return to Studio
+            </button>
+          )}
+
+          {activeTab === "stem_models" && (
+            <button
+              onClick={() => generatePageFromStemMolecule(selectedStemMolecule)}
+              className="rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 px-6 py-2.5 text-xs font-black text-white shadow-lg shadow-cyan-600/30 transition flex items-center gap-2"
+            >
+              <span>✨ Insert {selectedStemMolecule.name} Slide into Whiteboard</span>
             </button>
           )}
         </div>

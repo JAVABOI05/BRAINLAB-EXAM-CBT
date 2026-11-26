@@ -1,7 +1,7 @@
 // BrainLab Academy — PWA Service Worker (Low-Bandwidth & Offline Resilience)
 // Optimized for Nigerian mobile network variability (3G/4G) and offline exam persistence.
 
-const CACHE_NAME = "brainlab-pwa-v1.3";
+const CACHE_NAME = "brainlab-pwa-v1.4";
 const PRECACHE_ASSETS = [
   "/",
   "/resources",
@@ -64,10 +64,14 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // 1. Static assets (JS chunks, CSS, fonts, icons) -> Cache-first with network fallback
+  // 1. Static assets (JS chunks, CSS, fonts, KaTeX webfonts, icons, 3D molecular structures) -> Cache-first with network fallback
   if (
     url.pathname.startsWith("/_next/static/") ||
-    url.pathname.match(/\.(png|jpg|jpeg|svg|gif|webp|woff|woff2|ttf|ico|css)$/i)
+    url.pathname.startsWith("/structures/") ||
+    url.hostname.includes("jsdelivr.net") ||
+    url.hostname.includes("models.rcsb.org") ||
+    url.hostname.includes("cdnjs.cloudflare.com") ||
+    url.pathname.match(/\.(png|jpg|jpeg|svg|gif|webp|woff|woff2|ttf|ico|css|bcif|cif|pdb)$/i)
   ) {
     event.respondWith(
       caches.match(request).then((cached) => {
@@ -144,7 +148,6 @@ self.addEventListener("message", (event) => {
     self.skipWaiting();
   }
 });
-
 
 // Push notification event: triggers device notification when alert is broadcasted
 self.addEventListener("push", (event) => {

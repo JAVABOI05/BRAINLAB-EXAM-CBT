@@ -42,6 +42,7 @@ export default function QuestionAITutor({ item, questionNumber }: QuestionAITuto
   const [followUpLoading, setFollowUpLoading] = useState(false);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [selectedStyle, setSelectedStyle] = useState<"standard" | "simple" | "detailed" | "exam_traps">("standard");
+  const [socraticStep, setSocraticStep] = useState<"clue" | "formula" | "derivation" | null>(null);
   const [savedToSpaced, setSavedToSpaced] = useState(false);
 
   async function saveToSpacedDeck() {
@@ -98,6 +99,41 @@ export default function QuestionAITutor({ item, questionNumber }: QuestionAITuto
       void nudgeAITutorHint();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not generate breakdown.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function triggerSocraticStep(step: "clue" | "formula" | "derivation") {
+    setSocraticStep(step);
+    setLoading(true);
+    setError(null);
+    try {
+      let accumulated = "";
+      await streamAiTutor(
+        {
+          mode: "socratic",
+          step,
+          question: {
+            id: item.id,
+            subject: item.subject,
+            text: cleanQuestionText(item.text),
+            options: item.options,
+            correctAnswer: item.correctAnswer,
+            userAnswer: item.userAnswer,
+            explanation: cleanAnswerKeyNote(item.explanation || ""),
+          },
+        },
+        (chunk) => {
+          accumulated += chunk;
+          setExplanation(cleanAIResponse(accumulated));
+          setIsCached(false);
+          setLoading(false);
+        }
+      );
+      void nudgeAITutorHint();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not fetch Socratic guidance.");
     } finally {
       setLoading(false);
     }
@@ -539,6 +575,51 @@ Provide a concise, direct, and supportive answer under 120 words without markdow
 
           {explanation && !loading && (
             <div className="ai-tutor-content">
+              {/* Socratic Progressive Hints Bar */}
+              <div className="mb-4 rounded-2xl border border-indigo-100 bg-gradient-to-r from-indigo-50/70 to-blue-50/70 p-3.5 dark:border-indigo-900/50 dark:bg-slate-800/60 shadow-xs">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[11px] font-black uppercase tracking-wider text-indigo-900 dark:text-indigo-300 flex items-center gap-1.5">
+                    <span>💡</span> Socratic 3-Stage Guidance
+                  </span>
+                  <span className="text-[10px] text-slate-500 font-medium">Clue → Formula → Proof</span>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void triggerSocraticStep("clue")}
+                    className={`p-2 rounded-xl text-xs font-bold text-center border transition ${
+                      socraticStep === "clue"
+                        ? "bg-indigo-600 text-white border-indigo-600 shadow-sm"
+                        : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:bg-indigo-50 dark:hover:bg-slate-700"
+                    }`}
+                  >
+                    1. Thought Clue
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void triggerSocraticStep("formula")}
+                    className={`p-2 rounded-xl text-xs font-bold text-center border transition ${
+                      socraticStep === "formula"
+                        ? "bg-indigo-600 text-white border-indigo-600 shadow-sm"
+                        : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:bg-indigo-50 dark:hover:bg-slate-700"
+                    }`}
+                  >
+                    2. Core Formula
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void triggerSocraticStep("derivation")}
+                    className={`p-2 rounded-xl text-xs font-bold text-center border transition ${
+                      socraticStep === "derivation"
+                        ? "bg-indigo-600 text-white border-indigo-600 shadow-sm"
+                        : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:bg-indigo-50 dark:hover:bg-slate-700"
+                    }`}
+                  >
+                    3. Master Proof
+                  </button>
+                </div>
+              </div>
+
               {/* Style Switcher Pills */}
               <div className="flex flex-wrap items-center gap-1.5 mb-4 pb-3 border-b border-slate-100">
                 <span className="text-[11px] font-bold text-slate-500 mr-1">Style:</span>

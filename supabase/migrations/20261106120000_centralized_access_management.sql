@@ -2,6 +2,9 @@
 -- Additive compatibility migration. Review and apply only through the approved staging migration workflow.
 begin;
 
+create schema if not exists private;
+revoke all on schema private from public,anon;
+
 create table if not exists public.access_permissions (
   permission_key text primary key,
   module_key text not null,
@@ -41,15 +44,20 @@ create table if not exists public.access_user_role_assignments (
   expires_at timestamptz,
   revoked_at timestamptz,
   revoked_by uuid references auth.users(id) on delete set null,
-  unique (user_id, role_id),
   constraint access_assignment_scope_object check (jsonb_typeof(resource_scope) = 'object')
 );
 
 create index if not exists access_assignments_user_active_idx
   on public.access_user_role_assignments(user_id, expires_at)
   where revoked_at is null;
+-- Keep one current assignment per user/role while retaining revoked history rows.
+create unique index if not exists access_assignments_one_active_role_uidx
+  on public.access_user_role_assignments(user_id, role_id)
+  where revoked_at is null;
 create index if not exists access_role_permissions_key_idx
   on public.access_role_permissions(permission_key);
+create unique index if not exists access_roles_name_ci_uidx
+  on public.access_roles(lower(name));
 
 -- The catalogue is explicit: a permission key never becomes valid merely because a role name contains "admin".
 insert into public.access_permissions(permission_key,module_key,label,description,is_sensitive) values
@@ -118,7 +126,8 @@ insert into public.access_permissions(permission_key,module_key,label,descriptio
 ('stem.resource.manage','stem','Manage STEM resources','Create and edit STEM resources',false),
 ('stem.resource.publish','stem','Publish STEM resources','Publish STEM resources',true),
 ('stem.resource.review','stem','Review STEM resources','Review STEM resources',false),
-('stem.experiments.grade','stem','Grade STEM experiments','Grade submitted STEM experiments',false)
+('stem.experiments.grade','stem','Grade STEM experiments','Grade submitted STEM experiments',false),
+('exam.calendar.manage','exam_calendar','Manage exam calendar','Manage the National Exam Calendar and dynamic exam slots',true)
 on conflict (permission_key) do update set
   module_key=excluded.module_key,label=excluded.label,description=excluded.description,is_sensitive=excluded.is_sensitive;
 
@@ -151,8 +160,9 @@ with grants(role_key, permission_key) as (
     'ai.content.manage','learning.content.manage','ai.quality.review','analytics.ai.read',
     'community.moderate','student.support','analytics.read','institution.reports.read',
     'institution.manage','learning.content.review','finance.billing.manage','audit.logs.read','audit.logs.write',
-    'stem.resource.view','stem.resource.manage','stem.resource.publish','question_bank.create',
-    'question_bank.view','question_bank.edit_own','question_bank.import_csv','question_builder.use'
+    'stem.resource.view','stem.resource.manage','stem.resource.publish',
+    'question_bank.create','question_bank.view','question_bank.edit_own',
+    'question_bank.import_csv','question_builder.use'
   ]::text[])
   union all select 'cbt_admin', unnest(array[
     'cbt.questions.manage','cbt.questions.delete','cbt.answers.read','cbt.results.read',
@@ -164,6 +174,7 @@ with grants(role_key, permission_key) as (
     'ai.content.manage','learning.content.manage','ai.quality.review','analytics.ai.read',
     'stem.resource.view','stem.resource.manage'
   ]::text[])
+  -- Match the latest checked-in admin_has_permission() and TypeScript instructor catalogue.
   union all select 'teacher', unnest(array[
     'learning.content.manage','student.support','cbt.questions.manage','cbt.questions.delete',
     'cbt.results.read','ai.content.manage','question_bank.create','question_bank.view',
@@ -177,14 +188,16 @@ with grants(role_key, permission_key) as (
     'stem.resource.view','stem.resource.manage'
   ]::text[])
   union all select 'competition_moderator', unnest(array[
-    'community.moderate','student.support','question_bank.view','question_bank.moderate','cbt.questions.manage'
+    'community.moderate','student.support','question_bank.view',
+    'question_bank.moderate','cbt.questions.manage'
   ]::text[])
   union all select 'community_moderator', unnest(array['community.moderate','student.support']::text[])
   union all select 'analytics_admin', unnest(array[
     'analytics.read','analytics.ai.read','cbt.sessions.read','institution.reports.read','audit.logs.read'
   ]::text[])
   union all select 'school_admin', unnest(array[
-    'institution.manage','institution.reports.read','student.support','cbt.results.read','cbt.sessions.read'
+    'institution.manage','institution.reports.read','student.support',
+    'cbt.results.read','cbt.sessions.read'
   ]::text[])
   union all select 'content_reviewer', unnest(array[
     'learning.content.review','ai.quality.review','stem.resource.review','cbt.questions.manage'
@@ -207,19 +220,22 @@ on conflict do nothing;
 insert into public.access_user_role_assignments(user_id,role_id,assigned_at)
 select ap.user_id,r.id,coalesce(ap.created_at,now())
 from public.admin_profiles ap join public.access_roles r on r.role_key=ap.role
-on conflict (user_id,role_id) do nothing;
+on conflict (user_id,role_id) where revoked_at is null do nothing;
 
 -- Super Admin is the only authority for directory lookup and role management.
-create or replace function public.access_search_accounts(search_text text)
+create or replace function private.access_search_accounts_impl(search_text text)
 returns table(user_id uuid,email text,display_name text,has_staff_access boolean)
 language plpgsql stable security definer
-set search_path=public,pg_temp
+set search_path=''
 as $function$
 begin
-  if not public.is_super_admin() then
+  if not exists (
+    select 1 from public.admin_profiles ap
+    where ap.user_id=auth.uid() and ap.role='super_admin'
+  ) then
     raise exception 'Insufficient permission' using errcode='42501';
   end if;
-  if length(trim(coalesce(search_text,''))) < 2 then
+  if length(trim(coalesce(search_text,''))) < 2 or length(trim(search_text)) > 120 then
     return;
   end if;
   return query
@@ -231,39 +247,49 @@ begin
       where a.user_id=u.id and a.revoked_at is null
         and (a.expires_at is null or a.expires_at>now())) as has_staff_access
   from auth.users u
-  left join public.tutor_profiles tp on tp.user_id=u.id
+  left join lateral (
+    select p.name from public.tutor_profiles p
+    where p.user_id=u.id
+    order by p.updated_at desc,p.created_at desc,p.id desc
+    limit 1
+  ) tp on true
   where u.email ilike '%'||trim(search_text)||'%'
      or coalesce(u.raw_user_meta_data->>'full_name',u.raw_user_meta_data->>'name',tp.name,'') ilike '%'||trim(search_text)||'%'
-  -- Use the select-list ordinal to avoid PL/pgSQL OUT-parameter name ambiguity.
   order by 3
   limit 25;
 end;
 $function$;
 
-create or replace function public.access_list_role_catalogue()
+create or replace function private.access_list_role_catalogue_impl()
 returns table(id uuid,role_key text,name text,description text,is_system boolean,is_active boolean,permissions text[])
 language sql stable security definer
-set search_path=public,pg_temp
+set search_path=''
 as $function$
   select r.id,r.role_key,r.name,r.description,r.is_system,r.is_active,
     coalesce(array_agg(rp.permission_key order by rp.permission_key)
       filter(where rp.permission_key is not null),'{}'::text[])
   from public.access_roles r
   left join public.access_role_permissions rp on rp.role_id=r.id
-  where public.is_super_admin()
+  where exists (
+    select 1 from public.admin_profiles ap
+    where ap.user_id=auth.uid() and ap.role='super_admin'
+  )
   group by r.id
   order by r.is_system desc,r.name;
 $function$;
 
-create or replace function public.access_create_custom_role(
+create or replace function private.access_create_custom_role_impl(
   role_name text, role_description text, permission_keys text[]
 ) returns uuid
 language plpgsql security definer
-set search_path=public,pg_temp
+set search_path=''
 as $function$
-declare new_id uuid; key text;
+declare new_id uuid;
 begin
-  if not public.is_super_admin() then raise exception 'Insufficient permission' using errcode='42501'; end if;
+  if not exists (
+    select 1 from public.admin_profiles ap
+    where ap.user_id=auth.uid() and ap.role='super_admin'
+  ) then raise exception 'Insufficient permission' using errcode='42501'; end if;
   if length(trim(coalesce(role_name,'')))<2 or length(role_name)>80 then
     raise exception 'Role name must be between 2 and 80 characters' using errcode='22023';
   end if;
@@ -290,15 +316,18 @@ begin
 end;
 $function$;
 
-create or replace function public.access_assign_role(
+create or replace function private.access_assign_role_impl(
   target_user_id uuid, target_role_id uuid, resource_scope jsonb default '{}'::jsonb, expires_at timestamptz default null
 ) returns void
 language plpgsql security definer
-set search_path=public,pg_temp
+set search_path=''
 as $function$
 declare role_row public.access_roles%rowtype; target_email text;
 begin
-  if not public.is_super_admin() then raise exception 'Insufficient permission' using errcode='42501'; end if;
+  if not exists (
+    select 1 from public.admin_profiles ap
+    where ap.user_id=auth.uid() and ap.role='super_admin'
+  ) then raise exception 'Insufficient permission' using errcode='42501'; end if;
   if target_user_id is null or target_user_id=auth.uid() then
     raise exception 'You cannot assign or elevate your own access' using errcode='42501';
   end if;
@@ -322,8 +351,9 @@ begin
   end if;
   insert into public.access_user_role_assignments(user_id,role_id,resource_scope,assigned_by,expires_at,revoked_at,revoked_by)
   values(target_user_id,target_role_id,coalesce(resource_scope,'{}'::jsonb),auth.uid(),expires_at,null,null)
-  on conflict(user_id,role_id) do update set resource_scope=excluded.resource_scope,
-    assigned_by=auth.uid(),assigned_at=now(),expires_at=excluded.expires_at,revoked_at=null,revoked_by=null;
+  on conflict(user_id,role_id) where revoked_at is null do update
+    set resource_scope=excluded.resource_scope,assigned_by=auth.uid(),
+        assigned_at=now(),expires_at=excluded.expires_at;
   select email into target_email from auth.users where id=target_user_id;
   insert into public.audit_logs(admin_email,action,target_table,target_id,details)
   select coalesce(u.email,'unknown'),'access_role_assigned','access_user_role_assignments',target_user_id::text,
@@ -332,13 +362,22 @@ begin
 end;
 $function$;
 
-create or replace function public.access_revoke_role(target_user_id uuid,target_role_id uuid)
+create or replace function private.access_revoke_role_impl(target_user_id uuid,target_role_id uuid)
 returns void language plpgsql security definer
-set search_path=public,pg_temp
+set search_path=''
 as $function$
 begin
-  if not public.is_super_admin() then raise exception 'Insufficient permission' using errcode='42501'; end if;
+  if not exists (
+    select 1 from public.admin_profiles ap
+    where ap.user_id=auth.uid() and ap.role='super_admin'
+  ) then raise exception 'Insufficient permission' using errcode='42501'; end if;
   if target_user_id=auth.uid() then raise exception 'You cannot revoke your own access here' using errcode='42501'; end if;
+  if exists (
+    select 1 from public.access_roles r
+    where r.id=target_role_id and r.role_key='super_admin'
+  ) then
+    raise exception 'Super Admin role revocation requires the separate break-glass governance process' using errcode='42501';
+  end if;
   update public.access_user_role_assignments set revoked_at=now(),revoked_by=auth.uid()
   where user_id=target_user_id and role_id=target_role_id and revoked_at is null;
   if found then
@@ -347,6 +386,47 @@ begin
       jsonb_build_object('role_id',target_role_id)
     from auth.users u where u.id=auth.uid();
   end if;
+end;
+$function$;
+
+
+-- Public PostgREST entry points are SECURITY INVOKER wrappers only.
+create or replace function public.access_search_accounts(search_text text)
+returns table(user_id uuid,email text,display_name text,has_staff_access boolean)
+language sql stable security invoker
+set search_path=''
+as $function$ select * from private.access_search_accounts_impl(search_text); $function$;
+
+create or replace function public.access_list_role_catalogue()
+returns table(id uuid,role_key text,name text,description text,is_system boolean,is_active boolean,permissions text[])
+language sql stable security invoker
+set search_path=''
+as $function$ select * from private.access_list_role_catalogue_impl(); $function$;
+
+create or replace function public.access_create_custom_role(role_name text,role_description text,permission_keys text[])
+returns uuid
+language sql security invoker
+set search_path=''
+as $function$ select private.access_create_custom_role_impl(role_name,role_description,permission_keys); $function$;
+
+create or replace function public.access_assign_role(
+  target_user_id uuid,target_role_id uuid,resource_scope jsonb default '{}'::jsonb,expires_at timestamptz default null
+) returns void
+language plpgsql security invoker
+set search_path=''
+as $function$
+begin
+  perform private.access_assign_role_impl(target_user_id,target_role_id,resource_scope,expires_at);
+end;
+$function$;
+
+create or replace function public.access_revoke_role(target_user_id uuid,target_role_id uuid)
+returns void
+language plpgsql security invoker
+set search_path=''
+as $function$
+begin
+  perform private.access_revoke_role_impl(target_user_id,target_role_id);
 end;
 $function$;
 

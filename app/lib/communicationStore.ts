@@ -88,38 +88,36 @@ export async function recordUserHeartbeat(
       : "tutor"
     : "student";
 
+  const isVisible = options.isVisible !== false && user.user_metadata?.share_online_presence !== false;
+
   const entry: RealPeer = {
     user_id: user.id,
     display_name: displayName,
     email: user.email || "",
     role,
-    status,
-    custom_status: options.customStatus || null,
-    activity_context:
-      options.activityContext ||
-      (options.currentClassId ? "In Live Classroom" : "Studying in BrainLab"),
+    status: isVisible ? status : "offline",
+    custom_status: isVisible ? (options.customStatus || null) : null,
+    activity_context: isVisible
+      ? (options.activityContext ||
+         (options.currentClassId ? "In Live Classroom" : "Studying in BrainLab"))
+      : "Offline",
     avatar_url: typeof user.user_metadata?.avatar_url === "string" ? user.user_metadata.avatar_url : null,
     last_heartbeat_at: now,
   };
 
-  // Try native table first
+  // Try native table first (only use canonical columns to avoid schema mismatch)
   try {
     const { error } = await supabase.from("user_presence").upsert({
       user_id: user.id,
       status: entry.status,
       custom_status: entry.custom_status,
-      current_class_id: options.currentClassId || null,
+      current_class_id: isVisible ? (options.currentClassId || null) : null,
       last_heartbeat_at: now,
-      is_visible: options.isVisible !== false,
-      metadata: {
-        display_name: entry.display_name,
-        role: entry.role,
-        avatar_url: entry.avatar_url,
-        activity_context: entry.activity_context,
-      },
+      is_visible: isVisible,
     });
 
     if (!error) return { success: true, timestamp: now };
+    console.warn("user_presence upsert error:", error);
   } catch {
     // Ignore and proceed to resilient config fallback
   }
@@ -200,14 +198,24 @@ export async function getRealPeersAndPresence(currentUserId?: string) {
   }
 
   // 3. Load presence map from user_presence or exam_config
-  let presenceMap: Record<string, { status?: RealPeer["status"]; custom_status?: string | null; last_heartbeat_at?: string; activity_context?: string; display_name?: string }> = {};
+  let presenceMap: Record<
+    string,
+    {
+      status?: RealPeer["status"];
+      custom_status?: string | null;
+      last_heartbeat_at?: string;
+      activity_context?: string;
+      display_name?: string;
+      is_visible?: boolean;
+    }
+  > = {};
 
   try {
-    const thresholdDate = new Date(nowMs - thresholdMs).toISOString();
+    // Fetch all presence records without 3-minute cutoff so last seen can be accurately computed
     const { data: presences, error } = await supabase
       .from("user_presence")
-      .select("*")
-      .gte("last_heartbeat_at", thresholdDate);
+      .select("user_id, status, custom_status, last_heartbeat_at, is_visible, current_class_id")
+      .order("last_heartbeat_at", { ascending: false });
 
     if (!error && Array.isArray(presences)) {
       for (const p of presences) {
@@ -215,8 +223,7 @@ export async function getRealPeersAndPresence(currentUserId?: string) {
           status: p.status,
           custom_status: p.custom_status,
           last_heartbeat_at: p.last_heartbeat_at,
-          activity_context: p.metadata?.activity_context,
-          display_name: p.metadata?.display_name,
+          is_visible: p.is_visible,
         };
       }
     } else {
@@ -241,10 +248,17 @@ export async function getRealPeersAndPresence(currentUserId?: string) {
   // 4. Transform all real users into RealPeer list
   const allPeers: RealPeer[] = realUsers.map((u) => {
     const p = presenceMap[u.id];
+    const isSelf = u.id === currentUserId;
+
+    // Privacy preference: hidden if user opted out in account settings or is_visible is false
+    const isPrivacyHidden =
+      u.user_metadata?.share_online_presence === false || p?.is_visible === false;
+
     const lastHeartbeat = p?.last_heartbeat_at;
-    const isOnline = lastHeartbeat
-      ? nowMs - new Date(lastHeartbeat).getTime() < thresholdMs
-      : false;
+    const isRecentlyActive =
+      !isPrivacyHidden && lastHeartbeat
+        ? nowMs - new Date(lastHeartbeat).getTime() < thresholdMs
+        : false;
 
     const adminRole = adminUsersMap.get(u.id);
     const role: "admin" | "tutor" | "student" = adminRole
@@ -262,21 +276,43 @@ export async function getRealPeersAndPresence(currentUserId?: string) {
       u.email?.split("@")[0] ||
       "Learner";
 
+    let displayStatus: RealPeer["status"] = "offline";
+    let activityContext = "Offline";
+
+    if (isPrivacyHidden) {
+      displayStatus = "offline";
+      activityContext = isSelf ? "Presence Hidden (Privacy)" : "Offline";
+    } else if (isRecentlyActive) {
+      displayStatus = p?.status === "in_class" ? "in_class" : (p?.status || "online");
+      activityContext =
+        p?.custom_status ||
+        (displayStatus === "in_class" ? "In Live Classroom" : "Active on BrainLab");
+    } else if (lastHeartbeat) {
+      displayStatus = "offline";
+      activityContext = `Last seen ${formatRelativeTime(lastHeartbeat)}`;
+    } else {
+      displayStatus = "offline";
+      activityContext = "Offline";
+    }
+
     return {
       user_id: u.id,
       display_name: displayName,
-      email: u.id === currentUserId ? (u.email || "") : (u.user_metadata?.hide_email === false ? (u.email || "") : ""),
+      email: isSelf
+        ? u.email || ""
+        : u.user_metadata?.hide_email === false
+        ? u.email || ""
+        : "",
       role,
-      status: isOnline ? (p?.status || "online") : "offline",
-      custom_status: isOnline ? p?.custom_status || null : null,
-      activity_context: isOnline
-        ? p?.activity_context || "Active on BrainLab"
-        : lastHeartbeat
-        ? `Last seen ${formatRelativeTime(lastHeartbeat)}`
-        : "Registered Candidate",
-      avatar_url: typeof u.user_metadata?.avatar_url === "string" ? u.user_metadata.avatar_url : null,
-      last_heartbeat_at: lastHeartbeat || undefined,
-      is_self: u.id === currentUserId,
+      status: displayStatus,
+      custom_status: isRecentlyActive && !isPrivacyHidden ? p?.custom_status || null : null,
+      activity_context: activityContext,
+      avatar_url:
+        typeof u.user_metadata?.avatar_url === "string"
+          ? u.user_metadata.avatar_url
+          : null,
+      last_heartbeat_at: isPrivacyHidden ? undefined : lastHeartbeat || undefined,
+      is_self: isSelf,
       public_profile_slug: publicTutorProfiles.get(u.id),
     };
   });

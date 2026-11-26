@@ -32,7 +32,7 @@ export function normalizeWhatsAppNumber(phone?: string | null): string {
  * Normalizes a phone number for dial links (e.g. "+2349074310204").
  */
 export function normalizeDialPhone(phone?: string | null): string {
-  if (!phone) return "+2349074310204";
+  if (!phone) return "+2348089267399";
   const clean = phone.replace(/[^\d+]/g, "");
   return clean.startsWith("+") ? clean : `+${clean}`;
 }

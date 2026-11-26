@@ -21,6 +21,7 @@ export default function ActivePresenceBar({
   const [inClassCount, setInClassCount] = useState<number>(0);
   const [tutorCount, setTutorCount] = useState<number>(0);
   const [activeUsers, setActiveUsers] = useState<ActiveUserPresence[]>([]);
+  const [allPeers, setAllPeers] = useState<ActiveUserPresence[]>([]);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | undefined>(undefined);
   const heartbeatTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -59,6 +60,7 @@ export default function ActivePresenceBar({
           setInClassCount(json.inClassCount || 0);
           setTutorCount(json.tutorCount || 0);
           setActiveUsers(json.activeUsers || []);
+          setAllPeers(json.allPeers || []);
         }
       } catch (err) {
         console.warn("Presence check failed:", err);
@@ -105,6 +107,7 @@ export default function ActivePresenceBar({
           inClassCount={inClassCount}
           tutorCount={tutorCount}
           currentUserId={currentUserId}
+          allUsers={allPeers}
         />
       </>
     );

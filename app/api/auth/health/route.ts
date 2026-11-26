@@ -13,15 +13,16 @@ export async function GET(request: NextRequest) {
   let supabaseLatencyMs = 0;
   let errorMessage: string | null = null;
 
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://eusgwsuoloomphebrepe.supabase.co";
   const start = Date.now();
   try {
     const supabase = getSupabaseServerClient();
-    const { error } = await supabase.from("settings").select("key").limit(1);
+    const { error } = await supabase.from("access_codes").select("id").limit(1);
     supabaseLatencyMs = Date.now() - start;
     if (!error) {
       supabaseConnected = true;
     } else {
-      errorMessage = (error instanceof Error ? error.message : String(error));
+      errorMessage = (error as { message?: string })?.message || (error instanceof Error ? error.message : JSON.stringify(error));
     }
   } catch (err: unknown) {
     errorMessage = err instanceof Error ? err.message : "Could not connect to Supabase database";
@@ -41,7 +42,7 @@ export async function GET(request: NextRequest) {
     auth_redirects: {
       canonical_callback: `https://${canonicalDomain}/auth/callback`,
       canonical_reset_password: `https://${canonicalDomain}/auth/reset-password`,
-      supabase_oauth_callback: "https://eusgwsuoloomphebrepe.supabase.co/auth/v1/callback",
+      supabase_oauth_callback: `${supabaseUrl.replace(/\/$/, "")}/auth/v1/callback`,
       status: "PASS",
     },
     supabase_service: {

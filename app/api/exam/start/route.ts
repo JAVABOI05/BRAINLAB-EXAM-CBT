@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseServerClient, getUserFromRequest } from "../../../lib/supabaseServer";
+import { getSupabaseServerClient, getUserFromRequest, resolveAdminRole } from "../../../lib/supabaseServer";
+import { getStudentSubscriptionAndEntitlements } from "../../../lib/subscriptionEntitlements";
 import crypto from "crypto";
 import { generateExamPaper, freezeAttemptSnapshot, resolveUtme4Subjects, isAcademicSubject } from "../../../lib/examEngine";
 import { getMaintenanceModeConfig } from "../../../lib/platformConfig";
@@ -14,6 +15,10 @@ export async function POST(request: NextRequest) {
     const supabase = getSupabaseServerClient();
     // Exposure history is keyed only from a verified Supabase user, never a client-supplied ID.
     const registeredUser = await getUserFromRequest(request);
+    const cleanCode = String(code || "").trim().toUpperCase();
+    const cleanName = String(name || "").trim() || "Candidate";
+    const cleanPhone = String(phone || "").trim() || "08000000000";
+    const sessionCode = cleanCode || "OPEN-CBT";
 
     // Maintenance Mode Guard
     const maintenance = await getMaintenanceModeConfig().catch(() => null);
@@ -27,7 +32,19 @@ export async function POST(request: NextRequest) {
         } catch {}
       }
 
-      if (!bypass) {
+      let hasActiveAttempt = false;
+      const { data: activeAttemptForMaintenance, error: activeAttemptCheckError } = await supabase
+        .from("exam_sessions")
+        .select("id")
+        .eq("phone", cleanPhone)
+        .eq("access_code", sessionCode)
+        .eq("status", "started")
+        .order("started_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (!activeAttemptCheckError) hasActiveAttempt = Boolean(activeAttemptForMaintenance);
+
+      if (!bypass && !hasActiveAttempt) {
         return NextResponse.json(
           {
             ok: false,
@@ -41,11 +58,137 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const cleanCode = String(code || "").trim().toUpperCase();
-    const cleanName = String(name || "").trim() || "Candidate";
-    const cleanPhone = String(phone || "").trim() || "08000000000";
+    // Recovery takes precedence over access-code consumption
+    // Recover an existing active attempt before checking new-attempt eligibility or consuming its PIN.
+    const nowIso = new Date().toISOString();
 
-    // 1. Check access code if required
+    // Mark any stale elapsed sessions as 'expired' lazily so they do not linger in 'started' state
+    void supabase
+      .from("exam_sessions")
+      .update({ status: "expired" })
+      .eq("phone", cleanPhone)
+      .eq("access_code", sessionCode)
+      .eq("status", "started")
+      .lte("deadline_at", nowIso);
+
+    const { data: existingSession, error: existingSessionError } = await supabase
+      .from("exam_sessions")
+      .select("id, attempt_token, status, deadline_at, last_saved_at, phone, access_code, is_master_code")
+      .eq("phone", cleanPhone)
+      .eq("access_code", sessionCode)
+      .eq("status", "started")
+      .gt("deadline_at", nowIso)
+      .order("started_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (existingSessionError) {
+      console.error("[exam/start] Could not inspect an existing candidate attempt:", existingSessionError.message);
+      return NextResponse.json(
+        { ok: false, error: "recovery_lookup_failed", message: "We could not verify your previous examination. Please try again." },
+        { status: 503 }
+      );
+    }
+
+    if (existingSession) {
+      // A shared master code or OPEN-CBT has no candidate-specific secret. Do not
+      // treat a phone number alone as proof of identity for recovering that attempt.
+      if (existingSession.is_master_code || sessionCode === "OPEN-CBT") {
+        return NextResponse.json(
+          { ok: false, error: "recovery_identity_required", message: "This attempt used shared/open access and cannot be safely recovered using a phone number alone. Contact the invigilator for identity verification." },
+          { status: 403 }
+        );
+      }
+      const { data: recovered, error: recoveryError } = await supabase.rpc("resume_exam", {
+        p_session: existingSession.id,
+        p_token: existingSession.attempt_token,
+      });
+      if (recoveryError || !recovered || recovered.ok === false) {
+        console.error("[exam/start] Existing attempt recovery failed:", recoveryError?.message || recovered?.message);
+        return NextResponse.json(
+          { ok: false, error: recovered?.error || "recovery_failed", message: recovered?.message || "Your previous examination could not be restored. Please contact the invigilator." },
+          { status: 409 }
+        );
+      }
+      if (recovered.finished) return NextResponse.json({ ...recovered, resumed: true, last_saved_at: existingSession.last_saved_at });
+      const recoveredQuestions = Array.isArray(recovered.questions) ? recovered.questions : [];
+      if (recoveredQuestions.length === 0) {
+        return NextResponse.json(
+          { ok: false, error: "recovery_paper_unavailable", message: "Your saved examination was found, but its question paper could not be loaded. Please contact the invigilator; do not start a new attempt." },
+          { status: 503 }
+        );
+      }
+      return NextResponse.json({
+        ...recovered,
+        resumed: true,
+        last_saved_at: existingSession.last_saved_at,
+        subjects: [...new Set(recoveredQuestions.map((question: { subject?: string }) => question.subject).filter(Boolean))],
+      });
+    }
+
+    // Resolve the access policy from the same exam_config rows the admin panel edits.
+    // Do not trust the browser's local state or a cached public-settings response.
+    const { data: policyRows, error: policyError } = await supabase
+      .from("exam_config")
+      .select("config_key, config_value")
+      .in("config_key", ["access_code_required", "premium_mock_only"]);
+
+    if (policyError) {
+      console.error("[exam/start] Access policy lookup failed:", policyError.message);
+      return NextResponse.json(
+        { ok: false, error: "access_policy_unavailable", message: "Exam access settings are temporarily unavailable. Please try again shortly." },
+        { status: 503 }
+      );
+    }
+
+    const policyValues = new Map((policyRows || []).map((row) => [row.config_key, row.config_value]));
+    const readPolicyBoolean = (value: unknown, fallback: boolean) => {
+      if (typeof value === "boolean") return value;
+      if (typeof value === "string") return value.trim().toLowerCase() === "true";
+      return fallback;
+    };
+    const accessCodeRequired = readPolicyBoolean(policyValues.get("access_code_required"), true);
+    const premiumMockOnly = readPolicyBoolean(policyValues.get("premium_mock_only"), false);
+
+    // A premium entitlement is verified on the server against the authenticated user.
+    // Free/public CBT entitlements are deliberately not treated as a paid mock plan.
+    let hasPremiumMockAccess = false;
+    if (registeredUser && (premiumMockOnly || (accessCodeRequired && !cleanCode))) {
+      try {
+        const adminRole = await resolveAdminRole(registeredUser.id);
+        if (adminRole) {
+          hasPremiumMockAccess = true;
+        } else {
+          const entitlement = await getStudentSubscriptionAndEntitlements(registeredUser.id);
+          hasPremiumMockAccess =
+            entitlement.isSubscribed &&
+            ["premium", "plus", "pro", "apex", "admin_vip"].includes(String(entitlement.planId || "").toLowerCase());
+        }
+      } catch (entitlementError) {
+        console.error("[exam/start] Could not verify premium mock eligibility:", entitlementError);
+      }
+    }
+
+    if (premiumMockOnly && !hasPremiumMockAccess) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "premium_plan_required",
+          message: "This mock is reserved for students with an active Premium, Plus, Pro or Apex subscription.",
+        },
+        { status: 403 }
+      );
+    }
+
+    if (accessCodeRequired && !cleanCode && !hasPremiumMockAccess) {
+      return NextResponse.json(
+        { ok: false, error: "access_code_required", message: "A valid examination access code is required before starting this mock." },
+        { status: 403 }
+      );
+    }
+
+    // 1. Validate a supplied access code. When codes are disabled, an empty
+    // code is a valid launch; a supplied code is still validated and consumed.
     let isMasterCode = false;
     let preconfiguredSubject: string | null = null;
     let codeRecordId: string | null = null;
@@ -95,17 +238,35 @@ export async function POST(request: NextRequest) {
 
     // 3. Generate exam paper. Registered candidates receive unseen questions first.
     // Anonymous/open-code attempts retain the existing random-selection behaviour.
-    let previouslySeenIds: number[] = [];
+    let masteredQuestionIds: number[] = [];
+    let previouslySeenQuestionIds: number[] = [];
     if (registeredUser) {
       const { data: seenRows, error: seenError } = await supabase
         .from("question_exposure_history")
-        .select("question_id")
-        .eq("user_id", registeredUser.id);
+        .select("question_id, is_correct")
+        .eq("user_id", registeredUser.id)
+        .eq("surface", "full_mock");
       if (!seenError && seenRows) {
-        previouslySeenIds = [...new Set(seenRows.map((row: { question_id: number }) => Number(row.question_id)).filter(Number.isFinite))];
+        masteredQuestionIds = [...new Set(seenRows
+          .filter((row: { is_correct: boolean | null }) => row.is_correct === true)
+          .map((row: { question_id: number }) => Number(row.question_id))
+          .filter(Number.isFinite))];
+        previouslySeenQuestionIds = [...new Set(seenRows
+          .filter((row: { is_correct: boolean | null }) => row.is_correct !== true)
+          .map((row: { question_id: number }) => Number(row.question_id))
+          .filter(Number.isFinite))];
       } else if (seenError) {
-        // Keep exam launch available if rotation history is not yet readable.
+        // Fail closed for registered candidates: without verified history, the
+        // engine cannot guarantee that correctly mastered questions stay excluded.
         console.error("Unable to load learner question exposure history:", seenError.message);
+        return NextResponse.json(
+          {
+            ok: false,
+            error: "rotation_history_unavailable",
+            message: "We could not verify your mock-exam question history. Please try again shortly.",
+          },
+          { status: 503 }
+        );
       }
     }
     const attemptToken = crypto.randomUUID();
@@ -117,7 +278,8 @@ export async function POST(request: NextRequest) {
       token: attemptToken,
       subjects: selectedSubjects,
       durationSeconds,
-      excludeQuestionIds: previouslySeenIds,
+      excludeQuestionIds: masteredQuestionIds,
+      previouslySeenQuestionIds,
     });
 
     if (!generated.success || generated.paperIds.length !== 180 || generated.clientQuestions.length !== 180) {

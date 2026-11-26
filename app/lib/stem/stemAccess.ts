@@ -29,6 +29,7 @@ const MEMBERSHIP_RANK: Record<string, number> = {
   premium: 1,
   plus: 2,
   pro: 3,
+  apex: 4,
 };
 
 export interface StemAccessContext {
@@ -79,6 +80,21 @@ export function getStemResourceAccess(
     requiredLevel: getStemRequiredAccessLevel(resource.entitlement_tier),
     currentLevel: context.accessLevel,
   };
+}
+
+export function getMoleculeRequiredAccessLevel(molecule: { type: string; id: string }): StemAccessLevel {
+  if (molecule.type === "small_molecule") return "discover";
+  if (molecule.id === "hemoglobin-sickle") return "practise";
+  return "explore";
+}
+
+export function canAccessMolecule(
+  context: StemAccessContext,
+  molecule: { type: string; id: string }
+): boolean {
+  if (context.isPrivileged) return true;
+  const required = getMoleculeRequiredAccessLevel(molecule);
+  return context.accessLevel !== "none" && ACCESS_RANK[context.accessLevel] >= ACCESS_RANK[required];
 }
 
 /**
@@ -142,7 +158,7 @@ export async function resolveStemAccessContext(
 
   const now = new Date();
   const nowIso = now.toISOString();
-  const [subscriptionResult, entitlementResult] = await Promise.all([
+  const [subscriptionResult, entitlementResult, grantResult, progResult] = await Promise.all([
     serviceClient
       .from("user_subscriptions")
       .select("plan_id, current_period_end")
@@ -160,10 +176,54 @@ export async function resolveStemAccessContext(
       .eq("status", "active")
       .is("revoked_at", null)
       .lte("starts_at", nowIso),
+    serviceClient
+      .from("student_access_grants")
+      .select("target_tier_id, status, starts_at, expires_at, access_tiers(tier_key)")
+      .eq("student_id", user.id)
+      .eq("status", "active")
+      .is("suspended_at", null)
+      .is("revoked_at", null)
+      .lte("starts_at", nowIso),
+    serviceClient
+      .from("programme_memberships")
+      .select("programme_id, membership_status, starts_at, expires_at, access_programmes(associated_tier_id, access_tiers(tier_key))")
+      .eq("student_id", user.id)
+      .eq("membership_status", "active")
+      .lte("starts_at", nowIso),
   ]);
 
-  if (subscriptionResult.error || entitlementResult.error) {
+  if (subscriptionResult.error && entitlementResult.error) {
     throw new Error("Unable to verify your BrainLab subscription for STEM access.");
+  }
+
+  // Check valid grants & programmes
+  let bestGrantTier: string | null = null;
+  let highestGrantRank = 0;
+
+  const validGrants = (grantResult.data || []).filter((g: any) => {
+    const exp = g.expires_at ? new Date(g.expires_at).getTime() : Number.POSITIVE_INFINITY;
+    return exp > now.getTime();
+  });
+  for (const g of validGrants as any[]) {
+    const tKey = g.access_tiers?.tier_key;
+    const rank = MEMBERSHIP_RANK[(tKey || "").toLowerCase()] || 0;
+    if (rank > highestGrantRank) {
+      highestGrantRank = rank;
+      bestGrantTier = tKey;
+    }
+  }
+
+  const validProgs = (progResult.data || []).filter((p: any) => {
+    const exp = p.expires_at ? new Date(p.expires_at).getTime() : Number.POSITIVE_INFINITY;
+    return exp > now.getTime();
+  });
+  for (const p of validProgs as any[]) {
+    const tKey = p.access_programmes?.access_tiers?.tier_key;
+    const rank = MEMBERSHIP_RANK[(tKey || "").toLowerCase()] || 0;
+    if (rank > highestGrantRank) {
+      highestGrantRank = rank;
+      bestGrantTier = tKey;
+    }
   }
 
   const activeMembership = (entitlementResult.data || [])
@@ -175,11 +235,15 @@ export async function resolveStemAccessContext(
   const membershipPlanId = (activeMembership?.membership_type || "").toLowerCase();
   const subscriptionRank = MEMBERSHIP_RANK[subscriptionPlanId] || 0;
   const membershipRank = MEMBERSHIP_RANK[membershipPlanId] || 0;
-  const effectivePlanId = membershipRank >= subscriptionRank && membershipRank > 0
-    ? membershipPlanId
-    : subscriptionRank > 0
-      ? subscriptionPlanId
-      : "free";
+
+  let effectivePlanId = "free";
+  if (highestGrantRank >= membershipRank && highestGrantRank >= subscriptionRank && highestGrantRank > 0) {
+    effectivePlanId = bestGrantTier!;
+  } else if (membershipRank >= subscriptionRank && membershipRank > 0) {
+    effectivePlanId = membershipPlanId;
+  } else if (subscriptionRank > 0) {
+    effectivePlanId = subscriptionPlanId;
+  }
 
   const selectedPlan = plans.find((plan) => plan.id === effectivePlanId) || freePlan;
   const entitlements = normalizePlanEntitlements(

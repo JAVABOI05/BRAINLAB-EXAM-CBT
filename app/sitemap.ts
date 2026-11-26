@@ -8,6 +8,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // Public, canonical pages for search engines (Google, Bing, Yahoo).
   // Sensitive admin, candidate session, test token, or internal API routes are excluded.
+  // Learner workspace pages (CBT, learn, community, etc.) require sign-in and are excluded.
   const routes: MetadataRoute.Sitemap = [
     {
       url: siteUrl,
@@ -70,39 +71,27 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.8,
     },
     {
-      url: `${siteUrl}/cbt`,
-      lastModified,
-      changeFrequency: "daily",
-      priority: 0.95,
-    },
-    {
-      url: `${siteUrl}/ai-learning`,
-      lastModified,
-      changeFrequency: "weekly",
-      priority: 0.9,
-    },
-    {
-      url: `${siteUrl}/learn`,
-      lastModified,
-      changeFrequency: "weekly",
-      priority: 0.85,
-    },
-    {
-      url: `${siteUrl}/self-practice`,
-      lastModified,
-      changeFrequency: "weekly",
-      priority: 0.85,
-    },
-    {
-      url: `${siteUrl}/challenge-arena`,
+      url: `${siteUrl}/courses`,
       lastModified,
       changeFrequency: "weekly",
       priority: 0.8,
     },
     {
-      url: `${siteUrl}/courses`,
+      url: `${siteUrl}/syllabus`,
       lastModified,
       changeFrequency: "weekly",
+      priority: 0.85,
+    },
+    {
+      url: `${siteUrl}/programmes/post-utme`,
+      lastModified,
+      changeFrequency: "monthly",
+      priority: 0.8,
+    },
+    {
+      url: `${siteUrl}/programmes/schools`,
+      lastModified,
+      changeFrequency: "monthly",
       priority: 0.8,
     },
     {
@@ -128,24 +117,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified,
       changeFrequency: "weekly",
       priority: 0.75,
-    },
-    {
-      url: `${siteUrl}/calendar`,
-      lastModified,
-      changeFrequency: "weekly",
-      priority: 0.7,
-    },
-    {
-      url: `${siteUrl}/leaderboard`,
-      lastModified,
-      changeFrequency: "daily",
-      priority: 0.7,
-    },
-    {
-      url: `${siteUrl}/community`,
-      lastModified,
-      changeFrequency: "daily",
-      priority: 0.7,
     },
     {
       url: `${siteUrl}/verify`,

@@ -68,6 +68,51 @@ function renderTextWithMentions(text: string, currentUserName?: string) {
   });
 }
 
+function playHandRaiseChime() {
+  if (typeof window === "undefined") return;
+  try {
+    const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    if (!AudioContextClass) return;
+    const ctx = new AudioContextClass();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.15);
+    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.36);
+  } catch {
+    // Silent fallback
+  }
+}
+
+function playTimerCompleteChime() {
+  if (typeof window === "undefined") return;
+  try {
+    const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    if (!AudioContextClass) return;
+    const ctx = new AudioContextClass();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "triangle";
+    osc.frequency.setValueAtTime(880, ctx.currentTime);
+    osc.frequency.setValueAtTime(1046.5, ctx.currentTime + 0.2);
+    osc.frequency.setValueAtTime(1318.51, ctx.currentTime + 0.4);
+    gain.gain.setValueAtTime(0.18, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.7);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.71);
+  } catch {
+    // Silent fallback
+  }
+}
+
 export default function LiveClassroomPage({
   params,
 }: {
@@ -198,6 +243,36 @@ export default function LiveClassroomPage({
 
   // Big Screen & Pinned Lecture State
   const [pinnedMessage, setPinnedMessage] = useState<ClassroomMessage | null>(null);
+
+  // Synchronized Classroom Drill Timer
+  const [drillTimerActive, setDrillTimerActive] = useState(false);
+  const [drillTimerSeconds, setDrillTimerSeconds] = useState(0);
+  const [drillTimerTotal, setDrillTimerTotal] = useState(0);
+  const [drillTimerLabel, setDrillTimerLabel] = useState("");
+  const [showTimerPicker, setShowTimerPicker] = useState(false);
+  const drillTimerIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    if (drillTimerActive && drillTimerSeconds > 0) {
+      drillTimerIntervalRef.current = setInterval(() => {
+        setDrillTimerSeconds((prev) => {
+          if (prev <= 1) {
+            clearInterval(drillTimerIntervalRef.current!);
+            setDrillTimerActive(false);
+            playTimerCompleteChime();
+            toast.success("Drill time is up!");
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } else {
+      if (drillTimerIntervalRef.current) clearInterval(drillTimerIntervalRef.current);
+    }
+    return () => {
+      if (drillTimerIntervalRef.current) clearInterval(drillTimerIntervalRef.current);
+    };
+  }, [drillTimerActive, drillTimerSeconds]);
 
   // Roster
   const [participants, setParticipants] = useState<Participant[]>([]);
@@ -521,6 +596,7 @@ export default function LiveClassroomPage({
               prev.map((p) => (p.id === payload.userId ? { ...p, isHandRaised: payload.isHandRaised } : p))
             );
             if (payload.isHandRaised && (user.id === json.data.classDetails.tutorId || json.data.permissions.isModerator)) {
+              playHandRaiseChime();
               toast.info(`${payload.userName || "A student"} raised their hand.`);
             }
           }
@@ -549,6 +625,70 @@ export default function LiveClassroomPage({
           if (payload?.message) {
             setPinnedMessage(payload.message);
           }
+        });
+
+        // Chat Moderation Broadcasts
+        channel.on("broadcast", { event: "delete_chat_message" }, ({ payload }) => {
+          if (payload?.messageId) {
+            setMessages((prev) => prev.filter((m) => m.id !== payload.messageId));
+          }
+        });
+
+        channel.on("broadcast", { event: "clear_chat" }, () => {
+          setMessages([]);
+          toast.info("Class chat was cleared by instructor.");
+        });
+
+        // Student Speech and Hand Broadcasts
+        channel.on("broadcast", { event: "grant_student_speech" }, ({ payload }) => {
+          if (payload?.studentId && payload.studentId === user.id) {
+            if (localStreamRef.current) {
+              localStreamRef.current.getAudioTracks().forEach((t) => (t.enabled = true));
+            }
+            setIsAudioEnabled(true);
+            setIsHandRaised(false);
+            toast.success("The instructor granted you permission to speak! Your microphone is now unmuted.");
+          }
+        });
+
+        channel.on("broadcast", { event: "lower_student_hand" }, ({ payload }) => {
+          if (payload?.studentId && payload.studentId === user.id) {
+            setIsHandRaised(false);
+            toast.info("Your hand was lowered by the instructor.");
+          }
+        });
+
+        channel.on("broadcast", { event: "toggle_student_mic" }, ({ payload }) => {
+          const isTargeted = payload?.studentId === "all" ? !isHostRole : (payload?.studentId && payload.studentId === user.id);
+          if (isTargeted) {
+            const nextAudio = Boolean(payload?.enabled);
+            if (localStreamRef.current) {
+              localStreamRef.current.getAudioTracks().forEach((t) => (t.enabled = nextAudio));
+            }
+            setIsAudioEnabled(nextAudio);
+            if (nextAudio) {
+              toast.success("The instructor unmuted your microphone.");
+            } else {
+              toast.info(payload?.studentId === "all" ? "The instructor muted all student microphones." : "The instructor muted your microphone.");
+            }
+          }
+        });
+
+        // Synchronized Drill Timer Broadcasts
+        channel.on("broadcast", { event: "start_drill_timer" }, ({ payload }) => {
+          if (payload?.seconds) {
+            setDrillTimerTotal(payload.seconds);
+            setDrillTimerSeconds(payload.seconds);
+            setDrillTimerLabel(payload.label || "Class Practice Drill");
+            setDrillTimerActive(true);
+            toast.info(`Drill timer started: ${Math.floor(payload.seconds / 60)}m duration.`);
+          }
+        });
+
+        channel.on("broadcast", { event: "stop_drill_timer" }, () => {
+          setDrillTimerActive(false);
+          setDrillTimerSeconds(0);
+          toast.info("Drill timer stopped by instructor.");
         });
 
         // Class Ended by Tutor Broadcast
@@ -1757,6 +1897,143 @@ export default function LiveClassroomPage({
   const isTutorOrModerator = isHostRole;
   const isAssignedTutor = isHostRole;
 
+  // Active student hand raises (excluding instructor)
+  const raisedHandsCount = participants.filter((p) => p.isHandRaised && p.role !== "host").length;
+
+  const handleCopyClassLink = () => {
+    if (typeof window === "undefined") return;
+    const studentUrl = `${window.location.origin}/classroom/${classId}`;
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(studentUrl)
+        .then(() => toast.success("Student invite link copied to clipboard!"))
+        .catch(() => toast.error("Could not copy link automatically."));
+    }
+  };
+
+  const handleClearChat = () => {
+    if (!isTutorOrModerator) return;
+    if (typeof window !== "undefined" && !window.confirm("Are you sure you want to clear the entire chat history for this class?")) {
+      return;
+    }
+    setMessages([]);
+    if (channelRef.current) {
+      channelRef.current.send({
+        type: "broadcast",
+        event: "clear_chat",
+        payload: { clearedBy: currentUser?.id },
+      });
+    }
+    toast.success("Chat history cleared for all participants.");
+  };
+
+  const handleDeleteMessage = (msgId: string) => {
+    if (!isTutorOrModerator) return;
+    setMessages((prev) => prev.filter((m) => m.id !== msgId));
+    if (channelRef.current) {
+      channelRef.current.send({
+        type: "broadcast",
+        event: "delete_chat_message",
+        payload: { messageId: msgId, deletedBy: currentUser?.id },
+      });
+    }
+    toast.success("Message deleted.");
+  };
+
+  const handleGrantStudentSpeech = (studentId: string) => {
+    if (!isTutorOrModerator) return;
+    setParticipants((prev) =>
+      prev.map((p) => (p.id === studentId ? { ...p, isHandRaised: false, isMuted: false } : p))
+    );
+    if (channelRef.current) {
+      channelRef.current.send({
+        type: "broadcast",
+        event: "grant_student_speech",
+        payload: { studentId },
+      });
+    }
+    const targetStudent = participants.find((p) => p.id === studentId);
+    toast.success(`Granted speaking access to ${targetStudent?.name || "Student"} and unmuted mic.`);
+  };
+
+  const handleLowerStudentHand = (studentId: string) => {
+    if (!isTutorOrModerator) return;
+    setParticipants((prev) =>
+      prev.map((p) => (p.id === studentId ? { ...p, isHandRaised: false } : p))
+    );
+    if (channelRef.current) {
+      channelRef.current.send({
+        type: "broadcast",
+        event: "lower_student_hand",
+        payload: { studentId },
+      });
+    }
+    toast.info("Hand lowered.");
+  };
+
+  const handleToggleStudentMute = (studentId: string) => {
+    if (!isTutorOrModerator) return;
+    const target = participants.find((p) => p.id === studentId);
+    const shouldMute = target ? !target.isMuted : true;
+    setParticipants((prev) =>
+      prev.map((p) => (p.id === studentId ? { ...p, isMuted: shouldMute } : p))
+    );
+    if (channelRef.current) {
+      channelRef.current.send({
+        type: "broadcast",
+        event: "toggle_student_mic",
+        payload: { studentId, enabled: !shouldMute },
+      });
+    }
+    toast.info(shouldMute ? `Muted ${target?.name || "Student"}` : `Unmuted ${target?.name || "Student"}`);
+  };
+
+  const handleMuteAllStudents = () => {
+    if (!isTutorOrModerator) return;
+    setParticipants((prev) =>
+      prev.map((p) => (p.role !== "host" ? { ...p, isMuted: true } : p))
+    );
+    if (channelRef.current) {
+      channelRef.current.send({
+        type: "broadcast",
+        event: "toggle_student_mic",
+        payload: { studentId: "all", enabled: false },
+      });
+    }
+    toast.info("Muted all student microphones.");
+  };
+
+  const handleStartDrillTimer = (seconds: number, label = "Class Practice Drill") => {
+    if (!isTutorOrModerator) return;
+    setDrillTimerTotal(seconds);
+    setDrillTimerSeconds(seconds);
+    setDrillTimerLabel(label);
+    setDrillTimerActive(true);
+    setShowTimerPicker(false);
+    if (channelRef.current) {
+      channelRef.current.send({
+        type: "broadcast",
+        event: "start_drill_timer",
+        payload: { seconds, label },
+      });
+    }
+    toast.success(`Started ${Math.floor(seconds / 60)}m drill timer for class.`);
+  };
+
+  const handleStopDrillTimer = () => {
+    if (!isTutorOrModerator) return;
+    setDrillTimerActive(false);
+    setDrillTimerSeconds(0);
+    setShowTimerPicker(false);
+    if (channelRef.current) {
+      channelRef.current.send({
+        type: "broadcast",
+        event: "stop_drill_timer",
+        payload: {},
+      });
+    }
+    toast.info("Drill timer stopped.");
+  };
+
   const updateClassroomPermissions = (updates: {
     canStudentsDraw?: boolean;
     allowStudentMedia?: boolean;
@@ -2062,8 +2339,8 @@ export default function LiveClassroomPage({
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-slate-950 p-6 text-white">
         <div className="max-w-md w-full rounded-3xl border border-amber-500/40 bg-slate-900/90 p-8 text-center shadow-2xl backdrop-blur">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-500/20 border border-amber-500/40 text-3xl">
-            🔐
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-500/20 border border-amber-500/40">
+            <svg className="h-8 w-8 text-amber-400 mx-auto" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
           </div>
           <span className="mt-4 inline-block rounded-full bg-amber-500/15 border border-amber-500/30 px-3 py-1 text-[11px] font-black uppercase text-amber-300">
             BrainLab Masterclass
@@ -2170,7 +2447,19 @@ export default function LiveClassroomPage({
               }}
               className="rounded-xl border border-blue-500/40 bg-blue-500/15 hover:bg-blue-500/25 px-5 py-3 text-xs font-bold text-blue-200 transition active:scale-95 inline-flex items-center justify-center gap-2"
             >
-              <span>{classAlertSet ? "✓ Alert Set (We'll Ring Your Screen)" : "🔔 Turn On Alert When Tutor Goes Live"}</span>
+              <span className="inline-flex items-center gap-1.5">
+                {classAlertSet ? (
+                  <>
+                    <svg className="h-3.5 w-3.5 text-emerald-400 inline mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                    Alert Set (We&apos;ll Ring Your Screen)
+                  </>
+                ) : (
+                  <>
+                    <svg className="h-3.5 w-3.5 text-blue-300 inline mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+                    Turn On Alert When Tutor Goes Live
+                  </>
+                )}
+              </span>
             </button>
             <button
               type="button"
@@ -2198,8 +2487,8 @@ export default function LiveClassroomPage({
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-slate-950 p-6 text-white">
         <div className="max-w-md w-full rounded-3xl border border-blue-500/30 bg-slate-900/90 p-8 text-center shadow-2xl backdrop-blur">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-500/20 border border-blue-500/40 text-3xl">
-            📡
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-500/20 border border-blue-500/40">
+            <svg className="h-8 w-8 text-blue-400 mx-auto" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"/><circle cx="12" cy="12" r="2"/><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"/><path d="M19.1 4.9C23 8.8 23 15.1 19.1 19"/></svg>
           </div>
           <span className="mt-4 inline-block rounded-full bg-blue-500/15 border border-blue-500/30 px-3 py-1 text-[11px] font-black uppercase text-blue-300">
             Stage Not Started
@@ -2224,7 +2513,19 @@ export default function LiveClassroomPage({
               }}
               className="rounded-xl border border-blue-500/40 bg-blue-500/15 hover:bg-blue-500/25 px-5 py-3 text-xs font-bold text-blue-200 transition active:scale-95 inline-flex items-center justify-center gap-2"
             >
-              <span>{classAlertSet ? "✓ Alert Set (We'll Ring Your Screen)" : "🔔 Turn On Alert When Tutor Goes Live"}</span>
+              <span className="inline-flex items-center gap-1.5">
+                {classAlertSet ? (
+                  <>
+                    <svg className="h-3.5 w-3.5 text-emerald-400 inline mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                    Alert Set (We&apos;ll Ring Your Screen)
+                  </>
+                ) : (
+                  <>
+                    <svg className="h-3.5 w-3.5 text-blue-300 inline mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+                    Turn On Alert When Tutor Goes Live
+                  </>
+                )}
+              </span>
             </button>
             <button
               type="button"
@@ -2252,7 +2553,7 @@ export default function LiveClassroomPage({
               }}
               className="rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 px-5 py-3 text-xs font-black text-white shadow-xl transition active:scale-95 inline-flex items-center justify-center gap-2"
             >
-              <span>🚀</span>
+              <svg className="h-3.5 w-3.5 text-cyan-300 inline mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/></svg>
               <span>Launch & Enter Stage as Host</span>
             </button>
             <button
@@ -2277,7 +2578,7 @@ export default function LiveClassroomPage({
               href={`/login?redirect=/classroom/${classId}&role=host`}
               className="pt-2 text-xs font-bold text-amber-400 hover:text-amber-300 underline"
             >
-              👨‍🏫 Are you the instructor? Sign in with tutor account →
+              Are you the instructor? Sign in with tutor account →
             </Link>
           </div>
         </div>
@@ -2291,7 +2592,7 @@ export default function LiveClassroomPage({
         <div className="relative flex items-center justify-center">
           <div className="h-16 w-16 rounded-full border-4 border-blue-500/20 border-t-blue-500 animate-spin" />
           <div className="absolute h-8 w-8 rounded-full bg-blue-600/30 animate-ping" />
-          <span className="absolute text-lg">🎓</span>
+          <span className="absolute"><svg className="h-6 w-6 text-cyan-400 mx-auto" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg></span>
         </div>
         <h2 className="mt-6 text-xl font-black text-white">Connecting to Live Classroom…</h2>
         <p className="mt-2 text-xs text-slate-400 max-w-sm text-center leading-relaxed">
@@ -2305,7 +2606,7 @@ export default function LiveClassroomPage({
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-slate-900 p-6 text-white">
         <div className="max-w-md rounded-3xl border border-red-500/30 bg-slate-950 p-8 text-center shadow-2xl">
-          <span className="text-4xl">⚠️</span>
+          <svg className="h-10 w-10 text-rose-500 mx-auto" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
           <h2 className="mt-4 text-2xl font-black text-rose-400">Admission Denied</h2>
           <p className="mt-3 text-sm leading-6 text-slate-300">{error}</p>
           <div className="mt-6 flex flex-col gap-3">
@@ -2401,17 +2702,40 @@ export default function LiveClassroomPage({
               className="ml-0.5 text-slate-400 hover:text-blue-500 transition"
               title="Copy Class Code"
             >
-              📋
+              <svg className="h-4 w-4 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
             </button>
           </div>
           {isTutorOrModerator ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 border border-amber-500/30 px-2 sm:px-2.5 py-0.5 text-[10px] sm:text-[11px] font-black text-amber-600 dark:text-amber-300 shadow-2xs">
-              
-              <span>Tutor &amp; Host</span>
-            </span>
+            <>
+              <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 border border-amber-500/30 px-2 sm:px-2.5 py-0.5 text-[10px] sm:text-[11px] font-black text-amber-600 dark:text-amber-300 shadow-2xs">
+                <span>Tutor &amp; Host</span>
+              </span>
+              <button
+                type="button"
+                onClick={handleCopyClassLink}
+                className="hidden md:inline-flex items-center gap-1 rounded-full bg-blue-500/15 border border-blue-500/30 hover:bg-blue-500/25 px-2.5 py-0.5 text-[10px] sm:text-[11px] font-bold text-blue-700 dark:text-blue-300 transition active-press"
+                title="Copy student link to invite learners"
+              >
+                <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>
+                <span>Invite Students</span>
+              </button>
+              {raisedHandsCount > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab("participants");
+                    setMobileDrawerOpen(true);
+                  }}
+                  className="inline-flex items-center gap-1 rounded-full bg-amber-500/25 border border-amber-500/50 px-2.5 py-0.5 text-[10px] sm:text-[11px] font-black text-amber-300 animate-pulse hover:bg-amber-500/35 transition active-press"
+                  title="Students are raising hands to speak"
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M18 11V6a2 2 0 0 0-4 0v5" /><path d="M14 10V4a2 2 0 0 0-4 0v6" /><path d="M10 10.5V6a2 2 0 0 0-4 0v8" /><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15" /></svg>
+                  <span>{raisedHandsCount} {raisedHandsCount === 1 ? "Hand" : "Hands"} Raised</span>
+                </button>
+              )}
+            </>
           ) : (
             <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/15 border border-blue-500/30 px-2 sm:px-2.5 py-0.5 text-[10px] sm:text-[11px] font-bold text-blue-700 dark:text-blue-300">
-              
               <span>Student</span>
             </span>
           )}
@@ -2711,7 +3035,7 @@ export default function LiveClassroomPage({
                     </div>
                     {isLowDataMode ? (
                       <div className="h-24 sm:h-32 flex flex-col items-center justify-center p-2 text-center bg-slate-900 text-slate-300">
-                        <span className="text-xl">🎙️</span>
+                        <svg className="h-4 w-4 text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
                         <span className="text-[10px] font-bold text-emerald-400">HD Audio Only</span>
                         <span className="text-[9px] text-slate-500">Video paused for Low-Data Saver</span>
                       </div>
@@ -2814,7 +3138,7 @@ export default function LiveClassroomPage({
                         <div className="w-full rounded-3xl border-2 border-cyan-500/40 bg-gradient-to-b from-slate-900/95 to-slate-950 p-6 md:p-8 shadow-2xl backdrop-blur">
                           <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
                             <div className="flex items-center gap-2">
-                              <span className="text-xl">🎯</span>
+                              <svg className="h-5 w-5 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
                               <div>
                                 <h4 className="text-sm font-black uppercase tracking-wider text-cyan-300">
                                   {activePoll.is_open ? "Interactive Checkpoint Quiz" : "Quiz Checkpoint Results"}
@@ -2886,7 +3210,7 @@ export default function LiveClassroomPage({
                                           )}
                                           {!activePoll.is_open && opt.is_correct && (
                                             <span className="rounded bg-emerald-500/20 px-1.5 py-0.5 text-[10px] font-black text-emerald-300">
-                                              ✓ Correct
+                                              Correct
                                             </span>
                                           )}
                                           <span className="font-mono text-xs font-black text-slate-300">
@@ -3093,6 +3417,31 @@ export default function LiveClassroomPage({
               )}
             </div>
 
+            {/* Synchronized Classroom Drill Timer HUD */}
+            {drillTimerActive && (
+              <div className="absolute top-4 right-4 z-20 flex items-center gap-2.5 rounded-2xl border border-cyan-500/50 bg-slate-950/95 px-3.5 py-1.5 shadow-2xl backdrop-blur-md animate-fade-in">
+                <span className="flex h-2.5 w-2.5 rounded-full bg-cyan-400 animate-ping" />
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-cyan-300">
+                    {drillTimerLabel || "Practice Drill"}
+                  </span>
+                  <span className="font-mono text-sm font-black text-white">
+                    {Math.floor(drillTimerSeconds / 60)}:{(drillTimerSeconds % 60).toString().padStart(2, "0")}
+                  </span>
+                </div>
+                {isTutorOrModerator && (
+                  <button
+                    type="button"
+                    onClick={handleStopDrillTimer}
+                    className="ml-1 rounded-lg border border-rose-500/40 bg-rose-950/40 hover:bg-rose-900/60 px-2 py-0.5 text-[10px] font-bold text-rose-300 transition active-press"
+                    title="Stop timer"
+                  >
+                    Stop
+                  </button>
+                )}
+              </div>
+            )}
+
             {/* IN-STAGE FLOATING LIVE QUIZ / POLL HUD */}
             {activePoll && (
               <div
@@ -3185,7 +3534,7 @@ export default function LiveClassroomPage({
                                     )}
                                     {!activePoll.is_open && opt.is_correct && (
                                       <span className="ml-2 text-[10px] font-bold text-emerald-400">
-                                        ✓ Correct
+                                        Correct
                                       </span>
                                     )}
                                   </span>
@@ -3280,6 +3629,14 @@ export default function LiveClassroomPage({
             pendingAdmissions={pendingAdmissions}
             onAdmitStudent={handleAdmitStudent}
             onAdmitAllStudents={handleAdmitAllStudents}
+            onClearChat={handleClearChat}
+            onDeleteMessage={handleDeleteMessage}
+            onGrantStudentSpeech={handleGrantStudentSpeech}
+            onLowerStudentHand={handleLowerStudentHand}
+            onToggleStudentMute={handleToggleStudentMute}
+            onCopyClassLink={handleCopyClassLink}
+            onMuteAllStudents={handleMuteAllStudents}
+            onPinMessage={handlePinToBigScreen}
           />
         </aside>
       </div>
@@ -3334,6 +3691,14 @@ export default function LiveClassroomPage({
               pendingAdmissions={pendingAdmissions}
               onAdmitStudent={handleAdmitStudent}
               onAdmitAllStudents={handleAdmitAllStudents}
+              onClearChat={handleClearChat}
+              onDeleteMessage={handleDeleteMessage}
+              onGrantStudentSpeech={handleGrantStudentSpeech}
+              onLowerStudentHand={handleLowerStudentHand}
+              onToggleStudentMute={handleToggleStudentMute}
+              onCopyClassLink={handleCopyClassLink}
+              onMuteAllStudents={handleMuteAllStudents}
+              onPinMessage={handlePinToBigScreen}
             />
           </div>
         </div>
@@ -3356,7 +3721,7 @@ export default function LiveClassroomPage({
               onClick={() => setPreviewImage(null)}
               className="absolute -top-3 -right-3 flex h-8 w-8 items-center justify-center rounded-full bg-slate-800 text-white border border-slate-600 hover:bg-slate-700 font-bold"
             >
-              ✕
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
           </div>
         </div>
@@ -3376,7 +3741,7 @@ export default function LiveClassroomPage({
                 onClick={() => setIsCreatingPoll(false)}
                 className="text-slate-400 hover:text-white"
               >
-                ✕
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
             </div>
 
@@ -3591,7 +3956,7 @@ export default function LiveClassroomPage({
           >
             <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
               <div className="flex items-center gap-2">
-                <span className="text-xl">⚙️</span>
+                <svg className="h-5 w-5 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                 <div>
                   <h3 className="text-sm font-black uppercase tracking-wider text-amber-400">
                     Classroom Moderation Controls
@@ -3606,7 +3971,7 @@ export default function LiveClassroomPage({
                 onClick={() => setShowModerationModal(false)}
                 className="rounded-lg p-1 text-slate-400 hover:bg-slate-800 hover:text-white transition"
               >
-                ✕
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
             </div>
 
@@ -3615,7 +3980,7 @@ export default function LiveClassroomPage({
               <div className="flex items-start justify-between p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800">
                 <div className="pr-4">
                   <div className="flex items-center gap-2">
-                    <span className="text-base">🖍️</span>
+                    <svg className="h-4 w-4 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
                     <h4 className="text-xs font-bold text-white">Student Whiteboard Drawing</h4>
                   </div>
                   <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
@@ -3641,7 +4006,7 @@ export default function LiveClassroomPage({
               <div className="flex items-start justify-between p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800">
                 <div className="pr-4">
                   <div className="flex items-center gap-2">
-                    <span className="text-base">📷</span>
+                    <svg className="h-4 w-4 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
                     <h4 className="text-xs font-bold text-white">Student Diagram &amp; Image Uploads</h4>
                   </div>
                   <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
@@ -3667,7 +4032,7 @@ export default function LiveClassroomPage({
               <div className="flex items-start justify-between p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800">
                 <div className="pr-4">
                   <div className="flex items-center gap-2">
-                    <span className="text-base">🎙️</span>
+                    <svg className="h-4 w-4 text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
                     <h4 className="text-xs font-bold text-white">Student Voice Questions</h4>
                   </div>
                   <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
@@ -3693,7 +4058,7 @@ export default function LiveClassroomPage({
               <div className="flex items-start justify-between p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800">
                 <div className="pr-4">
                   <div className="flex items-center gap-2">
-                    <span className="text-base">🔇</span>
+                    <svg className="h-4 w-4 text-rose-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="2" x2="22" y1="2" y2="22"/><path d="M18.89 13.23A7.12 7.12 0 0 0 19 12v-2"/><path d="M5 10v2a7 7 0 0 0 12 5"/><path d="M15 9.34V5a3 3 0 0 0-5.68-1.33"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
                     <h4 className="text-xs font-bold text-white">Pause Student Chat</h4>
                   </div>
                   <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
@@ -3909,66 +4274,167 @@ export default function LiveClassroomPage({
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" /></svg><span>Poll</span>
               </button>
+
+              {/* Synchronized Drill Timer Menu */}
+              <div className="relative hidden sm:block">
+                <button
+                  type="button"
+                  onClick={() => setShowTimerPicker(!showTimerPicker)}
+                  className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-bold transition active-press ${
+                    drillTimerActive
+                      ? "border-cyan-500 bg-cyan-500/20 text-cyan-300 animate-pulse"
+                      : "border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700"
+                  }`}
+                  title="Launch timed student drill"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  <span>{drillTimerActive ? `${Math.floor(drillTimerSeconds / 60)}:${(drillTimerSeconds % 60).toString().padStart(2, "0")}` : "Timer"}</span>
+                </button>
+                {showTimerPicker && (
+                  <div className="absolute bottom-full mb-2 left-0 w-44 rounded-2xl border border-slate-700 bg-slate-900/95 p-2 shadow-2xl backdrop-blur z-50 space-y-1">
+                    <p className="px-2 py-1 text-[10px] font-black uppercase tracking-wider text-slate-400">Class Drill Timer</p>
+                    <button
+                      type="button"
+                      onClick={() => handleStartDrillTimer(60, "1-Minute Rapid Drill")}
+                      className="w-full text-left rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-200 hover:bg-cyan-500/20 hover:text-cyan-300 transition"
+                    >
+                      1 Minute Drill
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleStartDrillTimer(180, "3-Minute Question Check")}
+                      className="w-full text-left rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-200 hover:bg-cyan-500/20 hover:text-cyan-300 transition"
+                    >
+                      3 Minutes Drill
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleStartDrillTimer(300, "5-Minute Practice Sprint")}
+                      className="w-full text-left rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-200 hover:bg-cyan-500/20 hover:text-cyan-300 transition"
+                    >
+                      5 Minutes Drill
+                    </button>
+                    {drillTimerActive && (
+                      <button
+                        type="button"
+                        onClick={handleStopDrillTimer}
+                        className="w-full text-left rounded-lg px-2.5 py-1.5 text-xs font-bold text-rose-300 hover:bg-rose-950/50 transition border-t border-slate-800"
+                      >
+                        Stop Timer
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
             </>
           )}
 
-          <button
-            onClick={toggleHandRaise}
-            className={`flex items-center gap-1 sm:gap-1.5 rounded-xl px-2 sm:px-3 py-1.5 sm:py-2 text-xs font-bold border transition active-press ${
-              isHandRaised
-                ? "border-amber-500 bg-amber-500/20 text-amber-300"
-                : "border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700"
-            }`}
-            title={isHandRaised ? "Lower Hand" : "Raise Hand"}
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M18 11V6a2 2 0 0 0-4 0v5" /><path d="M14 10V4a2 2 0 0 0-4 0v6" /><path d="M10 10.5V6a2 2 0 0 0-4 0v8" /><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15" /></svg>
-            <span className="hidden sm:inline">{isHandRaised ? "Lower" : "Hand"}</span>
-          </button>
+          {isTutorOrModerator ? (
+            <>
+              {/* Host Control: Raised Hands Queue Viewer (Instructors see who raised hands, not self-raise) */}
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab("participants");
+                  setMobileDrawerOpen(true);
+                }}
+                className={`flex items-center gap-1 sm:gap-1.5 rounded-xl px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs font-bold border transition active-press ${
+                  raisedHandsCount > 0
+                    ? "border-amber-500 bg-amber-500/20 text-amber-300 animate-pulse shadow-sm"
+                    : "border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700"
+                }`}
+                title="View raised hands and grant mic access"
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M18 11V6a2 2 0 0 0-4 0v5" /><path d="M14 10V4a2 2 0 0 0-4 0v6" /><path d="M10 10.5V6a2 2 0 0 0-4 0v8" /><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15" /></svg>
+                <span>Hands ({raisedHandsCount})</span>
+              </button>
 
-          <div className="hidden sm:flex items-center gap-1 bg-slate-800/90 rounded-xl p-1 border border-slate-700">
-            <button
-              type="button"
-              onClick={() => sendReaction("💡")}
-              className="px-2 py-1 rounded-lg text-xs font-bold text-slate-200 hover:bg-slate-700/80 hover:text-cyan-300 transition flex items-center gap-1 active-press"
-              title="Understood!"
-            >
-              <span>💡</span>
-              <span className="hidden xl:inline text-[11px]">Understood!</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => sendReaction("🔥")}
-              className="px-2 py-1 rounded-lg text-xs font-bold text-slate-200 hover:bg-slate-700/80 hover:text-amber-400 transition flex items-center gap-1 active-press"
-              title="Fire Explanation!"
-            >
-              <span>🔥</span>
-              <span className="hidden xl:inline text-[11px]">Fire!</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => sendReaction("✍️")}
-              className="px-2 py-1 rounded-lg text-xs font-bold text-slate-200 hover:bg-slate-700/80 hover:text-emerald-300 transition flex items-center gap-1 active-press"
-              title="Taking Notes"
-            >
-              <span>✍️</span>
-              <span className="hidden xl:inline text-[11px]">Notes</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => sendReaction("👏")}
-              className="px-2 py-1 rounded-lg text-xs font-bold text-slate-200 hover:bg-slate-700/80 hover:text-white transition flex items-center gap-1 active-press"
-              title="Well Done!"
-            >
-              <span>👏</span>
-            </button>
-          </div>
+              {/* Host Control: Send Class Link */}
+              <button
+                type="button"
+                onClick={handleCopyClassLink}
+                className="hidden md:flex items-center gap-1.5 rounded-xl border border-blue-500/40 bg-blue-600/20 px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs font-bold text-blue-300 hover:bg-blue-600/30 transition active-press"
+                title="Copy student join URL"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>
+                <span>Invite</span>
+              </button>
 
-          <Link
-            href="/dashboard"
-            className="rounded-xl border border-rose-500/40 bg-rose-600/20 px-2.5 sm:px-4 py-1.5 sm:py-2 text-xs font-bold text-rose-300 hover:bg-rose-600 hover:text-white transition whitespace-nowrap active-press"
-          >
-            Exit
-          </Link>
+              {/* Host Control: End Class Safely */}
+              <button
+                type="button"
+                onClick={() => setShowEndClassModal(true)}
+                className="rounded-xl border border-rose-500 bg-rose-600 px-3 sm:px-4 py-1.5 sm:py-2 text-xs font-bold text-white hover:bg-rose-700 transition whitespace-nowrap active-press shadow-xs"
+                title="End masterclass for all participants"
+              >
+                End Class
+              </button>
+            </>
+          ) : (
+            <>
+              {/* Student Control: Raise / Lower Hand */}
+              <button
+                type="button"
+                onClick={toggleHandRaise}
+                className={`flex items-center gap-1 sm:gap-1.5 rounded-xl px-2 sm:px-3 py-1.5 sm:py-2 text-xs font-bold border transition active-press ${
+                  isHandRaised
+                    ? "border-amber-500 bg-amber-500/20 text-amber-300"
+                    : "border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700"
+                }`}
+                title={isHandRaised ? "Lower Hand" : "Raise Hand"}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M18 11V6a2 2 0 0 0-4 0v5" /><path d="M14 10V4a2 2 0 0 0-4 0v6" /><path d="M10 10.5V6a2 2 0 0 0-4 0v8" /><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15" /></svg>
+                <span className="hidden sm:inline">{isHandRaised ? "Lower" : "Hand"}</span>
+              </button>
+
+              {/* Student Control: Live Reactions */}
+              <div className="hidden sm:flex items-center gap-1 bg-slate-800/90 rounded-xl p-1 border border-slate-700">
+                <button
+                  type="button"
+                  onClick={() => sendReaction("insight")}
+                  className="px-2 py-1 rounded-lg text-xs font-bold text-slate-200 hover:bg-slate-700/80 hover:text-cyan-300 transition flex items-center gap-1 active-press"
+                  title="Understood!"
+                >
+                  <svg className="h-3.5 w-3.5 text-cyan-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5.76.76 1.23 1.52 1.41 2.5"/></svg>
+                  <span className="hidden xl:inline text-[11px]">Understood!</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => sendReaction("fire")}
+                  className="px-2 py-1 rounded-lg text-xs font-bold text-slate-200 hover:bg-slate-700/80 hover:text-amber-400 transition flex items-center gap-1 active-press"
+                  title="Fire Explanation!"
+                >
+                  <svg className="h-3.5 w-3.5 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 3z"/></svg>
+                  <span className="hidden xl:inline text-[11px]">Fire!</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => sendReaction("notes")}
+                  className="px-2 py-1 rounded-lg text-xs font-bold text-slate-200 hover:bg-slate-700/80 hover:text-emerald-300 transition flex items-center gap-1 active-press"
+                  title="Taking Notes"
+                >
+                  <svg className="h-3.5 w-3.5 text-emerald-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                  <span className="hidden xl:inline text-[11px]">Notes</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => sendReaction("applause")}
+                  className="px-2 py-1 rounded-lg text-xs font-bold text-slate-200 hover:bg-slate-700/80 hover:text-white transition flex items-center gap-1 active-press"
+                  title="Well Done!"
+                >
+                  <svg className="h-3.5 w-3.5 text-slate-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+                </button>
+              </div>
+
+              {/* Student Control: Leave Class */}
+              <Link
+                href="/dashboard"
+                className="rounded-xl border border-rose-500/40 bg-rose-600/20 px-2.5 sm:px-4 py-1.5 sm:py-2 text-xs font-bold text-rose-300 hover:bg-rose-600 hover:text-white transition whitespace-nowrap active-press"
+              >
+                Leave
+              </Link>
+            </>
+          )}
         </div>
       </footer>
 
@@ -3985,7 +4451,7 @@ export default function LiveClassroomPage({
       {classEndedByTutor && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-4 animate-in fade-in">
           <div className="w-full max-w-md rounded-3xl border border-white/15 bg-[#0B1536] p-6 text-center space-y-4 text-white shadow-2xl">
-            <span className="text-4xl">🎓</span>
+            <svg className="h-6 w-6 text-cyan-400 mx-auto" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
             <h3 className="text-lg font-black text-white">Class Has Concluded</h3>
             <p className="text-xs text-slate-300">
               The tutor has concluded this live classroom session. Your attendance has been recorded.

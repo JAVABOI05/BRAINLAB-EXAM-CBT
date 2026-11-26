@@ -6,16 +6,92 @@ import { toast } from "../lib/toast";
 import { getWhatsAppChatUrl, DEFAULT_WHATSAPP_NUMBER } from "../lib/whatsapp";
 import { getFooterConfig } from "../lib/platformConfig";
 
+function SectionIcon({ id }: { id: string }) {
+  switch (id) {
+    case "highlights":
+      return (
+        <svg className="h-4 w-4 text-amber-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+        </svg>
+      );
+    case "acceptance":
+      return (
+        <svg className="h-4 w-4 text-blue-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+          <polyline points="14 2 14 8 20 8" />
+          <line x1="16" y1="13" x2="8" y2="13" />
+          <line x1="16" y1="17" x2="8" y2="17" />
+          <polyline points="10 9 9 9 8 9" />
+        </svg>
+      );
+    case "cbt-integrity":
+      return (
+        <svg className="h-4 w-4 text-emerald-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+        </svg>
+      );
+    case "ai-fair-use":
+      return (
+        <svg className="h-4 w-4 text-purple-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <rect x="3" y="11" width="18" height="10" rx="2" />
+          <circle cx="12" cy="5" r="2" />
+          <path d="M12 7v4" />
+          <line x1="8" y1="16" x2="8" y2="16" />
+          <line x1="16" y1="16" x2="16" y2="16" />
+        </svg>
+      );
+    case "subscriptions-billing":
+      return (
+        <svg className="h-4 w-4 text-cyan-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
+          <line x1="1" y1="10" x2="23" y2="10" />
+        </svg>
+      );
+    case "intellectual-property":
+      return (
+        <svg className="h-4 w-4 text-indigo-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z" />
+          <path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z" />
+          <path d="M7 21h10" />
+          <path d="M12 3v18" />
+          <path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2" />
+        </svg>
+      );
+    case "community-conduct":
+      return (
+        <svg className="h-4 w-4 text-teal-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+          <path d="M6 12v5c3 3 9 3 12 0v-5" />
+        </svg>
+      );
+    case "disclaimers":
+      return (
+        <svg className="h-4 w-4 text-rose-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10" />
+          <line x1="12" y1="8" x2="12" y2="12" />
+          <line x1="12" y1="16" x2="12.01" y2="16" />
+        </svg>
+      );
+    case "dispute-support":
+    default:
+      return (
+        <svg className="h-4 w-4 text-blue-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+        </svg>
+      );
+  }
+}
+
 const SECTIONS = [
-  { id: "highlights", label: "Executive Highlights", icon: "⚡" },
-  { id: "acceptance", label: "1. Acceptance & Eligibility", icon: "📋" },
-  { id: "cbt-integrity", label: "2. CBT Integrity & Proctoring", icon: "🛡️" },
-  { id: "ai-fair-use", label: "3. AI Tutor Fair Use", icon: "🤖" },
-  { id: "subscriptions-billing", label: "4. Payments & Subscriptions", icon: "💳" },
-  { id: "intellectual-property", label: "5. Intellectual Property", icon: "⚖️" },
-  { id: "community-conduct", label: "6. Masterclass & Etiquette", icon: "🎓" },
-  { id: "disclaimers", label: "7. Educational Disclaimers", icon: "📜" },
-  { id: "dispute-support", label: "8. Disputes & Support Desk", icon: "💬" },
+  { id: "highlights", label: "Executive Highlights" },
+  { id: "acceptance", label: "1. Acceptance & Eligibility" },
+  { id: "cbt-integrity", label: "2. CBT Integrity & Proctoring" },
+  { id: "ai-fair-use", label: "3. AI Tutor Fair Use" },
+  { id: "subscriptions-billing", label: "4. Payments & Subscriptions" },
+  { id: "intellectual-property", label: "5. Intellectual Property" },
+  { id: "community-conduct", label: "6. Masterclass & Etiquette" },
+  { id: "disclaimers", label: "7. Educational Disclaimers" },
+  { id: "dispute-support", label: "8. Disputes & Support Desk" },
 ];
 
 export default function TermsOfUsePage() {
@@ -155,7 +231,7 @@ export default function TermsOfUsePage() {
                 Agreement Chapters
               </p>
               <nav className="space-y-1">
-                {SECTIONS.map(({ id, label, icon }) => (
+                {SECTIONS.map(({ id, label }) => (
                   <button
                     key={id}
                     onClick={() => scrollTo(id)}
@@ -165,7 +241,7 @@ export default function TermsOfUsePage() {
                         : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-white"
                     }`}
                   >
-                    <span className="text-sm shrink-0">{icon}</span>
+                    <SectionIcon id={id} />
                     <span className="truncate">{label}</span>
                   </button>
                 ))}
@@ -444,7 +520,7 @@ export default function TermsOfUsePage() {
               <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 sm:p-8 space-y-4 shadow-sm">
                 <div className="flex items-center justify-between">
                   <h2 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
-                    <span>💬</span>
+                    <SectionIcon id="dispute-support" />
                     <span>8. Questions, Disputes &amp; Official Inquiries</span>
                   </h2>
                   <button

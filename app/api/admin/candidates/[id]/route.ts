@@ -9,7 +9,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const admin = await getAdminSession();
+    const admin = await getAdminSession(request);
     if (!admin) {
       return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
     }
@@ -54,17 +54,49 @@ export async function GET(
 
     // 5. Fetch recent CBT exam sessions & results
     const candidateName = meta.full_name || meta.name || "";
+    const candidatePhone = meta.phone || u.phone || "";
+
+    const { data: resultsRows } = await supabase
+      .from("results")
+      .select("score, total, created_at")
+      .or(`name.ilike.%${candidateName}%,phone.eq.${candidatePhone || "---"}`)
+      .order("score", { ascending: false })
+      .limit(1);
+
+    let highestScore: { score: number; total: number; percentage: number } | null = null;
+    if (resultsRows && resultsRows.length > 0) {
+      const top = resultsRows[0];
+      const sc = Number(top.score) || 0;
+      const tot = Number(top.total) || 400;
+      highestScore = {
+        score: sc,
+        total: tot,
+        percentage: Math.min(100, Math.max(0, Math.round((sc / tot) * 100))),
+      };
+    }
 
     const { data: sessions } = await supabase
       .from("exam_sessions")
       .select("*")
-      .or(`candidate_name.ilike.%${candidateName}%,phone.eq.${meta.phone || "---"}`)
+      .or(`candidate_name.ilike.%${candidateName}%,phone.eq.${candidatePhone || "---"}`)
       .order("created_at", { ascending: false })
       .limit(15);
+
+    // 6. Fetch gamification profile
+    const { data: gamification } = await supabase
+      .from("user_gamification_profiles")
+      .select("lifetime_xp, current_level, level_name, current_streak_days, longest_streak_days, last_activity_date")
+      .eq("user_id", candidateId)
+      .maybeSingle();
 
     const isSuspended =
       meta.is_suspended === true ||
       (u.banned_until && new Date(u.banned_until) > new Date());
+
+    const lastSignInMs = u.last_sign_in_at ? new Date(u.last_sign_in_at).getTime() : 0;
+    const lastActivityMs = gamification?.last_activity_date ? new Date(gamification.last_activity_date).getTime() : 0;
+    const latestActivityMs = Math.max(lastSignInMs, lastActivityMs);
+    const lastSeenAt = latestActivityMs > 0 ? new Date(latestActivityMs).toISOString() : null;
 
     return NextResponse.json({
       ok: true,
@@ -75,13 +107,26 @@ export async function GET(
         phone: meta.phone || u.phone || "N/A",
         targetExam: meta.target_exam || meta.exam_type || "JAMB UTME",
         targetScore: meta.target_score || 280,
+        targetCourse: meta.target_course || meta.course || null,
+        dreamSchool: meta.dream_school || meta.institution || meta.university || null,
+        selectedSubjects: meta.selected_subjects || null,
         stateOfOrigin: meta.state || meta.state_of_origin || "N/A",
+        highestScore,
         createdAt: u.created_at,
         lastSignInAt: u.last_sign_in_at || null,
+        lastActivityDate: gamification?.last_activity_date || null,
+        lastSeenAt,
         emailConfirmed: Boolean(u.email_confirmed_at),
         isSuspended: Boolean(isSuspended),
         bannedUntil: u.banned_until || null,
         subscription: sub || null,
+        gamification: {
+          xp: gamification?.lifetime_xp || 0,
+          level: gamification?.current_level || 1,
+          levelName: gamification?.level_name || "Beginner",
+          streakDays: gamification?.current_streak_days || 0,
+          longestStreakDays: gamification?.longest_streak_days || 0,
+        },
         transactions: transactions || [],
         entitlements: entitlements || [],
         sessions: sessions || [],

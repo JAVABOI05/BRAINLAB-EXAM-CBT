@@ -13,12 +13,18 @@ export interface AccordionProps {
   items: AccordionItemData[];
   allowMultiple?: boolean;
   className?: string;
+  itemClassName?: string;
+  headerClassName?: string;
+  panelClassName?: string;
 }
 
 export function Accordion({
   items,
   allowMultiple = false,
   className = "",
+  itemClassName,
+  headerClassName,
+  panelClassName,
 }: AccordionProps) {
   const [expandedIds, setExpandedIds] = useState<string[]>(() =>
     items.filter((item) => item.defaultExpanded).map((item) => item.id)
@@ -47,7 +53,7 @@ export function Accordion({
         return (
           <div
             key={item.id}
-            className="rounded-2xl border border-slate-200/80 bg-[var(--bl-color-surface)] dark:border-slate-800 transition-colors"
+            className={itemClassName || "rounded-2xl border border-slate-200/80 bg-[var(--bl-color-surface)] dark:border-slate-800 transition-colors"}
           >
             <h3>
               <button
@@ -56,7 +62,7 @@ export function Accordion({
                 aria-expanded={isExpanded}
                 aria-controls={panelId}
                 onClick={() => toggle(item.id)}
-                className="flex w-full items-center justify-between px-6 py-5 text-left text-base font-semibold text-[var(--bl-color-text-primary)] bl-focus-ring rounded-2xl"
+                className={headerClassName || "flex w-full items-center justify-between px-6 py-5 text-left text-base font-semibold text-[var(--bl-color-text-primary)] bl-focus-ring rounded-2xl"}
               >
                 <span>{item.title}</span>
                 <span
@@ -86,7 +92,7 @@ export function Accordion({
                 id={panelId}
                 role="region"
                 aria-labelledby={headerId}
-                className="px-6 pb-6 pt-1 text-slate-600 dark:text-slate-300 leading-relaxed text-sm sm:text-base border-t border-slate-100 dark:border-slate-800/80"
+                className={panelClassName || "px-6 pb-6 pt-1 text-slate-600 dark:text-slate-300 leading-relaxed text-sm sm:text-base border-t border-slate-100 dark:border-slate-800/80"}
               >
                 {item.content}
               </div>

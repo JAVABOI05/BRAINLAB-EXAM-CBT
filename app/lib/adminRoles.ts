@@ -213,6 +213,22 @@ export const ADMIN_PERMISSION_KEYS = [
   "stem.experiments.grade",
   // National Exam Calendar & Live Dynamic Slots
   "exam.calendar.manage",
+  // Mail Centre & Communications Hub permissions
+  "mail.view",
+  "mail.compose",
+  "mail.send",
+  "mail.campaign.create",
+  "mail.campaign.submit",
+  "mail.campaign.approve",
+  "mail.campaign.reject",
+  "mail.campaign.dispatch",
+  "mail.inbox.view",
+  "mail.inbox.reply",
+  "mail.inbox.manage",
+  "mail.contacts.manage",
+  "mail.templates.manage",
+  "mail.automations.manage",
+  "mail.settings.manage",
 ] as const;
 
 export type AdminPermission = (typeof ADMIN_PERMISSION_KEYS)[number];

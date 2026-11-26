@@ -1,4 +1,5 @@
 export * from "./HomeHero";
+export * from "./HomeUniversityTargetSocialProof";
 export * from "./HomeJoinChannel";
 export * from "./HomeAudiences";
 export * from "./HomeBrainLabLoop";
@@ -10,3 +11,4 @@ export * from "./HomeFounderNote";
 export * from "./HomeFaqCta";
 export * from "./DynamicCountdownSlot";
 export * from "./DynamicLiveStatisticsSlot";
+export * from "./HomeBrilliantConceptExplorer";

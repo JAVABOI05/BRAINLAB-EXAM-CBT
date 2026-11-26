@@ -7,7 +7,7 @@
  *
  * SENDER CONFIGURATION:
  * - Production: Set RESEND_API_KEY and RESEND_FROM_EMAIL in your environment.
- *   Default production sender: "BrainLab Academy <support@brainlab.edu.ng>"
+ *   Default production sender: "BrainLab Academy <support@brainlabacademy.com.ng>"
  * - Development/Test fallback: "BrainLab Academy <onboarding@resend.dev>"
  *
  * SIMULATION MODE:
@@ -28,8 +28,15 @@ export interface SendEmailPayload {
   subject: string;
   html: string;
   text?: string;
+  from?: string;
   replyTo?: string;
+  attachments?: Array<{
+    filename: string;
+    content?: string;
+    path?: string;
+  }>;
   tags?: { name: string; value: string }[];
+  allowSimulation?: boolean;
 }
 
 export interface SendEmailResult {
@@ -37,6 +44,29 @@ export interface SendEmailResult {
   messageId?: string;
   error?: string;
   simulated?: boolean;
+}
+
+/**
+ * Replace placeholders like {{first_name}}, {{subscription_plan}}, {{unsubscribe_url}}
+ * and ensures safe fallbacks so raw mustache tags are never visible to students.
+ */
+export function substituteTokens(template: string, tokens: Record<string, string | number | undefined | null>): string {
+  if (!template) return "";
+  let result = template;
+  for (const [key, val] of Object.entries(tokens)) {
+    const safeVal = val !== undefined && val !== null ? String(val) : "";
+    const regex = new RegExp(`{{\\s*${key}\\s*}}`, "g");
+    result = result.replace(regex, safeVal);
+  }
+  // Safe fallbacks for common student tokens if still unreplaced
+  result = result.replace(/{{\s*first_name\s*}}/g, "Learner");
+  result = result.replace(/{{\s*full_name\s*}}/g, "BrainLab Candidate");
+  result = result.replace(/{{\s*subscription_plan\s*}}/g, "Free Access");
+  result = result.replace(/{{\s*unsubscribe_url\s*}}/g, "https://brainlabacademy.com.ng/unsubscribe");
+  result = result.replace(/{{\s*current_year\s*}}/g, new Date().getFullYear().toString());
+  result = result.replace(/{{\s*exam_title\s*}}/g, "JAMB UTME CBT Mock Examination");
+  result = result.replace(/{{\s*access_code\s*}}/g, "BL-MOCK-2026");
+  return result;
 }
 
 export interface WelcomeEmailParams {
@@ -74,9 +104,31 @@ const RESEND_API_ENDPOINT = "https://api.resend.com/emails";
 const DEFAULT_SENDER =
   process.env.RESEND_FROM_EMAIL ||
   (process.env.NODE_ENV === "production"
-    ? "BrainLab Academy <support@brainlab.edu.ng>"
+    ? "BrainLab Academy <noreply@mail.brainlabacademy.com.ng>"
     : "BrainLab Academy <onboarding@resend.dev>");
-const DEFAULT_REPLY_TO = "support@brainlab.edu.ng";
+const DEFAULT_REPLY_TO = "support@brainlabacademy.com.ng";
+
+/**
+ * Normalizes sender to match Resend's verified sending subdomain (mail.brainlabacademy.com.ng)
+ * and repairs unclosed display name brackets.
+ */
+export function normalizeSenderAddress(rawSender: string): string {
+  let s = (rawSender || "").trim();
+  if (!s) return "BrainLab Academy <noreply@mail.brainlabacademy.com.ng>";
+
+  // Fix unclosed bracket e.g. "BrainLab Academy <noreply@mail.brainlabacademy.com.ng"
+  if (s.includes("<") && !s.includes(">")) {
+    s = `${s}>`;
+  }
+
+  // Resend domain alignment: Resend API key is verified on mail.brainlabacademy.com.ng
+  // If attempting to send directly from root @brainlabacademy.com.ng, transform sender to @mail.brainlabacademy.com.ng
+  if (s.includes("@brainlabacademy.com.ng") && !s.includes("@mail.brainlabacademy.com.ng")) {
+    s = s.replace(/@brainlabacademy\.com\.ng/gi, "@mail.brainlabacademy.com.ng");
+  }
+
+  return s;
+}
 
 /**
  * Low-level email dispatcher using the Resend REST API via native fetch.
@@ -84,18 +136,33 @@ const DEFAULT_REPLY_TO = "support@brainlab.edu.ng";
  */
 export async function sendEmail(payload: SendEmailPayload): Promise<SendEmailResult> {
   let apiKey = process.env.RESEND_API_KEY;
-  let sender = DEFAULT_SENDER;
-  let replyTo = DEFAULT_REPLY_TO;
+  let sender = payload.from || DEFAULT_SENDER;
+  let replyTo = payload.replyTo || DEFAULT_REPLY_TO;
 
   try {
     const config = await getCommunicationServicesConfig();
     if (config?.resend?.api_key) apiKey = config.resend.api_key;
-    if (config?.resend?.from_email) sender = config.resend.from_email;
-    if (config?.resend?.reply_to) replyTo = config.resend.reply_to;
+    if (!payload.from && config?.resend?.from_email) sender = config.resend.from_email;
+    if (!payload.replyTo && config?.resend?.reply_to) replyTo = config.resend.reply_to;
   } catch {}
 
-  // Graceful simulation fallback when no API key is configured
+  // Auto-normalize sender to match verified Resend subdomain
+  sender = normalizeSenderAddress(sender);
+
+  const isProduction = process.env.NODE_ENV === "production";
+
+  // Strict check: Never simulate success in production when API key is missing
   if (!apiKey || apiKey.trim() === "") {
+    if (isProduction && !payload.allowSimulation) {
+      const err = "Configuration Error: RESEND_API_KEY is missing. Configure Resend API credentials in BrainLab Mail Centre settings.";
+      console.error(`[EmailService Error] ${err}`);
+      return {
+        success: false,
+        error: err,
+        simulated: false,
+      };
+    }
+
     console.warn(
       `[EmailService: Simulated Mode] RESEND_API_KEY is not set.\n` +
       `  Recipient : ${Array.isArray(payload.to) ? payload.to.join(", ") : payload.to}\n` +
@@ -111,21 +178,36 @@ export async function sendEmail(payload: SendEmailPayload): Promise<SendEmailRes
 
   try {
     const recipients = Array.isArray(payload.to) ? payload.to : [payload.to];
+
+    // Auto-substitute any unreplaced tokens with clean, sensible student fallbacks
+    let cleanHtml = substituteTokens(payload.html || payload.text || "", {});
+
+    // Automatically wrap bare content inside the executive BrainLab branded EdTech layout
+    if (!cleanHtml.includes("<!DOCTYPE") && !cleanHtml.includes("<html")) {
+      cleanHtml = wrapEmailTemplate(payload.subject, cleanHtml);
+    }
+
+    const bodyPayload: Record<string, unknown> = {
+      from: sender,
+      to: recipients,
+      subject: payload.subject,
+      html: cleanHtml,
+      text: payload.text || cleanHtml.replace(/<[^>]*>/g, ""),
+      reply_to: replyTo,
+      tags: payload.tags,
+    };
+
+    if (payload.attachments && payload.attachments.length > 0) {
+      bodyPayload.attachments = payload.attachments;
+    }
+
     const response = await fetch(RESEND_API_ENDPOINT, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        from: sender,
-        to: recipients,
-        subject: payload.subject,
-        html: payload.html,
-        text: payload.text,
-        reply_to: payload.replyTo || replyTo,
-        tags: payload.tags,
-      }),
+      body: JSON.stringify(bodyPayload),
     });
 
     const data = await response.json().catch(() => null);
@@ -157,30 +239,58 @@ export async function sendEmail(payload: SendEmailPayload): Promise<SendEmailRes
 /**
  * Base email layout wrapper with professional 2026 EdTech responsive HTML styling.
  */
-function wrapEmailTemplate(title: string, bodyContent: string): string {
+export function wrapEmailTemplate(
+  title: string,
+  bodyContent: string,
+  options?: { preheader?: string; categoryBadge?: string }
+): string {
   const year = new Date().getFullYear();
+  const preheader = options?.preheader || "Official Examination & Learning Communication from BrainLab Academy";
+  const badge = options?.categoryBadge || "JAMB • WAEC • NECO";
+
   return `
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <title>${title}</title>
+  <!--[if mso]>
+  <style type="text/css">
+    body, table, td { font-family: Arial, Helvetica, sans-serif !important; }
+  </style>
+  <![endif]-->
 </head>
-<body style="margin:0;padding:0;background-color:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#0f172a;">
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#f1f5f9;padding:32px 16px;">
+<body style="margin:0;padding:0;background-color:#0b1329;background:linear-gradient(180deg, #0b1329 0%, #1e293b 100%);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;color:#0f172a;">
+  <!-- Hidden Preheader Preview Text -->
+  <div style="display:none;font-size:1px;color:#0b1329;line-height:1px;max-height:0px;max-width:0px;opacity:0;overflow:hidden;">
+    ${preheader} &zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;
+  </div>
+
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#0b1329;background:linear-gradient(180deg, #0b1329 0%, #1e293b 100%);padding:40px 16px;">
     <tr>
       <td align="center">
-        <table role="presentation" width="100%" style="max-width:600px;background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 6px -1px rgba(0,0,0,0.05);border:1px solid #e2e8f0;" cellspacing="0" cellpadding="0">
+        <!-- Main Card 600px -->
+        <table role="presentation" width="100%" style="max-width:600px;background-color:#ffffff;border-radius:20px;overflow:hidden;box-shadow:0 20px 25px -5px rgba(0,0,0,0.3), 0 8px 10px -6px rgba(0,0,0,0.2);border:1px solid #334155;" cellspacing="0" cellpadding="0">
           
-          <!-- Header Bar -->
+          <!-- Branded Executive Header Bar -->
           <tr>
-            <td style="background-color:#00112b;padding:28px 36px;text-align:left;">
+            <td style="background-color:#00112b;background:linear-gradient(135deg, #00112b 0%, #071f4a 100%);padding:28px 36px;border-top:4px solid #1356e8;">
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
                 <tr>
-                  <td>
-                    <span style="color:#ffffff;font-size:22px;font-weight:800;letter-spacing:-0.5px;">BrainLab<span style="color:#38bdf8;">.</span></span>
-                    <div style="color:#94a3b8;font-size:12px;margin-top:4px;letter-spacing:0.5px;text-transform:uppercase;font-weight:600;">Excellence in Examination Preparation</div>
+                  <td align="left" style="vertical-align:middle;">
+                    <div style="font-size:26px;font-weight:900;letter-spacing:-0.5px;color:#ffffff;line-height:1;">
+                      BrainLab<span style="color:#38bdf8;">.</span>
+                    </div>
+                    <div style="color:#94a3b8;font-size:11px;margin-top:6px;letter-spacing:1px;text-transform:uppercase;font-weight:700;">
+                      Excellence in Examination Preparation &bull; Official Dispatch
+                    </div>
+                  </td>
+                  <td align="right" style="vertical-align:middle;">
+                    <span style="display:inline-block;padding:5px 12px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.25);border-radius:20px;color:#38bdf8;font-size:11px;font-weight:800;letter-spacing:0.5px;text-transform:uppercase;">
+                      ${badge}
+                    </span>
                   </td>
                 </tr>
               </table>
@@ -189,25 +299,31 @@ function wrapEmailTemplate(title: string, bodyContent: string): string {
 
           <!-- Main Content Body -->
           <tr>
-            <td style="padding:36px;background-color:#ffffff;">
+            <td style="padding:40px 36px;background-color:#ffffff;line-height:1.7;color:#334155;font-size:15px;">
               ${bodyContent}
             </td>
           </tr>
 
-          <!-- Official Footer -->
+          <!-- Official EdTech Footer -->
           <tr>
-            <td style="background-color:#f8fafc;padding:24px 36px;border-top:1px solid #e2e8f0;text-align:center;">
-              <p style="margin:0 0 8px 0;font-size:12px;color:#64748b;line-height:1.6;">
-                Official correspondence from <strong>BrainLab Academy</strong>.<br>
-                For learner support, reach us at <a href="mailto:support@brainlab.edu.ng" style="color:#0284c7;text-decoration:none;font-weight:600;">support@brainlab.edu.ng</a> or via WhatsApp.
+            <td style="background-color:#f8fafc;padding:28px 36px;border-top:1px solid #e2e8f0;text-align:center;">
+              <p style="margin:0 0 10px 0;font-size:12px;color:#64748b;line-height:1.6;">
+                Official correspondence from the <strong>BrainLab Academy Directorate</strong>.<br>
+                For candidate support, email <a href="mailto:support@brainlabacademy.com.ng" style="color:#1356e8;text-decoration:none;font-weight:700;">support@brainlabacademy.com.ng</a> or chat with our desk on <a href="https://wa.me/2348089267399" style="color:#10b981;text-decoration:none;font-weight:700;">WhatsApp</a>.
               </p>
-              <p style="margin:8px 0 8px 0;font-size:11px;color:#94a3b8;line-height:1.6;">
+              
+              <div style="margin:16px 0;padding:12px 16px;background:#f1f5f9;border-radius:8px;font-size:11px;color:#64748b;line-height:1.5;">
+                🔒 <strong>Candidate Security Note:</strong> BrainLab will never ask for your account password or confidential exam PIN. Never disclose your PIN to third parties.
+              </div>
+
+              <p style="margin:8px 0 0 0;font-size:11px;color:#94a3b8;line-height:1.6;">
                 You are receiving this communication regarding your candidate account.<br>
-                <a href="https://brainlabacademy.com.ng/unsubscribe" style="color:#64748b;text-decoration:underline;">Unsubscribe from notifications</a> &bull; 
-                <a href="https://brainlabacademy.com.ng/settings" style="color:#64748b;text-decoration:underline;">Notification Preferences</a>
+                <a href="https://brainlabacademy.com.ng/unsubscribe" style="color:#64748b;text-decoration:underline;">Unsubscribe</a> &bull; 
+                <a href="https://brainlabacademy.com.ng/terms" style="color:#64748b;text-decoration:underline;">Terms of Service</a> &bull;
+                <a href="https://brainlabacademy.com.ng/privacy" style="color:#64748b;text-decoration:underline;">Privacy Policy</a>
               </p>
-              <p style="margin:0;font-size:11px;color:#94a3b8;">
-                &copy; ${year} BrainLab Academy. All rights reserved. Lagos, Nigeria.
+              <p style="margin:10px 0 0 0;font-size:11px;color:#94a3b8;">
+                &copy; ${year} BrainLab Academy CBT. All rights reserved. Lagos, Nigeria.
               </p>
             </td>
           </tr>
@@ -251,7 +367,7 @@ export async function sendWelcomeEmail(params: WelcomeEmailParams): Promise<Send
     </div>
 
     <p style="margin:0;font-size:13px;line-height:1.6;color:#64748b;">
-      If you have questions at any step, simply reply to this email or contact our learner helpdesk at <a href="mailto:support@brainlab.edu.ng" style="color:#0284c7;">support@brainlab.edu.ng</a>.
+      If you have questions at any step, simply reply to this email or contact our learner helpdesk at <a href="mailto:support@brainlabacademy.com.ng?subject=BrainLab%20Technical%20and%20CBT%20Support" style="color:#0284c7;">support@brainlabacademy.com.ng</a>.
     </p>
     `
   );
@@ -537,6 +653,91 @@ export async function sendLiveClassReminderEmail(params: LiveClassReminderEmailP
   return sendEmail({
     to,
     subject: `Starting soon: ${classTitle} with ${tutorName}`,
+    html,
+  });
+}
+
+/**
+ * 7. Send Migrated Student Verification & Upgrade Notification (Decision D6).
+ * Dispatched only after an active student's legacy subscription has been verified
+ * and migrated into the central entitlement engine.
+ */
+export interface MigratedStudentEmailParams {
+  to: string;
+  studentName: string;
+  tierName: string;
+  expiryDateText: string;
+  featuresCount?: number;
+  loginUrl?: string;
+}
+
+export async function sendMigratedStudentNotificationEmail(
+  params: MigratedStudentEmailParams
+): Promise<SendEmailResult> {
+  const {
+    to,
+    studentName,
+    tierName,
+    expiryDateText,
+    featuresCount = 14,
+    loginUrl = "https://www.brainlabacademy.com.ng/dashboard",
+  } = params;
+
+  const html = wrapEmailTemplate(
+    `Your BrainLab Subscription is Verified & Upgraded`,
+    `
+    <h1 style="margin:0 0 16px 0;font-size:22px;font-weight:800;color:#0f172a;">
+      Your Account Upgrade is Complete!
+    </h1>
+    <p style="margin:0 0 16px 0;font-size:15px;line-height:1.6;color:#334155;">
+      Hello ${studentName}, we are pleased to inform you that your BrainLab subscription has been successfully verified and migrated to our new <strong>Central Access &amp; Cohort Management Platform</strong>.
+    </p>
+
+    <div style="background-color:#f0f9ff;border:1px solid #bae6fd;border-radius:12px;padding:20px;margin:24px 0;">
+      <h3 style="margin:0 0 10px 0;font-size:14px;font-weight:700;color:#0369a1;">Verified Subscription Summary:</h3>
+      <table style="width:100%;font-size:13px;line-height:1.8;color:#0c4a6e;">
+        <tr>
+          <td style="font-weight:bold;width:40%;">Active Plan / Tier:</td>
+          <td>${tierName}</td>
+        </tr>
+        <tr>
+          <td style="font-weight:bold;">Verified Expiry:</td>
+          <td>${expiryDateText}</td>
+        </tr>
+        <tr>
+          <td style="font-weight:bold;">Features Unlocked:</td>
+          <td>${featuresCount} platform features active</td>
+        </tr>
+      </table>
+    </div>
+
+    <div style="margin:20px 0;">
+      <p style="font-size:14px;line-height:1.6;color:#334155;margin:0 0 12px 0;">
+        <strong>What's included in your upgraded access?</strong>
+      </p>
+      <ul style="margin:0;padding-left:18px;font-size:13px;line-height:1.8;color:#475569;">
+        <li>Full CBT practice simulator with instant solutions and corrections.</li>
+        <li>AI study tutor hints and question breakdown.</li>
+        <li>Interactive live masterclasses and recorded review sessions.</li>
+        <li>STEM Studio virtual science laboratories and challenge arena.</li>
+      </ul>
+    </div>
+
+    <div style="text-align:center;margin:28px 0;">
+      <a href="${loginUrl}" style="background-color:#0284c7;color:#ffffff;text-decoration:none;font-size:14px;font-weight:800;padding:12px 28px;border-radius:8px;display:inline-block;box-shadow:0 2px 4px rgba(2,132,199,0.25);">
+        Access Your Learner Workspace &rarr;
+      </a>
+    </div>
+
+    <p style="margin:0;font-size:12px;color:#64748b;line-height:1.5;">
+      All your past progress, mock scores, and test history have been fully preserved. If you have any questions, our support team is always available at <a href="mailto:support@brainlabacademy.com.ng?subject=BrainLab%20Technical%20and%20CBT%20Support" style="color:#0284c7;">support@brainlabacademy.com.ng</a>.
+    </p>
+    `
+  );
+
+  return sendEmail({
+    to,
+    subject: `Your BrainLab Subscription is Verified & Upgraded (${tierName})`,
     html,
   });
 }

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Breadcrumbs } from "@/app/components/public/Breadcrumbs";
+import { ProgrammeCardLink } from "@/app/components/public/ProgrammeCardLink";
 
 export const metadata: Metadata = {
   title: "Academic Programmes & Examination Prep | BrainLab Academy",

@@ -138,6 +138,21 @@ export default function TeachingVideoLibraryPage() {
       (p.subject && p.subject.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
+  // Audio assets & voice notes
+  const audioRecordings = recordings.filter(
+    (r) =>
+      r.recording_source === "voice_note" ||
+      r.recording_source === "audio_asset" ||
+      r.resolution === "audio" ||
+      r.video_url?.match(/\.(mp3|wav|ogg|m4a|aac|webm)$/i)
+  );
+
+  const filteredAudios = audioRecordings.filter(
+    (a) =>
+      a.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (a.subject && a.subject.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
+
   const formatDuration = (secs: number) => {
     const m = Math.floor(secs / 60);
     const s = Math.floor(secs % 60);
@@ -209,6 +224,17 @@ export default function TeachingVideoLibraryPage() {
               }`}
             >
               📑 Lesson Projects ({projects.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("resources")}
+              className={`rounded-xl px-4 py-2 text-xs font-black transition ${
+                activeTab === "resources"
+                  ? "bg-[#1356E8] text-white shadow-md"
+                  : "text-slate-400 hover:text-white"
+              }`}
+            >
+              🎙️ Voice Notes & Audio ({audioRecordings.length})
             </button>
           </div>
 
@@ -346,6 +372,69 @@ export default function TeachingVideoLibraryPage() {
                       >
                         Reopen in Studio
                       </Link>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+        {/* Tab 3: Voice Notes & Audio */}
+        {activeTab === "resources" && (
+          <div>
+            {filteredAudios.length === 0 ? (
+              <div className="rounded-3xl border border-dashed border-white/10 p-12 text-center space-y-3">
+                <span className="text-4xl">🎙️</span>
+                <h3 className="text-base font-black text-white">No Audio Notes Yet</h3>
+                <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                  Recorded explanations, formula audio notes, and tutor voice comments will appear here.
+                </p>
+                <Link
+                  href="/classroom/studio"
+                  className="inline-block mt-2 rounded-xl bg-[#1356E8] px-4 py-2 text-xs font-black text-white"
+                >
+                  Record Lesson in Studio
+                </Link>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                {filteredAudios.map((rec) => (
+                  <div
+                    key={rec.id}
+                    className="rounded-2xl border border-white/10 bg-[#0B1536]/80 p-5 shadow-xl flex flex-col justify-between"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-black uppercase tracking-wider text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+                          Audio Note
+                        </span>
+                        <span className="text-[10px] font-mono text-slate-400">
+                          {formatDuration(rec.duration_seconds)}
+                        </span>
+                      </div>
+                      <h3 className="text-sm font-black text-white mt-2.5 line-clamp-1">{rec.title}</h3>
+                      <p className="text-xs text-slate-400 mt-1">
+                        {rec.subject || "General Academic"} {rec.topic ? `· ${rec.topic}` : ""}
+                      </p>
+                      <div className="mt-4 rounded-xl bg-black/40 p-2 border border-white/5">
+                        <audio src={rec.video_url} controls className="w-full h-8" preload="none" />
+                      </div>
+                    </div>
+                    <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-xs">
+                      <button
+                        type="button"
+                        onClick={() => handleDownloadVideo(rec)}
+                        className="font-bold text-emerald-400 hover:text-emerald-300 transition"
+                      >
+                        📥 Download Audio
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteRecording(rec.id, rec.title)}
+                        className="font-bold text-rose-400 hover:text-rose-300 transition"
+                      >
+                        Delete
+                      </button>
                     </div>
                   </div>
                 ))}

@@ -869,6 +869,19 @@ export default function AdminDashboardPage() {
               </Link>
             )}
 
+            {(canOpen("learning.content.review") || platformAdmin) && (
+              <Link className="admin-action-link" href="/admin/tutors">
+                <span className="admin-action-icon is-teal">
+                  <DashboardIcon name="students" />
+                </span>
+                <div className="admin-action-content">
+                  <strong>Tutor Applications</strong>
+                  <span>Review educator vetting submissions and NDPA consent records.</span>
+                </div>
+                <span className="admin-action-arrow" aria-hidden="true">→</span>
+              </Link>
+            )}
+
             {(canOpen("analytics.read") || platformAdmin) && (
               <Link className="admin-action-link" href="/admin/analytics">
                 <span className="admin-action-icon is-rose">

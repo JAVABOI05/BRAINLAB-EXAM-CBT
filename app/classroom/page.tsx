@@ -5,12 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/app/lib/supabase";
 import TierGateModal from "@/app/components/TierGateModal";
-import DeviceNotificationPrompt from "@/app/components/DeviceNotificationPrompt";
 import { toast } from "@/app/lib/toast";
-import {
-  requestDeviceNotificationPermission,
-  sendDeviceNotification,
-} from "@/app/lib/clientNotifications";
 import {
   getStudentSubscriptionAndEntitlements,
   isCurrentUserAdmin,
@@ -63,6 +58,7 @@ function ClassroomLobbyContent() {
   const [classes, setClasses] = useState<LiveClassItem[]>([]);
   const [loadingClasses, setLoadingClasses] = useState(true);
   const [classFilter, setClassFilter] = useState<"all" | "live" | "scheduled" | "completed">("all");
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Create Class Modal State (Tutor Only)
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -84,7 +80,12 @@ function ClassroomLobbyContent() {
     try {
       const res = await fetch("/api/classroom/classes", { cache: "no-store" });
       let data: any = { classes: [] };
-      try { const _t = await res.text(); data = JSON.parse(_t); } catch { /* non-blocking */ }
+      try {
+        const _t = await res.text();
+        data = JSON.parse(_t);
+      } catch {
+        // non-blocking
+      }
       if (data.classes) {
         setClasses(data.classes);
       }
@@ -92,8 +93,14 @@ function ClassroomLobbyContent() {
       // Non-blocking
     } finally {
       setLoadingClasses(false);
+      setIsRefreshing(false);
     }
   }, []);
+
+  const handleManualRefresh = () => {
+    setIsRefreshing(true);
+    void fetchClasses();
+  };
 
   const checkUserRoleAndAuth = useCallback(async () => {
     const { data: sessionData } = await supabase.auth.getSession();
@@ -120,8 +127,7 @@ function ClassroomLobbyContent() {
       "User";
     setUserName(name);
 
-    // Client-side presentation mirrors authoritative records only. Auth
-    // metadata, URL flags and local/session storage are never staff grants.
+    // Client-side presentation mirrors authoritative records only.
     const isAdmin = await isCurrentUserAdmin(user.id);
     let isApprovedTutor = false;
     try {
@@ -134,7 +140,7 @@ function ClassroomLobbyContent() {
         .maybeSingle();
       isApprovedTutor = Boolean(tutorProfile);
     } catch {
-      // The server remains authoritative if this optional client lookup fails.
+      // optional client lookup
     }
 
     let isAllowlistedTutor = false;
@@ -148,7 +154,7 @@ function ClassroomLobbyContent() {
           )
         );
       } catch {
-        // Fail closed when the explicit allowlist cannot be read.
+        // fail closed
       }
     }
 
@@ -160,6 +166,7 @@ function ClassroomLobbyContent() {
     const tier = await getStudentSubscriptionAndEntitlements(user.id);
     setSubscriptionInfo(tier);
   }, []);
+
   useEffect(() => {
     void checkUserRoleAndAuth();
     void fetchClasses();
@@ -196,8 +203,8 @@ function ClassroomLobbyContent() {
     e.preventDefault();
     const code = classCode.trim().toUpperCase() || "BL-LIVE-101";
 
-    // Subscription entitlement gate for students
-    if (subscriptionInfo && (!subscriptionInfo.isSubscribed || subscriptionInfo.planId === "free")) {
+    const isApex = subscriptionInfo?.accessCategory === "apex_cohort" || (subscriptionInfo?.isSubscribed && subscriptionInfo.planId !== "free");
+    if (!isApex) {
       const isFreeStage = code === "BL-LIVE-101";
       if (!isFreeStage && !isStaff && !isAdminUser) {
         setShowTierModal(true);
@@ -214,7 +221,7 @@ function ClassroomLobbyContent() {
     }
   };
 
-  // Tutor Launch Instant Stage (BL-LIVE-101 or Dynamic Room)
+  // Tutor Launch Instant Stage
   const handleLaunchInstantClass = async (customRoomCode?: unknown) => {
     setIsLaunchingInstant(true);
     try {
@@ -248,7 +255,6 @@ function ClassroomLobbyContent() {
         : "BL-LIVE-101"
       ).toUpperCase();
 
-      // Best-effort authoritative start
       try {
         await fetch(`/api/classroom/classes/${encodeURIComponent(targetRoom)}/start`, {
           method: "POST",
@@ -275,8 +281,8 @@ function ClassroomLobbyContent() {
   const handleStartScheduledClass = async (classItem: LiveClassItem) => {
     try {
       const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData.session?.access_token;
-      const user = sessionData.session?.user;
+      const token = sessionData?.session?.access_token;
+      const user = sessionData?.session?.user;
 
       if (!user) {
         toast.error("Please sign in with your instructor account to start this class.");
@@ -325,7 +331,7 @@ function ClassroomLobbyContent() {
 
     try {
       const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData.session?.access_token;
+      const token = sessionData?.session?.access_token;
       if (!token) throw new Error("Authentication required.");
 
       const payload = {
@@ -348,7 +354,12 @@ function ClassroomLobbyContent() {
       });
 
       let json: any = null;
-      try { const _t = await res.text(); json = JSON.parse(_t); } catch { throw new Error("Server error scheduling class. Please retry."); }
+      try {
+        const _t = await res.text();
+        json = JSON.parse(_t);
+      } catch {
+        throw new Error("Server error scheduling class. Please retry.");
+      }
       if (!res.ok || !json?.ok) {
         throw new Error(json?.error || "Failed to schedule class.");
       }
@@ -373,9 +384,9 @@ function ClassroomLobbyContent() {
   };
 
   const handleWhatsAppShare = (roomCode = "BL-LIVE-101", title = "Academic Masterclass") => {
-    const origin = typeof window !== "undefined" ? window.location.origin : "https://brainlabexam-cbt.vercel.app";
+    const origin = typeof window !== "undefined" ? window.location.origin : "https://brainlabacademy.com.ng";
     const link = `${origin}/classroom/${roomCode.trim()}`;
-    const text = `🎓 *BrainLab Live Academic Masterclass*\n📌 *Topic:* ${title}\n🎙️ *Format:* Interactive Audio, Whiteboard Derivations & Live Quizzes\n🔗 *Join Room Now:* ${link}\n\n_Works directly in phone or PC browser. No download required._`;
+    const text = `*BrainLab Live Academic Masterclass*\n*Topic:* ${title}\n*Format:* Interactive Audio, Whiteboard Derivations & Live Quizzes\n*Join Room Now:* ${link}\n\n_Works directly in phone or PC browser. No download required._`;
     const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
     window.open(url, "_blank");
   };
@@ -384,7 +395,7 @@ function ClassroomLobbyContent() {
     setIsBroadcastingAlert(true);
     try {
       const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData.session?.access_token;
+      const token = sessionData?.session?.access_token;
       if (!token) {
         toast.error("Please sign in before sending a classroom alert.");
         return;
@@ -404,7 +415,12 @@ function ClassroomLobbyContent() {
       });
 
       let json: any = {};
-      try { const _t = await res.text(); json = JSON.parse(_t); } catch { /* non-blocking */ }
+      try {
+        const _t = await res.text();
+        json = JSON.parse(_t);
+      } catch {
+        // non-blocking
+      }
       if (res.ok && json.success) {
         toast.success(json.message || "Live classroom alert dispatched to all students!");
       } else {
@@ -427,38 +443,54 @@ function ClassroomLobbyContent() {
   const liveClassesNow = classes.filter((c) => c.status === "live");
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#070d1e] text-slate-900 dark:text-slate-100 flex flex-col selection:bg-blue-500 selection:text-white transition-colors duration-200">
-      <main className="flex-1 max-w-6xl w-full mx-auto px-4 py-6 sm:py-10 space-y-8">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#070d1e] text-slate-900 dark:text-slate-100 flex flex-col selection:bg-blue-500 selection:text-white transition-colors duration-200 relative overflow-hidden">
+      {/* Ambient background glows for Brilliant aesthetic */}
+      <div className="pointer-events-none absolute -top-40 -left-40 h-96 w-96 rounded-full bg-blue-500/10 blur-3xl dark:bg-blue-600/10" aria-hidden="true" />
+      <div className="pointer-events-none absolute top-1/3 -right-40 h-96 w-96 rounded-full bg-indigo-500/10 blur-3xl dark:bg-indigo-600/10" aria-hidden="true" />
+
+      <main className="flex-1 max-w-6xl w-full mx-auto px-4 py-6 sm:py-10 space-y-8 relative z-10">
         
         {/* ================================================================== */}
         {/* TOP ROLE BAR & AUTHENTICATION IDENTIFICATION */}
         {/* ================================================================== */}
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 dark:border-white/10 bg-white/80 dark:bg-[#0B1536]/80 p-3.5 backdrop-blur-md shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-[#0B1536]/80 p-3.5 sm:p-4 backdrop-blur-xl shadow-xs">
           {/* Identity Pill */}
-          <div className="flex items-center gap-2.5">
-            <div className="h-9 w-9 rounded-xl bg-gradient-to-tr from-[#1356E8] to-blue-400 flex items-center justify-center text-white font-black text-sm shadow-md">
-              {portalMode === "tutor" ? "👨‍🏫" : "🎓"}
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-[#1356E8] to-blue-400 flex items-center justify-center text-white shadow-md shrink-0">
+              {portalMode === "tutor" ? (
+                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M21.42 10.922a1 1 0 0 0-.019-.838L12.83 2.18a2 2 0 0 0-1.66 0L2.6 10.084a1 1 0 0 0 0 1.832l8.57 7.908a2 2 0 0 0 1.66 0l8.57-7.908a1 1 0 0 0 .02-.994z" />
+                  <path d="M22 10v6" />
+                  <path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5" />
+                </svg>
+              ) : (
+                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+                  <path d="M6 12v5c3 3 9 3 12 0v-5" />
+                </svg>
+              )}
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-slate-900 dark:text-white">
+                <span className="text-xs sm:text-sm font-black text-slate-900 dark:text-white">
                   {userId ? userName : "Guest Learner"}
                 </span>
                 {isStaff ? (
-                  <span className="rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.2 text-[10px] font-black text-emerald-600 dark:text-emerald-400">
+                  <span className="rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2.5 py-0.5 text-[10px] font-black text-emerald-600 dark:text-emerald-400 inline-flex items-center gap-1">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                     Verified Instructor
                   </span>
                 ) : userId ? (
-                  <span className="rounded-full bg-blue-500/15 border border-blue-500/30 px-2 py-0.2 text-[10px] font-bold text-blue-600 dark:text-blue-400">
+                  <span className="rounded-full bg-blue-500/15 border border-blue-500/30 px-2.5 py-0.5 text-[10px] font-bold text-blue-600 dark:text-blue-400">
                     Student Account
                   </span>
                 ) : (
-                  <span className="rounded-full bg-slate-500/15 border border-slate-500/30 px-2 py-0.2 text-[10px] font-bold text-slate-500">
+                  <span className="rounded-full bg-slate-500/15 border border-slate-500/30 px-2.5 py-0.5 text-[10px] font-bold text-slate-500">
                     Not Signed In
                   </span>
                 )}
               </div>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
                 {userId ? userEmail : "Sign in to track attendance, save lecture notes, and participate in live polls"}
               </p>
             </div>
@@ -471,15 +503,24 @@ function ClassroomLobbyContent() {
                 <button
                   type="button"
                   onClick={() => setShowTutorAuthModal(true)}
-                  className="rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 px-3.5 py-1.5 text-xs font-black text-amber-700 dark:text-amber-300 transition active:scale-95 shadow-sm"
+                  className="rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 px-3.5 py-2 text-xs font-black text-amber-700 dark:text-amber-300 transition active:scale-95 shadow-xs inline-flex items-center gap-1.5"
                 >
-                  👨‍🏫 Instructor Sign In
+                  <svg className="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <polyline points="16 11 18 13 22 9" />
+                  </svg>
+                  <span>Instructor Sign In</span>
                 </button>
                 <Link
                   href="/login?redirect=/classroom"
-                  className="rounded-xl bg-[#1356E8] hover:bg-blue-600 px-3.5 py-1.5 text-xs font-black text-white shadow-md transition active:scale-95"
+                  className="rounded-xl bg-[#1356E8] hover:bg-blue-600 px-3.5 py-2 text-xs font-black text-white shadow-md transition active:scale-95 inline-flex items-center gap-1.5"
                 >
-                  🎓 Student Sign In
+                  <svg className="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+                    <path d="M6 12v5c3 3 9 3 12 0v-5" />
+                  </svg>
+                  <span>Student Sign In</span>
                 </Link>
               </div>
             ) : isStaff ? (
@@ -491,10 +532,15 @@ function ClassroomLobbyContent() {
                   className={`rounded-lg px-3 py-1.5 text-xs font-black transition flex items-center gap-1.5 ${
                     portalMode === "tutor"
                       ? "bg-[#1356E8] text-white shadow-md"
-                      : "text-slate-600 dark:text-slate-400 hover:text-white"
+                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                   }`}
                 >
-                  <span>👨‍🏫 Tutor Station</span>
+                  <svg className="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <polyline points="16 11 18 13 22 9" />
+                  </svg>
+                  <span>Tutor Station</span>
                 </button>
                 <button
                   type="button"
@@ -502,10 +548,14 @@ function ClassroomLobbyContent() {
                   className={`rounded-lg px-3 py-1.5 text-xs font-bold transition flex items-center gap-1.5 ${
                     portalMode === "student"
                       ? "bg-slate-700 text-white shadow-md"
-                      : "text-slate-600 dark:text-slate-400 hover:text-white"
+                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                   }`}
                 >
-                  <span>🎓 Student View</span>
+                  <svg className="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+                    <path d="M6 12v5c3 3 9 3 12 0v-5" />
+                  </svg>
+                  <span>Student View</span>
                 </button>
                 {isAdminUser && (
                   <Link
@@ -513,7 +563,10 @@ function ClassroomLobbyContent() {
                     className="rounded-lg border border-purple-500/40 bg-purple-500/10 hover:bg-purple-500/20 px-2.5 py-1.5 text-xs font-bold text-purple-700 dark:text-purple-300 transition flex items-center gap-1"
                     title="Open Live Classroom Platform Governance & LiveKit Settings"
                   >
-                    <span>⚙️</span>
+                    <svg className="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
                     <span className="hidden sm:inline">Governance</span>
                   </Link>
                 )}
@@ -537,9 +590,13 @@ function ClassroomLobbyContent() {
           <section className="space-y-6 animate-fade-in">
             {/* Tutor Header Hero */}
             <div className="rounded-3xl border border-blue-500/30 bg-gradient-to-br from-[#0B1536] via-[#0d1c47] to-[#070d1e] p-6 sm:p-8 text-white shadow-2xl relative overflow-hidden">
+              <div className="pointer-events-none absolute -right-20 -bottom-20 h-64 w-64 rounded-full bg-blue-500/20 blur-3xl" aria-hidden="true" />
               <div className="relative z-10 space-y-3 max-w-3xl">
-                <div className="inline-flex items-center gap-2 rounded-full border border-amber-400/40 bg-amber-400/10 px-3 py-0.5 text-xs font-black text-amber-300">
-                  <span>👨‍🏫 Authoritative Teaching Cockpit</span>
+                <div className="inline-flex items-center gap-2 rounded-full border border-amber-400/40 bg-amber-400/10 px-3.5 py-1 text-xs font-black text-amber-300">
+                  <svg className="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                  </svg>
+                  <span>Authoritative Teaching Cockpit</span>
                 </div>
                 <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-white">
                   Instructor Station &amp; Live Stage
@@ -556,7 +613,9 @@ function ClassroomLobbyContent() {
                     disabled={isLaunchingInstant}
                     className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 px-5 py-3 text-xs font-black text-white shadow-xl transition active:scale-95 disabled:opacity-50"
                   >
-                    <span>🚀</span>
+                    <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <polygon points="5 3 19 12 5 21 5 3" />
+                    </svg>
                     <span>{isLaunchingInstant ? "Launching Stage…" : "Launch Instant Stage (Host)"}</span>
                   </button>
 
@@ -565,31 +624,47 @@ function ClassroomLobbyContent() {
                     onClick={() => setShowCreateModal(true)}
                     className="flex items-center gap-2 rounded-xl bg-[#1356E8] hover:bg-blue-600 px-5 py-3 text-xs font-black text-white shadow-xl transition active:scale-95"
                   >
-                    <span>📅</span>
+                    <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
+                      <line x1="16" y1="2" x2="16" y2="6" />
+                      <line x1="8" y1="2" x2="8" y2="6" />
+                      <line x1="3" y1="10" x2="21" y2="10" />
+                    </svg>
                     <span>Schedule Masterclass</span>
                   </button>
 
                   <Link
                     href="/classroom/studio"
-                    className="flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 px-5 py-3 text-xs font-bold text-white transition active:scale-95 backdrop-blur"
+                    className="flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 px-5 py-3 text-xs font-bold text-white transition active:scale-95 backdrop-blur-md"
                   >
-                    <span>🎥</span>
+                    <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="m22 8-6 4 6 4V8Z" />
+                      <rect width="14" height="12" x="2" y="6" rx="2" />
+                    </svg>
                     <span>Video Lesson Studio (Offline)</span>
                   </Link>
 
                   <Link
                     href="/classroom/stem"
-                    className="flex items-center gap-2 rounded-xl border border-cyan-500/30 bg-cyan-500/10 hover:bg-cyan-500/20 px-5 py-3 text-xs font-bold text-cyan-200 transition active:scale-95 backdrop-blur"
+                    className="flex items-center gap-2 rounded-xl border border-cyan-500/30 bg-cyan-500/10 hover:bg-cyan-500/20 px-5 py-3 text-xs font-bold text-cyan-200 transition active:scale-95 backdrop-blur-md"
                   >
-                    <span>🧪</span>
+                    <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M10 2v7.527a2 2 0 0 1-.211.896L4.72 20.55a1 1 0 0 0 .9 1.45h12.76a1 1 0 0 0 .9-1.45l-5.069-10.127A2 2 0 0 1 14 9.527V2" />
+                      <path d="M8.5 2h7" />
+                      <path d="M7 16h10" />
+                    </svg>
                     <span>STEM Studio &amp; Labs</span>
                   </Link>
 
                   <Link
                     href="/classroom/library"
-                    className="flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 px-5 py-3 text-xs font-bold text-white transition active:scale-95 backdrop-blur"
+                    className="flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 px-5 py-3 text-xs font-bold text-white transition active:scale-95 backdrop-blur-md"
                   >
-                    <span>📚</span>
+                    <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z" />
+                      <path d="M6 6h10" />
+                      <path d="M6 10h10" />
+                    </svg>
                     <span>Teaching Library</span>
                   </Link>
                 </div>
@@ -597,7 +672,7 @@ function ClassroomLobbyContent() {
             </div>
 
             {/* Quick Link to Standard Main Stage */}
-            <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0B1536]/80 p-4 flex flex-wrap items-center justify-between gap-3 shadow-md">
+            <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0B1536]/80 p-4 sm:p-5 flex flex-wrap items-center justify-between gap-3 shadow-md min-h-[110px]">
               <div className="space-y-0.5">
                 <span className="text-[10px] font-black uppercase tracking-wider text-blue-600 dark:text-blue-400">
                   Default General Stage Code
@@ -613,9 +688,13 @@ function ClassroomLobbyContent() {
                 <button
                   type="button"
                   onClick={() => copyCodeToClipboard("BL-LIVE-101")}
-                  className="rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition"
+                  className="rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition inline-flex items-center gap-1.5"
                 >
-                  📋 Copy Code
+                  <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+                    <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+                  </svg>
+                  <span>Copy Code</span>
                 </button>
                 <button
                   type="button"
@@ -630,10 +709,13 @@ function ClassroomLobbyContent() {
                     const dynamicId = `BL-ROOM-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
                     handleLaunchInstantClass(dynamicId);
                   }}
-                  className="rounded-xl border border-purple-500/30 bg-purple-600/10 hover:bg-purple-600/20 px-3.5 py-2 text-xs font-black text-purple-600 dark:text-purple-300 shadow-sm transition active:scale-95"
+                  className="rounded-xl border border-purple-500/30 bg-purple-600/10 hover:bg-purple-600/20 px-3.5 py-2 text-xs font-black text-purple-600 dark:text-purple-300 shadow-xs transition active:scale-95 inline-flex items-center gap-1.5"
                   title="Generate a dynamic private room code for a specific class cohort"
                 >
-                  ✨ Generate Dynamic Room →
+                  <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M12 3v3M12 18v3M3 12h3M18 12h3" />
+                  </svg>
+                  <span>Generate Dynamic Room →</span>
                 </button>
               </div>
             </div>
@@ -641,15 +723,17 @@ function ClassroomLobbyContent() {
             {/* Tutor Broadcast, Outreach & Attendance Utilities */}
             <div className="grid gap-4 sm:grid-cols-3">
               {/* WhatsApp Broadcast Card */}
-              <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0B1536]/80 p-4 shadow-sm flex flex-col justify-between">
+              <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0B1536]/80 p-5 shadow-xs flex flex-col justify-between min-h-[175px]">
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-base">📢</span>
+                    <svg className="h-4 w-4 text-emerald-600 dark:text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M3 11l19-9-9 19-2-8-8-2z" />
+                    </svg>
                     <h4 className="text-xs font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
                       WhatsApp Broadcast
                     </h4>
                   </div>
-                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                  <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
                     Invite students directly via WhatsApp groups with formatted stage link &amp; topic summary.
                   </p>
                 </div>
@@ -663,15 +747,18 @@ function ClassroomLobbyContent() {
               </div>
 
               {/* In-App Alert Card */}
-              <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0B1536]/80 p-4 shadow-sm flex flex-col justify-between">
+              <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0B1536]/80 p-5 shadow-xs flex flex-col justify-between min-h-[175px]">
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-base">🔔</span>
+                    <svg className="h-4 w-4 text-amber-600 dark:text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+                      <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+                    </svg>
                     <h4 className="text-xs font-black uppercase tracking-wider text-amber-600 dark:text-amber-400">
                       In-App Student Alert
                     </h4>
                   </div>
-                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                  <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
                     Push an urgent live banner alert to all learners currently online on the platform.
                   </p>
                 </div>
@@ -686,15 +773,19 @@ function ClassroomLobbyContent() {
               </div>
 
               {/* Attendance Records Card */}
-              <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0B1536]/80 p-4 shadow-sm flex flex-col justify-between">
+              <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0B1536]/80 p-5 shadow-xs flex flex-col justify-between min-h-[175px]">
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-base">📥</span>
+                    <svg className="h-4 w-4 text-purple-600 dark:text-purple-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                      <polyline points="7 10 12 15 17 10" />
+                      <line x1="12" y1="15" x2="12" y2="3" />
+                    </svg>
                     <h4 className="text-xs font-black uppercase tracking-wider text-purple-600 dark:text-purple-400">
                       Attendance Records
                     </h4>
                   </div>
-                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                  <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
                     Download verified attendance CSV logs showing join/leave timestamps and active minutes.
                   </p>
                 </div>
@@ -709,7 +800,7 @@ function ClassroomLobbyContent() {
             </div>
 
             {/* Official JAMB UTME Syllabus Fast-Track Selector */}
-            <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0B1536]/80 p-5 shadow-sm space-y-3">
+            <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0B1536]/80 p-5 shadow-xs space-y-3 min-h-[150px]">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 dark:border-white/5 pb-3">
                 <div>
                   <span className="text-[10px] font-black uppercase tracking-wider text-blue-600 dark:text-blue-400">
@@ -791,7 +882,7 @@ function ClassroomLobbyContent() {
                     <button
                       type="button"
                       onClick={() => setShowCreateModal(true)}
-                      className="rounded-xl bg-[#1356E8] hover:bg-blue-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition active:scale-95"
+                      className="rounded-xl bg-[#1356E8] hover:bg-blue-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs transition active:scale-95"
                     >
                       Schedule as Masterclass →
                     </button>
@@ -819,23 +910,23 @@ function ClassroomLobbyContent() {
         {portalMode === "student" && (
           <section className="space-y-6 animate-fade-in">
             {/* Student Header Hero */}
-            <div className="text-center space-y-3 py-2">
-              <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-3.5 py-1 text-xs font-bold text-blue-700 dark:text-blue-300">
+            <div className="text-center space-y-3 py-4 max-w-2xl mx-auto">
+              <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-4 py-1.5 text-xs font-bold text-blue-700 dark:text-blue-300 shadow-xs">
                 <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span>BrainLab Live Academic Classroom • Student Hub</span>
+                <span>BrainLab Live Academic Classroom • Interactive Stage</span>
               </div>
               <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-slate-900 dark:text-white">
                 Live Interactive Lectures
               </h1>
-              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-xl mx-auto leading-relaxed">
-                Join real-time lectures led by verified BrainLab tutors. Write questions, participate in instant polls, and follow derivations on the whiteboard.
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                Join real-time lectures led by verified BrainLab tutors. Write questions, participate in instant polls, and follow derivations on the synchronized whiteboard.
               </p>
             </div>
 
             {/* Student Class Code Input Box */}
-            <div className="max-w-xl mx-auto rounded-3xl border border-blue-500/30 bg-white dark:bg-[#0B1536]/90 p-6 sm:p-8 shadow-2xl backdrop-blur">
+            <div className="max-w-xl mx-auto rounded-3xl border border-blue-500/25 dark:border-blue-500/30 bg-white/90 dark:bg-[#0B1536]/90 p-6 sm:p-8 shadow-xl backdrop-blur-md min-h-[220px]">
               <form onSubmit={handleStudentJoin} className="space-y-4">
-                <div className="text-left space-y-1">
+                <div className="text-left space-y-1.5">
                   <label className="block text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300">
                     Enter Class Code / Room ID
                   </label>
@@ -844,32 +935,41 @@ function ClassroomLobbyContent() {
                       type="text"
                       value={classCode}
                       onChange={(e) => setClassCode(e.target.value.toUpperCase())}
-                      placeholder="e.g. BL-LIVE-101 or 6-digit code"
-                      className="w-full rounded-2xl border-2 border-slate-200 dark:border-white/15 bg-slate-50 dark:bg-[#070d1e] px-4 py-3.5 text-sm sm:text-base font-black text-slate-900 dark:text-white outline-none focus:border-[#1356E8] tracking-widest placeholder:tracking-normal placeholder:font-normal"
+                      placeholder="e.g. BL-LIVE-101"
+                      className="w-full rounded-2xl border-2 border-slate-200 dark:border-white/15 bg-slate-50 dark:bg-[#070d1e] px-4 py-3.5 pr-48 text-sm sm:text-base font-black text-slate-900 dark:text-white outline-none focus:border-[#1356E8] tracking-widest placeholder:tracking-normal placeholder:font-normal transition shadow-xs"
                       required
                     />
                     <div className="absolute right-2 top-2 bottom-2 flex items-center gap-1.5">
                       <button
                         type="button"
                         onClick={() => router.push(`/classroom/${(classCode || "BL-LIVE-101").trim()}?role=host`)}
-                        className="rounded-xl bg-amber-500 hover:bg-amber-400 px-3.5 py-2 text-[11px] font-black text-slate-950 shadow-md transition active:scale-95 flex items-center gap-1"
+                        className="rounded-xl bg-amber-500 hover:bg-amber-400 px-3 py-2 text-[11px] font-black text-slate-950 shadow-xs transition active:scale-95 flex items-center gap-1"
                         title="Launch or enter session with host privileges"
                       >
-                        <span>👑</span>
-                        <span>Host Entry</span>
+                        <svg className="h-3 w-3 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                        </svg>
+                        <span>Host</span>
                       </button>
                       <button
                         type="submit"
-                        className="rounded-xl bg-gradient-to-r from-[#1356E8] to-blue-600 hover:from-blue-600 hover:to-blue-500 px-4 py-2 text-xs font-black text-white shadow-lg transition active:scale-95"
+                        className="rounded-xl bg-gradient-to-r from-[#1356E8] to-blue-600 hover:from-blue-600 hover:to-blue-500 px-4 py-2 text-xs font-black text-white shadow-md transition active:scale-95 inline-flex items-center gap-1.5"
                       >
-                        {isStaff || isAdminUser ? "Enter Stage as Host →" : "Enter Class →"}
+                        <span>{isStaff || isAdminUser ? "Enter Stage" : "Enter Class"}</span>
+                        <svg className="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <path d="M5 12h14" />
+                          <path d="m12 5 7 7-7 7" />
+                        </svg>
                       </button>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400 text-left">
-                  <span>🔒</span>
+                <div className="flex items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400 text-left pt-1">
+                  <svg className="h-4 w-4 text-blue-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                  </svg>
                   <span>Classes are conducted by BrainLab instructors. If the tutor has not started yet, you will safely wait in the waiting room.</span>
                 </div>
               </form>
@@ -877,7 +977,7 @@ function ClassroomLobbyContent() {
 
             {/* Live Now: Active Tutor Stages */}
             {liveClassesNow.length > 0 && (
-              <div className="rounded-3xl border-2 border-emerald-500/40 bg-emerald-500/5 p-6 shadow-xl space-y-4">
+              <div className="rounded-3xl border border-emerald-500/40 bg-emerald-500/5 dark:bg-emerald-950/20 p-6 shadow-xl space-y-4">
                 <div className="flex items-center gap-2">
                   <span className="flex h-3 w-3 rounded-full bg-emerald-500 animate-ping" />
                   <h3 className="text-base font-black text-emerald-800 dark:text-emerald-300">
@@ -919,7 +1019,7 @@ function ClassroomLobbyContent() {
         {/* ================================================================== */}
         {/* 3. CLASSROOM SCHEDULE & SESSIONS DIRECTORY (Shared by Both) */}
         {/* ================================================================== */}
-        <section className="rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0B1536]/80 p-6 sm:p-8 shadow-2xl space-y-6">
+        <section className="rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0B1536]/80 p-6 sm:p-8 shadow-2xl space-y-6 min-h-[460px]">
           <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 dark:border-white/10 pb-4">
             <div>
               <h2 className="text-xl font-black text-slate-900 dark:text-white">
@@ -952,23 +1052,41 @@ function ClassroomLobbyContent() {
               {/* Refresh */}
               <button
                 type="button"
-                onClick={fetchClasses}
+                onClick={handleManualRefresh}
                 className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 p-2 text-xs text-slate-600 dark:text-slate-300 transition"
                 title="Refresh Schedule"
               >
-                🔄
+                <svg
+                  className={`h-4 w-4 ${isRefreshing ? "animate-spin text-blue-500" : ""}`}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
+                </svg>
               </button>
             </div>
           </div>
 
           {/* Classes Table */}
           {loadingClasses ? (
-            <div className="py-12 text-center text-xs text-slate-500 animate-pulse">
+            <div className="py-16 text-center text-xs text-slate-500 animate-pulse min-h-[280px] flex items-center justify-center">
               Loading scheduled academic classes…
             </div>
           ) : filteredClasses.length === 0 ? (
-            <div className="py-12 text-center space-y-2">
-              <span className="text-3xl">📅</span>
+            <div className="py-16 text-center space-y-3 min-h-[280px] flex flex-col items-center justify-center">
+              <div className="h-12 w-12 rounded-2xl bg-slate-100 dark:bg-white/5 flex items-center justify-center text-slate-400">
+                <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
+                  <line x1="16" y1="2" x2="16" y2="6" />
+                  <line x1="8" y1="2" x2="8" y2="6" />
+                  <line x1="3" y1="10" x2="21" y2="10" />
+                </svg>
+              </div>
               <p className="text-sm font-bold text-slate-600 dark:text-slate-400">
                 No classes match the &quot;{classFilter}&quot; filter.
               </p>
@@ -978,12 +1096,16 @@ function ClassroomLobbyContent() {
                   onClick={() => setShowCreateModal(true)}
                   className="mt-2 inline-flex items-center gap-1.5 rounded-xl bg-[#1356E8] px-4 py-2 text-xs font-black text-white hover:bg-blue-600 shadow-md"
                 >
-                  <span>＋ Schedule a Masterclass</span>
+                  <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                  </svg>
+                  <span>Schedule a Masterclass</span>
                 </button>
               )}
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto min-h-[280px]">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="border-b border-slate-200 dark:border-white/10 text-[11px] font-black uppercase tracking-wider text-slate-400">
@@ -1024,16 +1146,16 @@ function ClassroomLobbyContent() {
 
                       <td className="py-3.5 px-4">
                         {item.status === "live" ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-black text-emerald-600 dark:text-emerald-400">
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2.5 py-0.5 text-[10px] font-black text-emerald-600 dark:text-emerald-400">
                             <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-ping" />
                             Live Now
                           </span>
                         ) : item.status === "scheduled" ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/15 border border-blue-500/30 px-2 py-0.5 text-[10px] font-bold text-blue-600 dark:text-blue-400">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/15 border border-blue-500/30 px-2.5 py-0.5 text-[10px] font-bold text-blue-600 dark:text-blue-400">
                             Scheduled
                           </span>
                         ) : (
-                          <span className="inline-flex items-center rounded-full bg-slate-500/15 px-2 py-0.5 text-[10px] font-bold text-slate-500">
+                          <span className="inline-flex items-center rounded-full bg-slate-500/15 px-2.5 py-0.5 text-[10px] font-bold text-slate-500">
                             {item.status}
                           </span>
                         )}
@@ -1045,10 +1167,13 @@ function ClassroomLobbyContent() {
                           <button
                             type="button"
                             onClick={() => copyCodeToClipboard(item.id)}
-                            className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-white"
+                            className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 transition"
                             title="Copy Class Code"
                           >
-                            📋
+                            <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                              <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+                              <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+                            </svg>
                           </button>
 
                           {/* Action Button: Tutor starts, Student enters */}
@@ -1056,9 +1181,12 @@ function ClassroomLobbyContent() {
                             <button
                               type="button"
                               onClick={() => handleStartScheduledClass(item)}
-                              className="rounded-lg bg-emerald-600 hover:bg-emerald-500 px-3 py-1.5 text-[11px] font-black text-white shadow-xs transition active:scale-95"
+                              className="rounded-lg bg-emerald-600 hover:bg-emerald-500 px-3 py-1.5 text-[11px] font-black text-white shadow-xs transition active:scale-95 inline-flex items-center gap-1"
                             >
-                              🚀 {item.status === "live" ? "Enter Live" : "Start Stage"}
+                              <svg className="h-3 w-3" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                <polygon points="5 3 19 12 5 21 5 3" />
+                              </svg>
+                              <span>{item.status === "live" ? "Enter Live" : "Start Stage"}</span>
                             </button>
                           ) : item.status === "live" ? (
                             <Link
@@ -1099,7 +1227,13 @@ function ClassroomLobbyContent() {
             >
               <div className="flex items-center justify-between pb-3 border-b border-white/10">
                 <div className="flex items-center gap-2">
-                  <span className="text-xl">👨‍🏫</span>
+                  <div className="h-8 w-8 rounded-lg bg-amber-500/20 text-amber-300 flex items-center justify-center">
+                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                      <circle cx="9" cy="7" r="4" />
+                      <polyline points="16 11 18 13 22 9" />
+                    </svg>
+                  </div>
                   <h3 className="text-base font-black text-white">BrainLab Instructor Sign In</h3>
                 </div>
                 <button
@@ -1107,7 +1241,10 @@ function ClassroomLobbyContent() {
                   onClick={() => setShowTutorAuthModal(false)}
                   className="rounded-lg p-1 text-slate-400 hover:text-white"
                 >
-                  ✕
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
                 </button>
               </div>
 
@@ -1185,7 +1322,14 @@ function ClassroomLobbyContent() {
             >
               <div className="flex items-center justify-between pb-3 border-b border-white/10">
                 <div className="flex items-center gap-2">
-                  <span className="text-xl">📅</span>
+                  <div className="h-8 w-8 rounded-lg bg-blue-500/20 text-blue-300 flex items-center justify-center">
+                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
+                      <line x1="16" y1="2" x2="16" y2="6" />
+                      <line x1="8" y1="2" x2="8" y2="6" />
+                      <line x1="3" y1="10" x2="21" y2="10" />
+                    </svg>
+                  </div>
                   <h3 className="text-base font-black text-white">Schedule New Masterclass</h3>
                 </div>
                 <button
@@ -1193,7 +1337,10 @@ function ClassroomLobbyContent() {
                   onClick={() => setShowCreateModal(false)}
                   className="rounded-lg p-1 text-slate-400 hover:text-white"
                 >
-                  ✕
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
                 </button>
               </div>
 
@@ -1206,7 +1353,7 @@ function ClassroomLobbyContent() {
                     type="text"
                     value={createTitle}
                     onChange={(e) => setCreateTitle(e.target.value)}
-                    placeholder="e.g. Organic Chemistry & Reaction Mechanisms Masterclass"
+                    placeholder="e.g. Organic Chemistry &amp; Reaction Mechanisms Masterclass"
                     className="w-full rounded-xl border border-white/15 bg-white/5 px-3.5 py-2.5 text-xs text-white placeholder-slate-400 outline-none focus:border-blue-500"
                     required
                   />
@@ -1304,13 +1451,11 @@ function ClassroomLobbyContent() {
 
       </main>
 
-      {/* Subscription Tier Gate Modal */}
+      {/* Flagship Cohort Programme Gate Modal */}
       <TierGateModal
         isOpen={showTierModal}
         onClose={() => setShowTierModal(false)}
-        requiredTierName="BrainLab Pro"
-        featureTitle="BrainLab Academic Masterclasses & Live Stage"
-        featureDescription="Interactive live classes with verified tutors require an active BrainLab Pro or Premium subscription."
+        redirectUrl="/apex"
       />
     </div>
   );

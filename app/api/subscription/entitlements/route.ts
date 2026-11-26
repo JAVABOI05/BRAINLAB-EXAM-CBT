@@ -85,8 +85,8 @@ async function handleResolution(request: NextRequest, allowRepair: boolean) {
     const now = new Date();
     const nowIso = now.toISOString();
 
-    // 3. Query user_subscriptions & learning_entitlements in parallel using service client
-    const [subRes, entRes, txRes] = await Promise.all([
+    // 3. Query authoritative student_access_grants, programme_memberships, user_subscriptions & learning_entitlements
+    const [subRes, entRes, txRes, grantRes, progRes] = await Promise.all([
       supabase
         .from("user_subscriptions")
         .select("plan_id, status, current_period_start, current_period_end")
@@ -113,6 +113,20 @@ async function handleResolution(request: NextRequest, allowRepair: boolean) {
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle(),
+      supabase
+        .from("student_access_grants")
+        .select("target_tier_id, status, starts_at, expires_at, access_tiers(tier_key)")
+        .eq("student_id", targetUserId)
+        .eq("status", "active")
+        .is("suspended_at", null)
+        .is("revoked_at", null)
+        .lte("starts_at", nowIso),
+      supabase
+        .from("programme_memberships")
+        .select("programme_id, membership_status, starts_at, expires_at, access_programmes(associated_tier_id, access_tiers(tier_key))")
+        .eq("student_id", targetUserId)
+        .eq("membership_status", "active")
+        .lte("starts_at", nowIso),
     ]);
 
     let activeSub = subRes.data;
@@ -221,11 +235,46 @@ async function handleResolution(request: NextRequest, allowRepair: boolean) {
     // 5. Resolve Highest Effective Tier
     const tierRank = (t?: string | null): number => {
       const val = (t || "").toLowerCase();
+      if (val === "apex") return 4;
       if (val === "pro") return 3;
       if (val === "plus") return 2;
       if (val === "premium") return 1;
       return 0;
     };
+
+    let highestGrantTier: string | null = null;
+    let highestGrantExpiry: string | null = null;
+    let highestGrantRank = 0;
+
+    const validGrants = (grantRes.data || []).filter((g: any) => {
+      const exp = g.expires_at ? new Date(g.expires_at).getTime() : Number.POSITIVE_INFINITY;
+      return exp > Date.now();
+    });
+
+    for (const g of validGrants as any[]) {
+      const tKey = g.access_tiers?.tier_key;
+      const rank = tierRank(tKey);
+      if (rank > highestGrantRank) {
+        highestGrantRank = rank;
+        highestGrantTier = tKey;
+        highestGrantExpiry = g.expires_at || null;
+      }
+    }
+
+    const validProgs = (progRes.data || []).filter((p: any) => {
+      const exp = p.expires_at ? new Date(p.expires_at).getTime() : Number.POSITIVE_INFINITY;
+      return exp > Date.now();
+    });
+
+    for (const p of validProgs as any[]) {
+      const tKey = p.access_programmes?.access_tiers?.tier_key;
+      const rank = tierRank(tKey);
+      if (rank > highestGrantRank) {
+        highestGrantRank = rank;
+        highestGrantTier = tKey;
+        highestGrantExpiry = p.expires_at || null;
+      }
+    }
 
     const activeMembership = activeEnts.find(
       (e) => e.entitlement_type === "membership" && tierRank(e.membership_type) > 0
@@ -237,7 +286,10 @@ async function handleResolution(request: NextRequest, allowRepair: boolean) {
     let effectivePlanId = "free";
     let effectiveExpiry: string | null = null;
 
-    if (tierRank(entTier) >= tierRank(subTier) && tierRank(entTier) > 0) {
+    if (highestGrantRank >= tierRank(entTier) && highestGrantRank >= tierRank(subTier) && highestGrantRank > 0) {
+      effectivePlanId = highestGrantTier!;
+      effectiveExpiry = highestGrantExpiry;
+    } else if (tierRank(entTier) >= tierRank(subTier) && tierRank(entTier) > 0) {
       effectivePlanId = entTier!;
       effectiveExpiry = activeMembership!.permanent ? null : activeMembership!.expires_at;
     } else if (tierRank(subTier) > 0) {

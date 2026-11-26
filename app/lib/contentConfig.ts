@@ -108,7 +108,7 @@ export interface LoopStageConfig {
 }
 
 export interface AudienceTabConfig {
-  id: "students" | "parents" | "schools" | "tutors";
+  id: "students" | "secondary" | "stem" | "independent" | "parents" | "schools" | "tutors";
   label: string;
   headline: ClaimNode<string>;
   body: ClaimNode<string>;
@@ -280,25 +280,25 @@ export const HOMEPAGE_CONTENT_CONFIG: HomepageContentConfig = {
     headline: {
       status: "VERIFIED",
       claimId: "CLM-HERO-01",
-      value: "One Intelligent Learning Ecosystem. A Complete Journey from Learning to Mastery.",
-      sourceNote: "Approved Brand Positioning Statement",
-      asOfDate: "2026-11-07",
+      value: "A Better Way to Learn, Practise and Achieve More.",
+      sourceNote: "Directive Section 7 Positioning Statement",
+      asOfDate: "2026-11-11",
     },
     subhead: {
       status: "VERIFIED",
       claimId: "CLM-HERO-02",
-      value: "From syllabus fundamentals and CBT mocks to weak-spot diagnostics and live tutor mastery — unified in one high-performance platform for Nigerian students.",
-      sourceNote: "Approved Brand Value Proposition",
-      asOfDate: "2026-11-07",
+      value: "Unified examination preparation across UTME, O Level, and Post-UTME candidate tracks.",
+      sourceNote: "Directive Section 7 Hero Subheading",
+      asOfDate: "2026-11-11",
     },
-    primaryCta: { label: "Start Free Practice", href: "/cbt" },
-    secondaryCta: { label: "Explore the Platform", href: "/products" },
+    primaryCta: { label: "Launch Candidate Simulator", href: "/cbt" },
+    secondaryCta: { label: "Discover Apex Cohort", href: "/apex" },
     disclosure: {
       status: "VERIFIED",
       claimId: "CLM-HERO-03",
-      value: "Free tier includes diagnostic tests and daily practice drills.",
-      sourceNote: "Platform Entitlement Specification",
-      asOfDate: "2026-11-07",
+      value: "Standard candidate access across UTME mock engine, O Level curriculum syllabus, and Post-UTME drills.",
+      sourceNote: "Directive Section 3 Public Category Specification",
+      asOfDate: "2026-11-11",
     },
     countdown: {
       targetExam: "JAMB UTME 2027",
@@ -534,12 +534,12 @@ export const HOMEPAGE_CONTENT_CONFIG: HomepageContentConfig = {
       question: {
         status: "VERIFIED",
         claimId: "CLM-FAQ-03",
-        value: "Is there a free practice option available?",
+        value: "What examination programmes does BrainLab support?",
       },
       answer: {
         status: "VERIFIED",
         claimId: "CLM-FAQ-04",
-        value: "Yes. Students can access diagnostic sample tests, daily subject drills, and syllabus explorer tools for free without requiring a debit card.",
+        value: "BrainLab covers three primary candidate tracks: UTME (JAMB CBT simulation & 4-subject blueprints), O Level (WAEC & NECO Senior Secondary SS1–SS3 theory & objective papers), and Post-UTME (university screening speed drills & aggregate calculators).",
       },
     },
     {

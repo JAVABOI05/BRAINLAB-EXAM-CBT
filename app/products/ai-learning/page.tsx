@@ -15,44 +15,97 @@ export const metadata: Metadata = {
   },
 };
 
-const AI_CAPABILITIES = [
+interface AiCapabilityItem {
+  iconId: "diag" | "drill" | "memory" | "trap" | "guard" | "speed";
+  title: string;
+  description: string;
+}
+
+const AI_CAPABILITIES: AiCapabilityItem[] = [
   {
-    icon: "🔬",
+    iconId: "diag",
     title: "Automated Mock Exam Error Diagnosis",
     description:
       "Our diagnostic engine analyzes your incorrect responses after each mock exam to distinguish between simple calculation slips and fundamental conceptual misunderstandings.",
   },
   {
-    icon: "🎯",
+    iconId: "drill",
     title: "Targeted 5-Question Reinforcement Drills",
     description:
       "Rather than retaking an entire 40-question paper, receive compact, high-intensity 5-question drills targeted specifically at the subtopics where you dropped marks.",
   },
   {
-    icon: "🧠",
+    iconId: "memory",
     title: "SM-2 Spaced Repetition Memory Engine",
     description:
       "Daily 10-minute active recall decks. Review formulas, scientific definitions, and grammatical rules just as they are about to fade from memory, locking them into long-term recall.",
   },
   {
-    icon: "⚠️",
+    iconId: "trap",
     title: "Examiner Trap Analysis",
     description:
       "Understand why incorrect options are seductive. Our step-by-step explanations reveal the exact calculation mistakes or conceptual traps examiners set in multiple-choice distractors.",
   },
   {
-    icon: "🛡️",
+    iconId: "guard",
     title: "Ethical & Academic Safety Guardrails",
     description:
       "Engineered strictly to teach how to solve problems. The AI will never provide unverified shortcuts or leak answer keys, adhering strictly to Nigerian curriculum integrity guidelines.",
   },
   {
-    icon: "⚡",
+    iconId: "speed",
     title: "Low-Bandwidth Inference Delivery",
     description:
       "Explanations and drills are streamlined for lightning-fast loading on mobile data connections without requiring high-speed fiber or high-end smartphones.",
   },
 ];
+
+function AiCapabilityIcon({ id }: { id: AiCapabilityItem["iconId"] }) {
+  switch (id) {
+    case "diag":
+      return (
+        <svg className="h-5 w-5 text-purple-600 dark:text-purple-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="8" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
+      );
+    case "drill":
+      return (
+        <svg className="h-5 w-5 text-purple-600 dark:text-purple-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10" />
+          <circle cx="12" cy="12" r="6" />
+          <circle cx="12" cy="12" r="2" />
+        </svg>
+      );
+    case "memory":
+      return (
+        <svg className="h-5 w-5 text-purple-600 dark:text-purple-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 4.44-2.04" />
+          <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-4.44-2.04" />
+        </svg>
+      );
+    case "trap":
+      return (
+        <svg className="h-5 w-5 text-purple-600 dark:text-purple-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+          <line x1="12" y1="9" x2="12" y2="13" />
+          <line x1="12" y1="17" x2="12.01" y2="17" />
+        </svg>
+      );
+    case "guard":
+      return (
+        <svg className="h-5 w-5 text-purple-600 dark:text-purple-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+        </svg>
+      );
+    case "speed":
+      return (
+        <svg className="h-5 w-5 text-purple-600 dark:text-purple-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+        </svg>
+      );
+  }
+}
 
 export default function AiLearningProductPage() {
   return (
@@ -132,7 +185,14 @@ export default function AiLearningProductPage() {
 
                 <div className="rounded-xl border border-purple-500/30 bg-purple-950/20 p-3.5 text-xs space-y-2">
                   <div className="flex items-center justify-between text-purple-300 font-bold text-[11px]">
-                    <span>🎯 Generated 5-Question Drill</span>
+                    <span className="flex items-center gap-1.5">
+                      <svg className="h-3.5 w-3.5 text-purple-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <circle cx="12" cy="12" r="10" />
+                        <circle cx="12" cy="12" r="6" />
+                        <circle cx="12" cy="12" r="2" />
+                      </svg>
+                      <span>Generated 5-Question Drill</span>
+                    </span>
                     <span>Ready in 1.2s</span>
                   </div>
                   <p className="text-slate-300 text-[11px]">
@@ -157,35 +217,265 @@ export default function AiLearningProductPage() {
         </div>
       </section>
 
-      {/* Capabilities */}
+      {/* Capabilities - Compact Alternating Cards */}
       <section className="py-16 sm:py-24">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-12">
-          <div className="text-center max-w-2xl mx-auto space-y-2">
-            <h2 className="text-2xl font-black text-slate-950 dark:text-white sm:text-3xl">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-12 sm:space-y-16">
+          <div className="text-center max-w-2xl mx-auto space-y-3">
+            <div className="inline-flex items-center gap-2 rounded-full border border-purple-200 dark:border-purple-800/80 bg-purple-50/80 dark:bg-purple-950/60 px-4 py-1.5 text-xs font-bold text-purple-700 dark:text-purple-300 shadow-xs">
+              <span className="flex h-2 w-2 rounded-full bg-purple-600 dark:bg-purple-400 animate-pulse" />
+              <span>PEDAGOGICAL AI CAPABILITIES</span>
+            </div>
+            <h2 className="text-3xl font-black text-slate-950 dark:text-white tracking-tight sm:text-4xl">
               Precision Diagnostics, Not General Answers
             </h2>
-            <p className="text-sm text-slate-600 dark:text-slate-400">
+            <p className="text-sm text-slate-600 dark:text-slate-400 font-normal">
               Generic chatbots fail at Nigerian examination prep. Our algorithms are specifically tuned to the syllabus conventions of JAMB and WAEC.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {AI_CAPABILITIES.map((cap, idx) => (
-              <div
-                key={idx}
-                className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900/80 space-y-3"
-              >
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-50 text-xl dark:bg-purple-950/60">
-                  {cap.icon}
+          <div className="space-y-12 sm:space-y-16">
+            {/* Row 1: Automated Mock Exam Error Diagnosis (Text Left, Visual Preview Right) */}
+            <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0B1528] p-6 sm:p-8 lg:p-10 shadow-sm transition hover:border-purple-400/50">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                {/* Text Side (Span 7) */}
+                <div className="lg:col-span-7 space-y-4">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-purple-300 dark:border-purple-700/60 bg-purple-50 dark:bg-purple-950/70 px-3 py-1 text-xs font-mono font-bold uppercase tracking-wider text-purple-800 dark:text-purple-300 shadow-xs">
+                    <span className="h-1.5 w-1.5 rounded-full bg-purple-500 animate-pulse" />
+                    <span>Root-Cause Error Diagnostics</span>
+                  </div>
+
+                  <h3 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-white tracking-tight">
+                    Automated Mock Exam Error Diagnosis
+                  </h3>
+
+                  <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed font-normal">
+                    Our diagnostic engine analyzes your incorrect responses after each mock exam to distinguish between simple calculation slips and fundamental conceptual misunderstandings.
+                  </p>
+
+                  <ul className="space-y-2 text-xs sm:text-sm text-slate-600 dark:text-slate-300 pt-1">
+                    <li className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-950 text-purple-600 dark:text-purple-400 text-xs font-bold">✓</span>
+                      <span>Categorizes mistakes into arithmetic errors, distractor traps, or concept gaps</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-950 text-purple-600 dark:text-purple-400 text-xs font-bold">✓</span>
+                      <span>Deconstructs why incorrect distractor options trick examination candidates</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-950 text-purple-600 dark:text-purple-400 text-xs font-bold">✓</span>
+                      <span>Directly maps every flagged question to the exact JAMB syllabus objective</span>
+                    </li>
+                  </ul>
+
+                  <div className="pt-2">
+                    <Link
+                      href="/ai-learning"
+                      className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-purple-700 hover:bg-purple-600 text-white font-bold text-xs px-5 py-2.5 shadow-sm transition active:scale-95"
+                    >
+                      <span>Open AI Study Studio</span>
+                      <span aria-hidden="true">&rarr;</span>
+                    </Link>
+                  </div>
                 </div>
-                <h3 className="text-base font-extrabold text-slate-950 dark:text-white">
-                  {cap.title}
-                </h3>
-                <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-400">
-                  {cap.description}
-                </p>
+
+                {/* Visual Preview Side (Span 5) */}
+                <div className="lg:col-span-5">
+                  <div className="rounded-2xl border border-purple-900/40 bg-slate-950 p-5 text-white shadow-lg space-y-3.5">
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-purple-400 animate-pulse" />
+                        <span className="font-mono text-xs font-bold uppercase tracking-wider text-slate-300">
+                          DIAGNOSTIC RADAR
+                        </span>
+                      </div>
+                      <span className="font-mono text-[11px] font-bold text-rose-400 bg-rose-950/80 border border-rose-800/80 px-2 py-0.5 rounded">
+                        Trap Identified
+                      </span>
+                    </div>
+
+                    <div className="rounded-xl border border-slate-800 bg-slate-900/90 p-3.5 space-y-2">
+                      <div className="text-xs font-mono text-cyan-300 font-bold">Physics: Current Electricity</div>
+                      <div className="text-xs text-rose-300 font-mono">
+                        Selected: P = I²R in Parallel (Trap)
+                      </div>
+                      <p className="text-[11px] text-slate-300 leading-relaxed">
+                        In parallel circuits, voltage V is constant across branches. Power formula P = V²/R reveals that lower resistance yields higher power dissipation.
+                      </p>
+                    </div>
+
+                    <div className="flex items-center justify-between text-[11px] font-mono text-slate-400 pt-1 border-t border-slate-800">
+                      <span>Remediation Target: Circuits</span>
+                      <span className="text-emerald-400 font-bold">Drill Ready</span>
+                    </div>
+                  </div>
+                </div>
               </div>
-            ))}
+            </div>
+
+            {/* Row 2: Targeted 5-Question Reinforcement Drills (Visual Preview Left, Text Right) */}
+            <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0B1528] p-6 sm:p-8 lg:p-10 shadow-sm transition hover:border-cyan-400/50">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                {/* Visual Preview Side (Span 5 - Order 2 on mobile, Order 1 on desktop) */}
+                <div className="lg:col-span-5 order-2 lg:order-1">
+                  <div className="rounded-2xl border border-cyan-900/40 bg-slate-950 p-5 text-white shadow-lg space-y-3.5">
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-cyan-400 animate-pulse" />
+                        <span className="font-mono text-xs font-bold uppercase tracking-wider text-slate-300">
+                          REINFORCEMENT DRILL
+                        </span>
+                      </div>
+                      <span className="font-mono text-[11px] font-bold text-cyan-300 bg-cyan-950/80 border border-cyan-800/80 px-2 py-0.5 rounded">
+                        5 Questions
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-center font-mono">
+                      <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
+                        <div className="text-[10px] text-slate-400 uppercase">Target Concept</div>
+                        <div className="text-xs font-black text-cyan-300 mt-0.5">Parallel Power</div>
+                        <div className="text-[10px] text-slate-500">P = V²/R</div>
+                      </div>
+                      <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
+                        <div className="text-[10px] text-slate-400 uppercase">Generation Time</div>
+                        <div className="text-xs font-black text-emerald-400 mt-0.5">&lt; 1.2s</div>
+                        <div className="text-[10px] text-slate-500">Socratic Mode</div>
+                      </div>
+                    </div>
+
+                    <div className="rounded-xl border border-slate-800 bg-slate-900/90 p-3 space-y-1.5 text-xs font-mono">
+                      <div className="flex items-center justify-between text-slate-300">
+                        <span>Drill Progress: Question 3 of 5</span>
+                        <span className="text-emerald-400 font-bold">2/2 Correct</span>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-slate-800 overflow-hidden">
+                        <div className="h-full rounded-full bg-cyan-500 w-[60%]" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Text Side (Span 7 - Order 1 on mobile, Order 2 on desktop) */}
+                <div className="lg:col-span-7 space-y-4 order-1 lg:order-2">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300 dark:border-cyan-700/60 bg-cyan-50 dark:bg-cyan-950/70 px-3 py-1 text-xs font-mono font-bold uppercase tracking-wider text-cyan-800 dark:text-cyan-300 shadow-xs">
+                    <span className="h-1.5 w-1.5 rounded-full bg-cyan-500 animate-pulse" />
+                    <span>High-Intensity Targeted Drills</span>
+                  </div>
+
+                  <h3 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-white tracking-tight">
+                    Targeted 5-Question Reinforcement Drills
+                  </h3>
+
+                  <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed font-normal">
+                    Rather than retaking an entire 40-question paper, receive compact, high-intensity 5-question drills targeted specifically at the subtopics where you dropped marks.
+                  </p>
+
+                  <ul className="space-y-2 text-xs sm:text-sm text-slate-600 dark:text-slate-300 pt-1">
+                    <li className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-cyan-100 dark:bg-cyan-950 text-cyan-600 dark:text-cyan-400 text-xs font-bold">✓</span>
+                      <span>Sub-2 second generation tuned to your exact test responses</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-cyan-100 dark:bg-cyan-950 text-cyan-600 dark:text-cyan-400 text-xs font-bold">✓</span>
+                      <span>Tests the missed principle from varying angles to ensure true comprehension</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-cyan-100 dark:bg-cyan-950 text-cyan-600 dark:text-cyan-400 text-xs font-bold">✓</span>
+                      <span>Immediate Socratic hints if you hesitate or choose another distractor</span>
+                    </li>
+                  </ul>
+
+                  <div className="pt-2">
+                    <Link
+                      href="/cbt"
+                      className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-cyan-700 hover:bg-cyan-600 text-white font-bold text-xs px-5 py-2.5 shadow-sm transition active:scale-95"
+                    >
+                      <span>Take Practice Test to Trigger Drills</span>
+                      <span aria-hidden="true">&rarr;</span>
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Row 3: SM-2 Spaced Repetition Memory Engine (Text Left, Visual Preview Right) */}
+            <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0B1528] p-6 sm:p-8 lg:p-10 shadow-sm transition hover:border-emerald-400/50">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                {/* Text Side (Span 7) */}
+                <div className="lg:col-span-7 space-y-4">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-emerald-300 dark:border-emerald-700/60 bg-emerald-50 dark:bg-emerald-950/70 px-3 py-1 text-xs font-mono font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300 shadow-xs">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>Active Recall &amp; Memory Retention</span>
+                  </div>
+
+                  <h3 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-white tracking-tight">
+                    SM-2 Spaced Repetition Memory Engine
+                  </h3>
+
+                  <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed font-normal">
+                    Daily 10-minute active recall decks. Review formulas, scientific definitions, and grammatical rules just as they are about to fade from memory, locking them into long-term recall.
+                  </p>
+
+                  <ul className="space-y-2 text-xs sm:text-sm text-slate-600 dark:text-slate-300 pt-1">
+                    <li className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 text-xs font-bold">✓</span>
+                      <span>Mathematically scheduled intervals prevent the Ebbinghaus forgetting curve</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 text-xs font-bold">✓</span>
+                      <span>Flashcards for physics constants, organic nomenclature &amp; English idioms</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 text-xs font-bold">✓</span>
+                      <span>94% average retention probability verified across daily revision streaks</span>
+                    </li>
+                  </ul>
+
+                  <div className="pt-2">
+                    <Link
+                      href="/pricing"
+                      className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-xs px-5 py-2.5 shadow-sm transition active:scale-95"
+                    >
+                      <span>Explore Revision Plans</span>
+                      <span aria-hidden="true">&rarr;</span>
+                    </Link>
+                  </div>
+                </div>
+
+                {/* Visual Preview Side (Span 5) */}
+                <div className="lg:col-span-5">
+                  <div className="rounded-2xl border border-emerald-900/40 bg-slate-950 p-5 text-white shadow-lg space-y-3.5">
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                        <span className="font-mono text-xs font-bold uppercase tracking-wider text-slate-300">
+                          SM-2 MEMORY CARD
+                        </span>
+                      </div>
+                      <span className="font-mono text-[11px] font-bold text-emerald-400 bg-emerald-950/80 border border-emerald-800/80 px-2 py-0.5 rounded">
+                        Interval: +3 Days
+                      </span>
+                    </div>
+
+                    <div className="rounded-xl border border-slate-800 bg-slate-900/95 p-4 space-y-2 text-xs font-mono">
+                      <div className="text-[10px] text-slate-400 uppercase">Flashcard 14 of 25</div>
+                      <div className="text-white font-bold text-sm">Faraday&apos;s Law of Induction</div>
+                      <div className="p-2 rounded bg-slate-800 border border-slate-700 text-cyan-300 font-bold">
+                        &epsilon; = -N &middot; (d&Phi;/dt)
+                      </div>
+                      <p className="text-[10px] text-slate-400 font-sans">
+                        Induced EMF is directly proportional to rate of change of magnetic flux linkage.
+                      </p>
+                    </div>
+
+                    <div className="flex items-center justify-between text-[11px] font-mono text-slate-400 pt-1 border-t border-slate-800">
+                      <span>Recall Confidence: High</span>
+                      <span className="text-emerald-400 font-bold">94% Retention</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>

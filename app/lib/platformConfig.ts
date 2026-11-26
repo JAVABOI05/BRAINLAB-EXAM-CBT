@@ -561,7 +561,7 @@ const DEFAULT_WEBSITE_CONTENT: WebsiteContentConfig = {
   banner_announcement: "🎓 2026/2027 JAMB UTME & WAEC Mock Examination series is now live!",
   banner_active: true,
   support_email: "support@brainlabacademy.com.ng",
-  support_phone: "+234 907 431 0204",
+  support_phone: "+234 808 926 7399",
   maintenance_mode: false,
 };
 
@@ -571,8 +571,8 @@ export const DEFAULT_FOOTER_CONFIG: FooterConfig = {
     "Empowering Nigerian secondary and tertiary candidates with adaptive CBT mock exams, curriculum-aligned study materials, and instant AI tutor explanations.",
   support_email: "support@brainlabacademy.com.ng",
   academy_email: "hello@brainlabacademy.com.ng",
-  support_phone: "+234 907 431 0204",
-  whatsapp_number: "2349074310204",
+  support_phone: "+234 808 926 7399",
+  whatsapp_number: "2348089267399",
   whatsapp_channel_url: "https://whatsapp.com/channel/0029Vb75fko3mFXyaqlnk70m",
   office_location: "Lagos, Nigeria",
   social_links: [
@@ -1536,9 +1536,9 @@ export const DEFAULT_COMMUNICATION_SERVICES_CONFIG: CommunicationServicesConfig 
   resend: {
     enabled: true,
     api_key: process.env.RESEND_API_KEY || "",
-    from_email: process.env.RESEND_FROM_EMAIL || "BrainLab Academy <support@brainlab.edu.ng>",
-    system_from_email: process.env.SYSTEM_FROM_EMAIL || "BrainLab Academy <results@brainlabacademy.com.ng>",
-    reply_to: "support@brainlab.edu.ng",
+    from_email: process.env.RESEND_FROM_EMAIL || "BrainLab Academy <noreply@mail.brainlabacademy.com.ng>",
+    system_from_email: process.env.SYSTEM_FROM_EMAIL || "BrainLab Academy <results@mail.brainlabacademy.com.ng>",
+    reply_to: "support@brainlabacademy.com.ng",
   },
   zoho: {
     enabled: false,
@@ -1546,7 +1546,7 @@ export const DEFAULT_COMMUNICATION_SERVICES_CONFIG: CommunicationServicesConfig 
     smtp_port: 465,
     smtp_user: "",
     smtp_pass: "",
-    from_email: "support@brainlab.edu.ng",
+    from_email: "support@brainlabacademy.com.ng",
     use_tls: true,
   },
   cloudflare: {
@@ -1617,4 +1617,75 @@ export async function saveCommunicationServicesConfig(
     adminUser,
     reason || `Updated communication services & email provider settings (Active: ${config.active_email_provider})`
   );
+}
+
+// ----------------------------------------------------------------------------
+// COHORT PLATFORM CONFIGURATION & DYNAMIC PROPAGATION
+// Allows Root Administrators to rename the flagship cohort ("Apex Cohort")
+// and have the name dynamically apply across all public & student surfaces.
+// ----------------------------------------------------------------------------
+
+export interface CohortPlatformConfig {
+  active_cohort_name: string;
+  active_cohort_tagline: string;
+  active_cohort_slug: string;
+  active_cohort_session: string;
+  active_cohort_target: string;
+  enrolment_url: string;
+  whatsapp_inquiry_phone: string;
+  whatsapp_inquiry_digits: string;
+  is_enrolling: boolean;
+  updated_at?: string;
+  updated_by?: string;
+}
+
+export const DEFAULT_COHORT_CONFIG: CohortPlatformConfig = {
+  active_cohort_name: "Apex Cohort",
+  active_cohort_tagline: "Guided Educational Programme & Intensive Mentorship",
+  active_cohort_slug: "apex",
+  active_cohort_session: "2026/2027",
+  active_cohort_target: "JAMB UTME 2027",
+  enrolment_url: "/apex",
+  whatsapp_inquiry_phone: "+234 808 926 7399",
+  whatsapp_inquiry_digits: "2348089267399",
+  is_enrolling: true,
+};
+
+export async function getCohortConfig(bearerToken?: string): Promise<CohortPlatformConfig> {
+  const cfg = await getPlatformConfig<CohortPlatformConfig>(
+    "cohort_platform_config",
+    DEFAULT_COHORT_CONFIG,
+    bearerToken
+  );
+  return {
+    ...DEFAULT_COHORT_CONFIG,
+    ...(cfg || {}),
+  };
+}
+
+export async function saveCohortConfig(
+  config: CohortPlatformConfig,
+  adminUser: { id: string; email: string },
+  reason?: string,
+  bearerToken?: string
+): Promise<boolean> {
+  return await setPlatformConfig(
+    "cohort_platform_config",
+    {
+      ...config,
+      updated_at: new Date().toISOString(),
+      updated_by: adminUser.email,
+    },
+    adminUser,
+    reason || `Admin updated active cohort name to "${config.active_cohort_name}"`,
+    bearerToken
+  );
+}
+
+export function buildCohortWhatsAppUrl(
+  cohortName: string = DEFAULT_COHORT_CONFIG.active_cohort_name,
+  digits: string = DEFAULT_COHORT_CONFIG.whatsapp_inquiry_digits
+): string {
+  const message = `Hello BrainLab, I am coming from the website and would like to make enquiries about the intensive ${cohortName} JAMB Preparatory Class.`;
+  return `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
 }

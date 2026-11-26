@@ -40,7 +40,7 @@ async function verifyArchitecture() {
 
   runCheck(
     "StudentPortalShell contains clean return link to public website",
-    studentShellContent.includes("🌐 Public Site") &&
+    studentShellContent.includes("Public Site") &&
       studentShellContent.includes("Public Website ↗")
   );
 

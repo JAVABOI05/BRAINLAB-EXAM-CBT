@@ -12,7 +12,7 @@ function escapeCsvField(val: unknown): string {
 
 export async function GET(request: NextRequest) {
   try {
-    const admin = await getAdminSession();
+    const admin = await getAdminSession(request);
     if (!admin) {
       return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
     }

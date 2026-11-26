@@ -20,6 +20,8 @@ import {
   GeneticsPunnettAdapter,
   LogicGatesAdapter,
 } from "@/app/components/classroom/whiteboard/stemAdapter";
+import { CURATED_MOLECULES } from "@/app/components/stem/Molecular3DViewer";
+import { generateMoleculeSvgDataUrl } from "@/app/components/stem/molecularSvgExport";
 
 type Lesson = {
   id: string;
@@ -196,6 +198,8 @@ export default function ClassroomStudioPage() {
       const ad = new GeneticsPunnettAdapter();
       ad.init();
       svgDataUrl = ad.exportSvg(720, 480, "dark");
+    } else if (importStem === "molecular-3d-explorer") {
+      svgDataUrl = generateMoleculeSvgDataUrl(CURATED_MOLECULES[0]);
     }
 
     if (svgDataUrl) {
@@ -679,7 +683,7 @@ export default function ClassroomStudioPage() {
             className="inline-flex items-center gap-1.5 rounded-xl border border-purple-500/40 bg-purple-950/60 hover:bg-purple-900/80 px-3 py-1.5 text-xs font-bold text-purple-200 transition"
             title="Import questions from CSV, slides from PowerPoint/PDF, or lesson outlines"
           >
-            <span>📥</span>
+            <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             <span>Import</span>
             {attachments.length > 0 && (
               <span className="rounded-full bg-purple-600 px-1.5 py-0.2 text-[10px] font-black text-white">
@@ -699,7 +703,7 @@ export default function ClassroomStudioPage() {
             }`}
             title="Toggle Picture-in-Picture Tutor Camera overlay"
           >
-            <span>📷</span>
+            <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
             <span>{isCameraEnabled ? "Camera ON" : "Camera"}</span>
           </button>
 
@@ -714,7 +718,7 @@ export default function ClassroomStudioPage() {
             }`}
             title="Toggle Microphone"
           >
-            <span>{isMicEnabled ? "🎙️" : "🔇"}</span>
+            {isMicEnabled ? <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg> : <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="2" x2="22" y1="2" y2="22"/><path d="M18.89 13.23A7.12 7.12 0 0 0 19 12v-2"/><path d="M5 10v2a7 7 0 0 0 12 5"/><path d="M15 9.34V5a3 3 0 0 0-5.68-1.33"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12"/><line x1="12" x2="12" y1="19" y2="22"/></svg>}
           </button>
 
           {/* ================================================================ */}
@@ -796,7 +800,7 @@ export default function ClassroomStudioPage() {
             className="rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 px-3 py-1.5 text-xs font-bold text-slate-300 hover:text-white transition flex items-center gap-1"
             title="Duplicate this lesson deck as a reusable template"
           >
-            <span>📑</span>
+            <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
             <span>Duplicate Deck</span>
           </button>
 
@@ -807,7 +811,7 @@ export default function ClassroomStudioPage() {
             className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-blue-700 to-indigo-700 hover:from-blue-600 hover:to-indigo-600 px-3.5 py-1.5 text-xs font-black text-white shadow-md transition active:scale-95"
             title="Convert this prepared lesson directly into an active Live Classroom session for students"
           >
-            <span>📡</span>
+            <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"/><circle cx="12" cy="12" r="2"/><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"/><path d="M19.1 4.9C23 8.8 23 15.1 19.1 19"/></svg>
             <span>Go Live</span>
           </button>
 
@@ -817,7 +821,7 @@ export default function ClassroomStudioPage() {
             className="rounded-xl border border-blue-500/30 bg-[#1356E8]/10 hover:bg-[#1356E8]/20 px-3 py-1.5 text-xs font-bold text-blue-300 transition"
             title="Open Teaching and Video Library"
           >
-            📚 Library
+            <svg className="h-3.5 w-3.5 inline mr-1 text-blue-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m16 6 4 14"/><path d="M12 6v14"/><path d="M8 8v12"/><path d="M4 4v16"/></svg>Library
           </Link>
         </div>
       </header>

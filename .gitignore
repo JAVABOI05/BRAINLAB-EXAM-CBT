@@ -19,3 +19,5 @@ supabase/.temp/
 PY QUESTIONS
 Clean-Vercel.ps1
 *.ps1
+.agents/
+artifacts/

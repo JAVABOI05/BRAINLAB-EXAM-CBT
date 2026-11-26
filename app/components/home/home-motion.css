@@ -1,0 +1,347 @@
+/*
+ * BrainLab Academy: Landing Page Motion & Style Tokens
+ * Extracted from production design asset benchmarks (UI_SYSTEM.md sections 5 and 6).
+ *
+ * Core Tokens:
+ * - Brand orange #E8512F matches the BrainLab logo upward rising arrow.
+ * - Animate transform, opacity, and SVG stroke-draw only (0 layout shifts / CLS = 0).
+ * - Strict WCAG 2.1 AA accessibility and prefers-reduced-motion fallback.
+ */
+
+:root {
+  --bl-color-brand-orange: #e8512f;
+  --bl-color-brand-orange-light: #f2703c;
+  --bl-color-brand-orange-deep: #c9401f;
+  /* Darker orange for small text on light backgrounds (5.5:1 contrast on white) */
+  --bl-color-brand-orange-ink: #b8401f;
+}
+
+/* ---------- Brand Orange Utilities ---------- */
+.bl-home-accent-orange {
+  color: var(--bl-color-brand-orange);
+}
+
+.bl-home-ink {
+  color: var(--bl-color-brand-navy, #0b1536);
+}
+
+.bl-home-gradient-orange {
+  background: linear-gradient(
+    135deg,
+    var(--bl-color-brand-orange-light) 0%,
+    var(--bl-color-brand-orange) 55%,
+    var(--bl-color-brand-orange-deep) 100%
+  );
+  color: var(--bl-color-brand-navy, #0b1536);
+}
+
+.bl-home-chip-orange {
+  background: linear-gradient(
+    135deg,
+    var(--bl-color-brand-orange-light) 0%,
+    var(--bl-color-brand-orange) 100%
+  );
+  color: var(--bl-color-brand-navy, #0b1536);
+}
+
+/* Tint chip for dark backgrounds */
+.bl-home-tint-orange {
+  border: 1px solid color-mix(in srgb, var(--bl-color-brand-orange) 45%, transparent);
+  background: color-mix(in srgb, var(--bl-color-brand-orange) 14%, transparent);
+  color: var(--bl-color-brand-orange-light);
+}
+
+/* Tint chip for light backgrounds */
+.bl-home-chip-light {
+  border: 1px solid color-mix(in srgb, var(--bl-color-brand-orange) 35%, transparent);
+  background: color-mix(in srgb, var(--bl-color-brand-orange) 9%, white);
+  color: var(--bl-color-brand-orange-ink);
+}
+
+/* Section eyebrow: short orange rule + small caps label */
+.bl-home-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.75rem;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--bl-color-brand-orange-ink);
+}
+
+.bl-home-eyebrow::before {
+  content: "";
+  width: 1.75rem;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--bl-color-brand-orange);
+}
+
+.bl-home-eyebrow-dark {
+  color: var(--bl-color-brand-orange-light);
+}
+
+/* Highlighter-style emphasis for key headline phrases */
+.bl-home-mark {
+  background: linear-gradient(
+    transparent 64%,
+    color-mix(in srgb, var(--bl-color-brand-orange) 32%, transparent) 64%
+  );
+  padding: 0 0.12em;
+  margin: 0 -0.12em;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+/* Hairline blueprint grid (crisp, zero blur) */
+.bl-home-grid-light {
+  background-image:
+    linear-gradient(rgba(11, 21, 54, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(11, 21, 54, 0.05) 1px, transparent 1px);
+  background-size: 48px 48px;
+  -webkit-mask-image: radial-gradient(ellipse 80% 70% at 50% 0%, #000 25%, transparent 78%);
+  mask-image: radial-gradient(ellipse 80% 70% at 50% 0%, #000 25%, transparent 78%);
+}
+
+.bl-home-grid-dark {
+  background-image:
+    linear-gradient(rgba(148, 163, 184, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.07) 1px, transparent 1px);
+  background-size: 48px 48px;
+  -webkit-mask-image: radial-gradient(ellipse 80% 70% at 50% 0%, #000 25%, transparent 78%);
+  mask-image: radial-gradient(ellipse 80% 70% at 50% 0%, #000 25%, transparent 78%);
+}
+
+/* Hover lift for cards */
+.bl-home-lift {
+  transition: transform 240ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 240ms cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 240ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.bl-home-lift:hover {
+  transform: translateY(-3px);
+}
+
+/* Primary call to action: logo-orange gradient with a soft pulse ring */
+.bl-home-cta-orange {
+  position: relative;
+  isolation: isolate;
+  background: linear-gradient(
+    135deg,
+    var(--bl-color-brand-orange-light) 0%,
+    var(--bl-color-brand-orange) 55%,
+    var(--bl-color-brand-orange-deep) 100%
+  );
+  color: #ffffff;
+  transition: filter 200ms cubic-bezier(0.16, 1, 0.3, 1), transform 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.bl-home-cta-orange:hover {
+  filter: brightness(1.08);
+}
+
+.bl-home-cta-orange::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  border: 2px solid var(--bl-color-brand-orange);
+  opacity: 0;
+  pointer-events: none;
+  animation: bl-home-ring 3.2s ease-out 1.5s infinite;
+}
+
+@keyframes bl-home-ring {
+  0% {
+    opacity: 0.65;
+    transform: scale(1);
+  }
+  70%,
+  100% {
+    opacity: 0;
+    transform: scale(1.14, 1.3);
+  }
+}
+
+/* ---------- Crisp layered panels behind the hero card ---------- */
+.bl-home-panel-orange {
+  border: 1px solid color-mix(in srgb, var(--bl-color-brand-orange) 40%, transparent);
+  background: color-mix(in srgb, var(--bl-color-brand-orange) 12%, transparent);
+}
+
+.bl-home-panel-blue {
+  border: 1px solid color-mix(in srgb, var(--bl-color-brand-primary, #3b82f6) 35%, transparent);
+  background: color-mix(in srgb, var(--bl-color-brand-primary, #3b82f6) 10%, transparent);
+}
+
+/* ---------- Entrance Animations ---------- */
+@keyframes bl-home-rise {
+  from {
+    opacity: 0.4;
+    transform: translateY(16px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.bl-home-enter {
+  animation: bl-home-rise 600ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.bl-home-enter-d1 {
+  animation-delay: 140ms;
+}
+
+@keyframes bl-home-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.bl-home-fade-in {
+  animation: bl-home-fade-in 900ms ease-out 200ms both;
+}
+
+/* ---------- Ambient drift (gentle floating micro-interactions) ---------- */
+@keyframes bl-home-drift {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+.bl-home-float {
+  animation: bl-home-drift 9s ease-in-out infinite;
+}
+
+.bl-home-float-alt {
+  animation: bl-home-drift 9s ease-in-out -4.5s infinite;
+}
+
+/* ---------- Learning-loop orbit and rising arrow (hero graphic) ---------- */
+@keyframes bl-home-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.bl-home-orbit {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: bl-home-spin 70s linear infinite;
+}
+
+.bl-home-orbit-rev {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: bl-home-spin 110s linear infinite reverse;
+}
+
+@keyframes bl-home-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.bl-home-draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: bl-home-draw 1300ms cubic-bezier(0.16, 1, 0.3, 1) 500ms forwards;
+}
+
+@keyframes bl-home-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.bl-home-pop {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: bl-home-pop 400ms cubic-bezier(0.16, 1, 0.3, 1) 1500ms both;
+}
+
+@keyframes bl-home-twinkle {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.bl-home-twinkle {
+  animation: bl-home-twinkle 3.6s ease-in-out infinite;
+}
+
+.bl-home-twinkle-2 {
+  animation: bl-home-twinkle 3.6s ease-in-out -1.2s infinite;
+}
+
+.bl-home-twinkle-3 {
+  animation: bl-home-twinkle 3.6s ease-in-out -2.4s infinite;
+}
+
+/* ---------- Soft fade for values that resolve after mount ---------- */
+.bl-home-fade {
+  transition: opacity 240ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ---------- Reduced motion and print compliance (WCAG 2.1 AA) ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .bl-home-enter,
+  .bl-home-fade-in,
+  .bl-home-float,
+  .bl-home-float-alt,
+  .bl-home-fade,
+  .bl-home-orbit,
+  .bl-home-orbit-rev,
+  .bl-home-pop,
+  .bl-home-twinkle,
+  .bl-home-twinkle-2,
+  .bl-home-twinkle-3 {
+    animation: none !important;
+    transition: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .bl-home-draw {
+    animation: none !important;
+    stroke-dashoffset: 0 !important;
+  }
+
+  .bl-home-cta-orange::after {
+    display: none;
+  }
+
+  .bl-home-lift:hover {
+    transform: none;
+  }
+}
+
+@media print {
+  .bl-home-cta-orange::after {
+    display: none;
+  }
+}

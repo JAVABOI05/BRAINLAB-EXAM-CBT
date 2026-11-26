@@ -13,14 +13,14 @@ const faqs = [
   ],
   [
     "What if my exam requires an access code?",
-    "You can request or verify a valid access code by emailing our CBT support desk at support@brainlab.edu.ng or contacting us on WhatsApp. Never share your candidate PIN publicly.",
-    "mailto:support@brainlab.edu.ng?subject=BrainLab%20Access%20Code%20Inquiry",
+    "You can request or verify a valid access code by emailing our CBT support desk at support@brainlabacademy.com.ng or contacting us on WhatsApp. Never share your candidate PIN publicly.",
+    "mailto:support@brainlabacademy.com.ng?subject=BrainLab%20Access%20Code%20Inquiry",
     "Email Access Code Support",
   ],
   [
     "Why can’t I see my result or corrections?",
     "Results and corrections follow the active exam release settings configured by your administrator. If immediate results are held, they will be released once approved. You can contact support for result verification.",
-    "mailto:support@brainlab.edu.ng?subject=BrainLab%20Exam%20Result%20Inquiry",
+    "mailto:support@brainlabacademy.com.ng?subject=BrainLab%20Exam%20Result%20Inquiry",
     "Email Result Support",
   ],
   [
@@ -72,14 +72,24 @@ export default function SupportPageClient() {
 
           {/* Primary Action Buttons */}
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <Link
+              href="/contact"
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-blue-700 px-6 py-3 font-bold text-white shadow-xs transition-all hover:bg-blue-800 active:scale-95"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" />
+              </svg>
+              <span>Submit In-Portal Ticket</span>
+            </Link>
+
             <a
-              href="mailto:support@brainlab.edu.ng?subject=BrainLab%20CBT%20Support%20Request"
+              href="mailto:support@brainlabacademy.com.ng?subject=BrainLab%20CBT%20Support%20Request"
               className="inline-flex min-h-12 items-center justify-center gap-2.5 rounded-xl bg-[#012153] px-6 py-3 font-bold text-white shadow-sm transition-all hover:bg-[#0a2f72] active:scale-95"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0l-9.75 6.75L2.25 6.75" />
               </svg>
-              <span>Open CBT support</span>
+              <span>Email Support Desk</span>
             </a>
 
             <a
@@ -99,10 +109,10 @@ export default function SupportPageClient() {
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Official Email Support</p>
               <a
-                href="mailto:support@brainlab.edu.ng"
+                href="mailto:support@brainlabacademy.com.ng?subject=BrainLab%20Technical%20and%20CBT%20Support"
                 className="mt-1 inline-block text-base font-extrabold text-blue-900 hover:underline"
               >
-                support@brainlab.edu.ng
+                support@brainlabacademy.com.ng
               </a>
               <p className="text-xs text-slate-500 mt-0.5">Direct candidate and access code inquiries</p>
             </div>
@@ -180,7 +190,7 @@ export default function SupportPageClient() {
         <div className="mx-auto max-w-5xl px-5 py-12 sm:px-8 lg:py-16">
           <h2 className="text-2xl font-extrabold text-slate-950">A note about candidate security</h2>
           <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600">
-            Never send your password or personal examination access PIN to anyone. BrainLab support agents will never ask for your account password. If you encounter any unauthorized access attempts, immediately email <a href="mailto:support@brainlab.edu.ng" className="font-bold text-blue-800 underline">support@brainlab.edu.ng</a>.
+            Never send your password or personal examination access PIN to anyone. BrainLab support agents will never ask for your account password. If you encounter any unauthorized access attempts, immediately email <a href="mailto:support@brainlabacademy.com.ng?subject=BrainLab%20Technical%20and%20CBT%20Support" className="font-bold text-blue-800 underline">support@brainlabacademy.com.ng</a>.
           </p>
         </div>
       </section>

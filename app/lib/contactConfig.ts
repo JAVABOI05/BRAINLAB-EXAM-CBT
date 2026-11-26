@@ -67,8 +67,8 @@ export function buildWhatsAppChatUrl(message: string, phoneDigits = CANONICAL_PH
   return `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
 }
 
-export const CANONICAL_PHONE_DISPLAY = "+234 907 431 0204";
-export const CANONICAL_PHONE_DIGITS = "2349074310204";
+export const CANONICAL_PHONE_DISPLAY = "+234 808 926 7399";
+export const CANONICAL_PHONE_DIGITS = "2348089267399";
 export const CANONICAL_WHATSAPP_CHANNEL = "https://whatsapp.com/channel/0029Vb75fko3mFXyaqlnk70m";
 export const CANONICAL_SUPPORT_EMAIL = "support@brainlabacademy.com";
 export const CANONICAL_ENQUIRIES_EMAIL = "enquiries@brainlabacademy.com";

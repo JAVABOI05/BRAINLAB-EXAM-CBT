@@ -7,6 +7,7 @@ import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
+import { sanitizeRedirectUrl } from "../../lib/authRedirect";
 import type { Session } from "@supabase/supabase-js";
 
 const EXAM_SPEED_TIPS = [
@@ -70,7 +71,7 @@ export default function AuthCallbackPage() {
     async function completeSignIn() {
       const params = new URLSearchParams(window.location.search);
       const code = params.get("code");
-      const nextParam = params.get("next");
+      const nextParam = params.get("next") || params.get("redirect");
 
       if (params.has("error") || params.has("error_description")) {
         clearInterval(progressTimer);
@@ -81,6 +82,18 @@ export default function AuthCallbackPage() {
       }
 
       let activeSession: Session | null = null;
+      let isRecoveryFlow =
+        params.get("type") === "recovery" ||
+        window.location.hash.includes("type=recovery") ||
+        nextParam === "/auth/reset-password" ||
+        nextParam === "/account/reset-password";
+
+      // Listen for PASSWORD_RECOVERY auth event during exchange
+      const { data: authListener } = supabase.auth.onAuthStateChange((event) => {
+        if (event === "PASSWORD_RECOVERY") {
+          isRecoveryFlow = true;
+        }
+      });
 
       // 1. Fast Code Exchange
       if (code) {
@@ -90,14 +103,17 @@ export default function AuthCallbackPage() {
         if (!exchangeError && exchangeData?.session) {
           activeSession = exchangeData.session;
         } else {
+          console.error("[AUTH_CALLBACK_EXCHANGE_ERROR]", exchangeError);
           // Check if session is already active in local storage / cookies
           const { data: existing } = await supabase.auth.getSession();
           if (existing?.session) {
             activeSession = existing.session;
           } else {
+            authListener?.subscription?.unsubscribe();
             clearInterval(progressTimer);
             clearOperatorGateNonBlocking();
-            setErrorDetails("This sign-in link could not be verified or has expired. Please sign in again.");
+            const reason = exchangeError?.message ? ` (${exchangeError.message})` : "";
+            setErrorDetails(`This sign-in link could not be verified or has expired${reason}. Please sign in again.`);
             return;
           }
         }
@@ -106,10 +122,21 @@ export default function AuthCallbackPage() {
         activeSession = existing?.session ?? null;
       }
 
+      authListener?.subscription?.unsubscribe();
+
       if (!activeSession) {
         clearInterval(progressTimer);
         clearOperatorGateNonBlocking();
         setErrorDetails("No active sign-in session was found. Please return to the sign in page.");
+        return;
+      }
+
+      // Check if this was a password recovery request
+      if (isRecoveryFlow) {
+        clearOperatorGateNonBlocking();
+        setStatusText("Password reset session verified. Opening form…");
+        setProgress(100);
+        router.replace("/auth/reset-password");
         return;
       }
 
@@ -155,18 +182,25 @@ export default function AuthCallbackPage() {
         } catch {
           // proceed
         }
-        router.replace("/admin/dashboard");
+        // Support returning an authenticated administrator to an intended admin screen (e.g. PIN recovery)
+        const safeAdminTarget =
+          nextParam && nextParam.startsWith("/admin")
+            ? sanitizeRedirectUrl(nextParam, "/admin/dashboard")
+            : "/admin/dashboard";
+        router.replace(safeAdminTarget);
         return;
       }
 
       // Standard learner: fast-route to dashboard
       clearOperatorGateNonBlocking();
       setStatusText("Welcome to BrainLab Academy! Launching…");
-      const targetDestination = nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//")
-        ? nextParam
-        : "/dashboard";
+      // Prevent standard students from being redirected into admin pages
+      let safeLearnerTarget = sanitizeRedirectUrl(nextParam, "/dashboard");
+      if (safeLearnerTarget.startsWith("/admin")) {
+        safeLearnerTarget = "/dashboard";
+      }
 
-      router.replace(targetDestination);
+      router.replace(safeLearnerTarget);
     }
 
     void completeSignIn().catch((err) => {
@@ -201,8 +235,12 @@ export default function AuthCallbackPage() {
         {errorDetails ? (
           /* Error State */
           <div className="relative z-10 space-y-4">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-2xl text-rose-600 dark:text-rose-400">
-              ⚠️
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-400">
+              <svg className="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+                <line x1="12" y1="9" x2="12" y2="13" />
+                <line x1="12" y1="17" x2="12.01" y2="17" />
+              </svg>
             </div>
             <h1 className="text-xl font-black text-slate-950 dark:text-white">Sign-in Notice</h1>
             <p role="alert" className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">

@@ -64,6 +64,7 @@ export type AttemptPayload = {
   answers: Record<string, Option>;
   questions: PaperQuestion[];
   subjects?: string[];
+  last_saved_at?: string | null;
 };
 export type ResultItem = {
   id: string;
@@ -215,11 +216,19 @@ export async function startExam(
   phone: string,
   elective: string,
   subjects?: string[]
-): Promise<AttemptPayload | ApiError> {
+): Promise<AttemptPayload | FinishedPayload | ApiError> {
   try {
+    // Supabase's browser client persists the session in localStorage, which is
+    // not automatically sent to Route Handlers. Forward the verified access
+    // token so the server can resolve paid-plan eligibility and learner history.
+    const { data: authData } = await supabase.auth.getSession();
+    const accessToken = authData.session?.access_token;
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
+
     const res = await fetch("/api/exam/start", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify({ code, name, phone, elective, subjects }),
     });
     const data = await res.json();
@@ -230,9 +239,17 @@ export async function startExam(
         message: data.message || "Failed to start exam.",
       };
     }
-    return data as AttemptPayload;
-  } catch {
-    return call<AttemptPayload>("start_exam", { p_code: code, p_name: name, p_phone: phone, p_elective: elective });
+    return data as AttemptPayload | FinishedPayload;
+  } catch (error) {
+    // Never fall back to the legacy start_exam RPC: it does not receive the
+    // premium-only policy check added to /api/exam/start. A network/auth error
+    // must fail closed rather than create an attempt through an older path.
+    console.error("[examApi] Authoritative exam-start request failed:", error);
+    return {
+      ok: false as const,
+      error: "start_unavailable",
+      message: "We could not securely verify your exam access. Please check your connection and try again.",
+    };
   }
 }
 

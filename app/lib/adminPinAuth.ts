@@ -177,18 +177,36 @@ export async function setupAdminPin(newPin: string): Promise<PinVerifyResult> {
   }
 }
 
-export async function resetAdminPin(params: { adminPassword: string; newPin: string }): Promise<PinVerifyResult> {
+export async function resetAdminPin(params: {
+  newPin: string;
+  adminPassword?: string;
+  accessToken?: string;
+}): Promise<PinVerifyResult> {
   try {
-    const authHeader = await getAuthHeader();
+    let token = params.accessToken?.trim();
+    if (!token) {
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
+      if (sessionError || !session?.access_token) {
+        return {
+          ok: false,
+          error: "No active administrator session found. Please re-authenticate with Google.",
+        };
+      }
+      token = session.access_token;
+    }
+
     const res = await fetch("/api/admin/security/pin", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        ...authHeader,
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
         action: "reset",
-        adminPassword: params.adminPassword,
+        accessToken: token,
         newPin: params.newPin,
       }),
     });

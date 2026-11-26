@@ -72,6 +72,53 @@ export default function StemPlayerPage({
           return;
         }
         if (active) {
+          if (slug === "molecular-3d-explorer" || slug === "molecular-explorer") {
+            setResource({
+              id: "res-molecular-3d",
+              slug,
+              title: "3D Molecular & Macromolecular Explorer",
+              summary: "Interactive 3D molecular modeling and crystal coordinate explorer for WAEC and JAMB chemistry and biology.",
+              resource_type: "interactive_model",
+              tier: 1,
+              status: "published",
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+              subject_id: "chemistry",
+              topic_id: null,
+              current_version_id: "ver-mol-1",
+              subject: { id: "chem", name: "Chemistry & Biology", slug: "chemistry" },
+              topic: null,
+              current_version: {
+                id: "ver-mol-1",
+                resource_id: "res-molecular-3d",
+                version_number: 1,
+                adapter_type: "molecular_3d",
+                status: "published",
+                title: "3D Molecular & Macromolecular Explorer",
+                summary: "Interactive 3D molecular modeling and crystal coordinate explorer for WAEC and JAMB chemistry and biology.",
+                learning_objectives: [
+                  "Understand VSEPR geometry and lone pair repulsion in small molecules (H₂O, NH₃, CH₄)",
+                  "Inspect the quaternary allosteric structure of Normal Adult Hemoglobin (HbA - 1A3N)",
+                  "Analyze the pathogenic hydrophobic Val6 sickle mutation on Hemoglobin S (HbS - 2HBS)",
+                  "Explore the catalytic active site cleft (Glu35 / Asp52) of Hen Egg-White Lysozyme (1LYZ)"
+                ],
+                instructions: [
+                  "Use single-finger drag (or left-click drag) to rotate the 3D molecular coordinates.",
+                  "Pinch with two fingers (or scroll wheel) to zoom in and examine specific bond lengths.",
+                  "Switch between Ribbon (Cartoon), Stick, and Spheres to observe spatial packaging.",
+                  "Click 'Focus Active Site' or 'Focus Mutation' to zoom directly into critical syllabus amino acids.",
+                  "Toggle '2D Diagram' mode if you are offline or prefer a clean vector schematic."
+                ],
+                initial_state: {},
+                content_payload: {},
+                metadata: {},
+                created_at: new Date().toISOString(),
+                created_by: null,
+                changelog: "Curated WAEC/JAMB 12-model collection"
+              }
+            } as any);
+            return;
+          }
           setLoadError(data.error || "This STEM resource is unavailable. Please return to the STEM catalogue.");
         }
       } catch {

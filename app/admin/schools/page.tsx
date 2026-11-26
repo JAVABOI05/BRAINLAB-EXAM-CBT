@@ -208,10 +208,38 @@ export default function AdminSchoolsPage() {
   }, [router]);
 
   // Update Status of an Inquiry
-  const handleUpdateStatus = (id: string, newStatus: SchoolInquiry["status"]) => {
+  const handleUpdateStatus = async (id: string, newStatus: SchoolInquiry["status"]) => {
     setInquiries((prev) =>
       prev.map((inq) => (inq.id === id ? { ...inq, status: newStatus } : inq))
     );
+    try {
+      await fetch("/api/schools/inquiry", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, status: newStatus }),
+      });
+      toast.success(`Inquiry status updated to ${newStatus}`);
+    } catch {
+      // Retain optimistic state
+    }
+  };
+
+  // Export Inquiries to CSV
+  const handleExportInquiriesCsv = () => {
+    let csv = "Reference_Code,School_Name,Contact_Name,Phone,Email,Location,Student_Count,Exam_Type,Status,Submitted_At\n";
+    filteredInquiries.forEach((inq) => {
+      csv += `"${inq.referenceCode}","${inq.schoolName.replace(/"/g, '""')}","${inq.contactName.replace(/"/g, '""')}","${inq.phone}","${inq.email}","${inq.location.replace(/"/g, '""')}",${inq.studentCount},"${inq.examType}","${inq.status}","${inq.submittedAt}"\n`;
+    });
+
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `BrainLab_School_Inquiries_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   // Generate Batch of Mock PINs
@@ -387,9 +415,10 @@ export default function AdminSchoolsPage() {
         ----------------------------------------------------------------- */}
         {activeTab === "inquiries" && (
           <div className="space-y-4">
-            <div className="flex items-center justify-between gap-4 bg-white p-4 rounded-xl border border-slate-200">
-              <span className="text-xs font-bold text-slate-700">Filter Inquiries by Status:</span>
-              <div className="flex gap-1.5 text-xs">
+            <div className="flex flex-wrap items-center justify-between gap-4 bg-white p-4 rounded-xl border border-slate-200">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-slate-700">Filter Inquiries by Status:</span>
+                <div className="flex gap-1.5 text-xs">
                 {["All", "Pending", "Quoted", "Active Partner"].map((st) => (
                   <button
                     key={st}
@@ -405,6 +434,14 @@ export default function AdminSchoolsPage() {
                   </button>
                 ))}
               </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleExportInquiriesCsv}
+                className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-100 transition shadow-2xs"
+              >
+                📥 Export CSV
+              </button>
             </div>
 
             <div className="grid gap-4">

@@ -302,6 +302,7 @@ const GROUPS: Group[] = [
     label: "Academy & Content",
     items: [
       { id: "questions", label: "Question Bank", href: "/admin/questions/manage", description: "Questions and question-bank maintenance", icon: "questions", visible: (_u, a) => a["cbt.questions.manage"] === true },
+      { id: "exam-focus", label: "Seasonal Exam Focus", href: "/admin/exam-focus", description: "Seasonal exam campaign, deadlines, and homepage priority banner", icon: "academic", visible: (u, a) => a["learning.content.manage"] === true || platformAdmin(u) },
       { id: "difficulty-model", label: "Difficulty Model", href: "/admin/questions/difficulty-model", description: "Formal difficulty slider, interpolation & shortage policies", icon: "config", visible: (_u, a) => a["cbt.questions.manage"] === true || platformAdmin(_u) },
       { id: "blueprints", label: "Exam Blueprints", href: "/admin/questions/blueprints", description: "UTME English & subject blueprints and quotas", icon: "blueprints", visible: (_u, a) => a["cbt.questions.manage"] === true || platformAdmin(_u) },
       { id: "high-yield", label: "High-Yield Topics", href: "/admin/questions/high-yield", description: "Syllabus topic quotas and shortage alerts", icon: "high-yield", visible: (_u, a) => a["cbt.questions.manage"] === true || platformAdmin(_u) },
@@ -341,8 +342,9 @@ const GROUPS: Group[] = [
       { id: "settings", label: "Settings", href: "/admin/settings", description: "Central configuration workspace", icon: "settings", visible: always },
       { id: "config", label: "Exam Configuration", href: "/admin/config", description: "Exam rules and configuration", icon: "config", visible: (_u, a) => a["cbt.config.read"] === true || a["cbt.config.manage"] === true },
       { id: "academic", label: "Academic Structure", href: "/admin/academic", description: "Academic sessions, curricula and subjects", icon: "academic", visible: (u, a) => a["learning.content.manage"] === true || platformAdmin(u) },
-      { id: "communication", label: "Communications & Email Hub", href: "/admin/communication", description: "Resend, Zoho, Cloudflare, Termii & broadcast emails", icon: "communication", visible: (u, a) => a["community.moderate"] === true || platformAdmin(u) },
+      { id: "communication", label: "BrainLab Mail Centre", href: "/admin/communication", description: "Unified inbox, broadcast campaigns, approvals, Resend telemetry & contacts", icon: "communication", visible: (u, a) => a["mail.view"] === true || a["community.moderate"] === true || platformAdmin(u) },
       { id: "roles", label: "Administrator Roles", href: "/admin/users", description: "Assign and review admin roles", icon: "roles", visible: (u) => u.role === "super_admin" },
+      { id: "access", label: "Access & Cohorts", href: "/admin/access", description: "Central entitlement engine, cohorts, grants, quotas and codes", icon: "security", visible: (u, a) => platformAdmin(u) || a["institution.manage"] === true || a["finance.billing.manage"] === true },
       { id: "security", label: "Security & Access", href: "/admin/security", description: "Security workspace and access review", icon: "security", visible: (u, a) => platformAdmin(u) || a["audit.logs.read"] === true },
       { id: "audit", label: "Audit Trail", href: "/admin/audit", description: "Administrative change history", icon: "audit", visible: (u, a) => platformAdmin(u) || a["audit.logs.read"] === true },
       { id: "announcements", label: "Announcements & Maintenance", href: "/admin/announcements", description: "Site-wide broadcast banner and CBT maintenance mode", icon: "communication", visible: (u, a) => platformAdmin(u) || a["cbt.config.manage"] === true },
@@ -460,6 +462,8 @@ export default function AdminWorkspaceShell({ user, permissions, onLogout, child
     "/admin/communication": "Communications & Email Hub",
     "/admin/users": "Administrator Roles",
     "/admin/security": "Security & Audit",
+    "/admin/access": "Access & Cohort Management Centre",
+    "/admin/cohorts": "Access & Cohort Management Centre",
     "/admin/audit": "Audit Trail",
   };
 

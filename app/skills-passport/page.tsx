@@ -423,8 +423,9 @@ export default function SkillsPassportPage() {
                   <span className="text-[10px] font-black uppercase text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md">
                     {rec.subject}
                   </span>
-                  <span className="text-[10px] font-bold text-slate-500 font-mono">
-                    ⏱️ ~{rec.estimatedMinutes} mins
+                  <span className="text-[10px] font-bold text-slate-500 font-mono inline-flex items-center gap-1">
+                    <svg className="h-3 w-3 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+                    ~{rec.estimatedMinutes} mins
                   </span>
                 </div>
                 <h4 className="mt-2 text-xs font-black text-slate-900">{rec.topic}</h4>

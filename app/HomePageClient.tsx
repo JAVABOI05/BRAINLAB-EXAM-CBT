@@ -3,6 +3,7 @@
 import React from "react";
 import {
   HomeHero,
+  HomeUniversityTargetSocialProof,
   HomeJoinChannel,
   HomeAudiences,
   HomeBrainLabLoop,
@@ -20,10 +21,10 @@ import {
 export const HOMEPAGE_PRODUCT_LINKS = [
   { href: "/products/cbt", label: "CBT Practice Simulator" },
   { href: "/products/learning-hub", label: "Curriculum Learning Hub" },
+  { href: "/products/challenge-arena", label: "Challenge Arena & Duels" },
   { href: "/products/stem-studio", label: "STEM Studio Virtual Labs" },
   { href: "/products/ai-learning", label: "AI Study Studio & Diagnostics" },
   { href: "/products/live-classroom", label: "Live Interactive Classroom" },
-  { href: "/products/challenge-arena", label: "Challenge Arena & Duels" },
 ];
 
 export const HOMEPAGE_AUDIENCE_LINKS = [
@@ -47,36 +48,59 @@ export const HOMEPAGE_AUDIENCE_LINKS = [
  */
 export default function HomePageClient() {
   return (
-    <div className="w-full bg-[var(--bl-color-canvas)] text-[var(--bl-color-text-primary)] transition-colors">
-      {/* 1. Hero Section */}
-      <HomeHero />
+    <div className="relative w-full bg-white text-slate-900 dark:bg-[#060D20] dark:text-white overflow-hidden selection:bg-blue-600 selection:text-white transition-colors duration-200">
+      {/* Brilliant Subtle Dot Matrix Texture */}
+      <div
+        className="pointer-events-none absolute inset-0 opacity-[0.035] dark:opacity-[0.05]"
+        style={{
+          backgroundImage: `radial-gradient(currentColor 1.2px, transparent 1.2px)`,
+          backgroundSize: "24px 24px",
+        }}
+        aria-hidden="true"
+      />
+      <div
+        className="pointer-events-none absolute -top-40 right-1/4 h-[550px] w-[550px] rounded-full bg-blue-500/10 dark:bg-blue-600/15 blur-[140px]"
+        aria-hidden="true"
+      />
+      <div
+        className="pointer-events-none absolute top-1/2 -left-32 h-[450px] w-[450px] rounded-full bg-emerald-500/10 blur-[130px]"
+        aria-hidden="true"
+      />
 
-      {/* Prominent Join Our Channel Block (directly beneath hero on mobile & desktop) */}
-      <HomeJoinChannel />
+      <div className="relative z-10">
+        {/* 1. Hero Section */}
+        <HomeHero />
 
-      {/* 2. Audience Entry Points */}
-      <HomeAudiences />
+        {/* Compact, High-Impact Broadcast Channel Ribbon */}
+        <HomeJoinChannel />
 
-      {/* 3. The BrainLab Loop */}
-      <HomeBrainLabLoop />
+        {/* 2. Audience Entry Points */}
+        <HomeAudiences />
 
-      {/* 4. Product Showcase */}
-      <HomeProductShowcase />
+        {/* 3. The BrainLab Loop */}
+        <HomeBrainLabLoop />
 
-      {/* 5. STEM Studio Spotlight */}
-      <HomeStemStudio />
+        {/* 4. Product Showcase */}
+        <HomeProductShowcase />
 
-      {/* 6. Trust and Outcomes (Conditional) */}
-      <HomeTrustOutcomes />
+        {/* 5. STEM Studio Spotlight */}
+        <HomeStemStudio />
 
-      {/* 7. Pricing Teaser (Real Data) */}
-      <HomePricingTeaser />
+        {/* 6. Trust and Outcomes (Conditional) */}
+        <HomeTrustOutcomes />
 
-      {/* 8. Founder Note (Conditional) */}
-      <HomeFounderNote />
+        {/* University Target Benchmarks & Social Proof (Lower Page Positioning) */}
+        <HomeUniversityTargetSocialProof />
 
-      {/* 9. FAQ and Final Call to Action */}
-      <HomeFaqCta />
+        {/* 7. Pricing Teaser (Real Data) */}
+        <HomePricingTeaser />
+
+        {/* 8. Founder Note (Conditional) */}
+        <HomeFounderNote />
+
+        {/* 9. FAQ and Final Call to Action */}
+        <HomeFaqCta />
+      </div>
     </div>
   );
 }

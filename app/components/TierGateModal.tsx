@@ -3,12 +3,13 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { isCurrentUserAdmin } from "../lib/subscriptionEntitlements";
+import { useCohortConfig } from "../lib/useCohortConfig";
 
 interface TierGateModalProps {
   isOpen: boolean;
   onClose: () => void;
-  featureTitle: string;
-  featureDescription: string;
+  featureTitle?: string;
+  featureDescription?: string;
   requiredTierName?: string;
   currentPlanName?: string;
   redirectUrl?: string;
@@ -19,12 +20,16 @@ export default function TierGateModal({
   onClose,
   featureTitle,
   featureDescription,
-  requiredTierName = "Premium Study",
-  currentPlanName = "Free Learner",
-  redirectUrl,
+  requiredTierName,
+  currentPlanName = "Public Learner",
+  redirectUrl = "/apex",
 }: TierGateModalProps) {
   const [isAdminUser, setIsAdminUser] = useState(false);
-  const [resolvedRedirect, setResolvedRedirect] = useState(redirectUrl || "");
+  const cohortConfig = useCohortConfig();
+
+  const effectiveTierName = requiredTierName || cohortConfig.active_cohort_name;
+  const effectiveTitle = featureTitle || `${cohortConfig.active_cohort_name} Intensive Tutorial`;
+  const effectiveDescription = featureDescription || `This live guided session is part of the ${cohortConfig.active_cohort_name} educational programme. Enrol to access structured timetables, dedicated tutor guidance, and weekly assignments.`;
 
   useEffect(() => {
     let active = true;
@@ -35,21 +40,15 @@ export default function TierGateModal({
       }
     });
 
-    if (!redirectUrl && typeof window !== "undefined") {
-      setResolvedRedirect(`${window.location.pathname}${window.location.search}`);
-    }
-
     return () => {
       active = false;
     };
-  }, [redirectUrl, onClose]);
+  }, [onClose]);
 
-  // Super Admins and Admins are NEVER shown paywalls or subscription modals
+  // Super Admins and Admins are NEVER shown gating modals
   if (!isOpen || isAdminUser) return null;
 
-  const upgradeHref = resolvedRedirect
-    ? `/pricing?redirect=${encodeURIComponent(resolvedRedirect)}`
-    : "/pricing";
+  const targetHref = redirectUrl || "/apex";
 
   return (
     <div
@@ -63,7 +62,7 @@ export default function TierGateModal({
 
         <div className="flex items-center justify-between">
           <span className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-black uppercase tracking-wider text-indigo-900">
-            🔒 Subscription Upgrade Required
+            <svg className="h-3.5 w-3.5 text-indigo-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M22 10v6M2 10l10-5 10 5-10 5z" /><path d="M6 12v5c3 3 9 3 12 0v-5" /></svg><span>{effectiveTierName} Programme</span>
           </span>
           <button
             type="button"
@@ -76,26 +75,28 @@ export default function TierGateModal({
         </div>
 
         <div className="mt-5 text-center">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600 text-3xl text-white shadow-lg shadow-indigo-600/30">
-            ⚡
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-600/30">
+            <svg className="h-8 w-8 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M4 21V10M20 21V10M12 21V10M2 10h20M12 3l10 7H2zM2 21h20"/>
+            </svg>
           </div>
 
           <h3 className="mt-4 text-2xl font-black text-slate-950">
-            Unlock {featureTitle}
+            {effectiveTitle}
           </h3>
 
           <p className="mt-2 text-sm leading-relaxed text-slate-600">
-            {featureDescription}
+            {effectiveDescription}
           </p>
 
           <div className="mt-4 rounded-2xl border border-slate-100 bg-slate-50 p-3.5 text-xs">
             <div className="flex items-center justify-between text-slate-500">
-              <span>Your Current Tier:</span>
+              <span>Your Current Category:</span>
               <span className="font-extrabold text-slate-800">{currentPlanName}</span>
             </div>
             <div className="mt-1.5 flex items-center justify-between text-indigo-700 font-bold border-t border-slate-200/60 pt-1.5">
-              <span>Required Tier:</span>
-              <span className="font-black text-indigo-900">{requiredTierName}+</span>
+              <span>Programme Track:</span>
+              <span className="font-black text-indigo-900">{effectiveTierName}</span>
             </div>
           </div>
         </div>
@@ -106,13 +107,13 @@ export default function TierGateModal({
             onClick={onClose}
             className="w-full rounded-xl border border-slate-300 py-3 text-xs font-extrabold text-slate-700 hover:bg-slate-50 transition"
           >
-            Maybe Later
+            Continue Independent Learning
           </button>
           <Link
-            href={upgradeHref}
+            href={targetHref}
             className="w-full rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 py-3 text-center text-xs font-black text-white hover:from-indigo-700 hover:to-purple-700 shadow-md shadow-indigo-600/25 transition"
           >
-            Upgrade Plan Now →
+            Discover {effectiveTierName} →
           </Link>
         </div>
       </div>

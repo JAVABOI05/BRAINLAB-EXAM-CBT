@@ -204,7 +204,7 @@ export default function GlobalLearnerToolbar() {
             className="inline-flex items-center gap-1.5 rounded-full bg-rose-500/10 border border-rose-500/30 px-3 py-1 text-xs font-bold text-rose-700 dark:text-rose-300 animate-pulse hover:bg-rose-500/20 transition mr-2"
           >
             <span className="h-2 w-2 rounded-full bg-rose-500 animate-ping" />
-            <span>🔴 Live Class In Session: {liveClass.title}</span>
+            <span>Live Class In Session: {liveClass.title}</span>
             <span aria-hidden="true">→</span>
           </Link>
         )}
@@ -218,7 +218,11 @@ export default function GlobalLearnerToolbar() {
             aria-label={`Appearance is ${appearance}. Change appearance.`}
             title={`Appearance: ${appearance}. Click to switch to ${nextAppearance[appearance]}.`}
           >
-            <span aria-hidden="true">{resolvedTheme === "dark" ? "☾" : resolvedTheme === "light" ? "☀" : "◐"}</span>
+            <span aria-hidden="true">{resolvedTheme === "dark" ? (
+              <svg className="h-3.5 w-3.5 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" /></svg>
+            ) : (
+              <svg className="h-3.5 w-3.5 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" /></svg>
+            )}</span>
             <span>{appearance === "system" ? "System" : resolvedTheme === "dark" ? "Dark" : "Light"}</span>
           </button>
         </div>

@@ -3,9 +3,15 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { getSubscriptionPlans, DEFAULT_PLANS, type SubscriptionPlan } from "@/app/lib/platformConfig";
+import { useCohortConfig } from "@/app/lib/useCohortConfig";
+import { useScrollReveal } from "@/app/lib/useScrollReveal";
 
 export function HomePricingTeaser() {
+  const cohortConfig = useCohortConfig();
   const [plans, setPlans] = useState<SubscriptionPlan[]>(DEFAULT_PLANS);
+
+  const { ref: headerRef, isRevealed: headerRevealed } = useScrollReveal();
+  const { ref: cardsRef, isRevealed: cardsRevealed } = useScrollReveal();
 
   useEffect(() => {
     let isMounted = true;
@@ -24,127 +30,207 @@ export function HomePricingTeaser() {
     };
   }, []);
 
+  const plan =
+    plans.find((p) => p.id === "plus" || p.id === "premium" || p.id === "apex_cohort") ||
+    plans[0];
+
   return (
     <section
       id="pricing"
-      aria-label="Transparent Subscription Pricing"
-      className="py-16 sm:py-20 lg:py-24 border-b border-slate-200/80 bg-slate-50/60 dark:border-slate-800 dark:bg-[#070e1e]"
+      aria-label="BrainLab Open Academic Platform and Plans"
+      className="scroll-mt-20 sm:scroll-mt-24 py-10 sm:py-16 lg:py-24 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-[#060D20] text-slate-900 dark:text-white overflow-hidden"
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto mb-14">
-          <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold bg-blue-50 text-[var(--bl-color-brand-primary)] border border-blue-200/60 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/60 mb-3">
-            TRANSPARENT PLANS
+        <div
+          ref={headerRef}
+          className={`text-center max-w-3xl mx-auto mb-8 sm:mb-14 bl-reveal-init ${
+            headerRevealed ? "bl-reveal-visible" : ""
+          }`}
+        >
+          <span className="inline-flex items-center gap-1.5 px-3 py-0.5 sm:px-3.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-black bg-blue-50 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800 mb-2 sm:mb-3 shadow-2xs">
+            TRANSPARENT CANDIDATE ACCESS &bull; HONEST COMMITMENT
           </span>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-[var(--bl-color-text-primary)] tracking-tight">
-            Predictable Preparation Pricing with No Hidden Fees
+          <h2 className="text-xl sm:text-4xl lg:text-5xl font-black text-slate-950 dark:text-white tracking-tight leading-tight">
+            Complete Academic Superpowers for Every Candidate
           </h2>
-          <p className="mt-3.5 text-base sm:text-lg text-slate-600 dark:text-slate-300 leading-relaxed">
-            Begin with daily free practice or unlock unlimited timed mocks, full worked step-by-step corrections, and live classroom masterclasses.
+          <p className="mt-2 text-xs sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed font-normal">
+            Comprehensive curriculum coverage, timed CBT mock engines, and diagnostic telemetry engineered specifically for candidates targeting top-percentile scores.
           </p>
         </div>
 
-        {/* Pricing Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 max-w-5xl mx-auto items-stretch">
-          {plans.slice(0, 3).map((plan) => {
-            const isFree = plan.price_kobo === 0 || plan.id === "free";
-            const isPopular = plan.id === "premium" || plan.id === "pro";
-
-            return (
-              <div
-                key={plan.id}
-                className={`flex flex-col justify-between rounded-3xl p-6 sm:p-8 transition-all duration-200 ${
-                  isPopular
-                    ? "border-2 border-[var(--bl-color-brand-primary)] bg-[var(--bl-color-surface)] shadow-xl relative"
-                    : "border border-slate-200/90 bg-[var(--bl-color-surface)] shadow-sm dark:border-slate-800"
-                }`}
-              >
+        {/* Pricing Layout: Light Standard Platform + One Deep Navy Highlight Card */}
+        <div
+          ref={cardsRef}
+          className={`grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-stretch max-w-6xl mx-auto bl-reveal-init ${
+            cardsRevealed ? "bl-reveal-visible" : ""
+          }`}
+        >
+          {/* 1. CANDIDATE STANDARD SUITE (Light Surface Bento Card) */}
+          <div className="lg:col-span-7 rounded-2xl sm:rounded-3xl p-5 sm:p-8 lg:p-9 border-2 border-slate-200 dark:border-slate-800 bg-[#F8FAFC] dark:bg-slate-900/60 shadow-md sm:shadow-lg flex flex-col justify-between">
+            <div>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 border-b border-slate-200 dark:border-slate-800 pb-4 sm:pb-5 mb-4 sm:mb-6">
                 <div>
-                  {isPopular && (
-                    <div className="mb-4">
-                      <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-bold text-[var(--bl-color-brand-primary)] dark:bg-blue-950 dark:text-blue-300">
-                        Most Popular for Candidates
-                      </span>
-                    </div>
-                  )}
-
-                  <h3 className="text-xl font-extrabold text-[var(--bl-color-text-primary)] tracking-tight">
-                    {plan.name}
-                  </h3>
-
-                  <p className="mt-2 text-xs sm:text-sm text-slate-500 dark:text-slate-400 line-clamp-2">
-                    {plan.description}
-                  </p>
-
-                  {/* Dynamic Price Display */}
-                  <div className="my-6">
-                    {isFree ? (
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-4xl font-black text-[var(--bl-color-text-primary)]">
-                          Free
-                        </span>
-                        <span className="text-xs text-slate-500 dark:text-slate-400">
-                          / forever
-                        </span>
-                      </div>
-                    ) : (
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-4xl font-black text-[var(--bl-color-text-primary)]">
-                          ₦{plan.price_naira.toLocaleString()}
-                        </span>
-                        <span className="text-xs text-slate-500 dark:text-slate-400">
-                          / {plan.interval}
-                        </span>
-                      </div>
-                    )}
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-bold bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800 mb-1.5">
+                    OPEN CANDIDATE PLATFORM
                   </div>
-
-                  {/* Features List */}
-                  <ul className="space-y-2.5 text-xs sm:text-sm text-slate-600 dark:text-slate-300 border-t border-slate-100 pt-5 dark:border-slate-800/80">
-                    {plan.features.map((feat) => (
-                      <li key={feat} className="flex items-start gap-2.5">
-                        <svg
-                          className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          strokeWidth="2.5"
-                          stroke="currentColor"
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                        </svg>
-                        <span>{feat}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  <h3 className="text-xl sm:text-3xl font-black text-slate-950 dark:text-white tracking-tight">
+                    Candidate Standard Suite
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-0.5 sm:mt-1">
+                    Standard access across UTME, O Level, and Post-UTME core study and simulation engines
+                  </p>
                 </div>
-
-                <div className="mt-8 pt-4">
-                  <Link
-                    href={isFree ? "/cbt" : `/pricing?plan=${plan.id}`}
-                    className={`inline-flex w-full items-center justify-center rounded-xl px-5 py-3 text-sm font-bold transition bl-focus-ring min-h-[44px] ${
-                      isPopular
-                        ? "bg-[var(--bl-color-brand-primary)] hover:bg-[var(--bl-color-brand-primary-hover)] text-white shadow-sm"
-                        : "bg-slate-100 hover:bg-slate-200 text-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200"
-                    }`}
-                  >
-                    <span>{isFree ? "Start Free Practice" : `Choose ${plan.name}`}</span>
-                    <span aria-hidden="true">&rarr;</span>
-                  </Link>
+                <div className="text-left sm:text-right">
+                  <span className="text-lg sm:text-2xl font-black text-emerald-700 dark:text-emerald-400 uppercase tracking-tight block">
+                    Free Access
+                  </span>
+                  <span className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 font-semibold">
+                    Included for All Candidates
+                  </span>
                 </div>
               </div>
-            );
-          })}
-        </div>
 
-        {/* View Full Plans Anchor */}
-        <div className="mt-12 text-center">
-          <Link
-            href="/pricing"
-            className="text-sm font-bold text-[var(--bl-color-brand-primary)] hover:underline inline-flex items-center gap-1.5"
-          >
-            <span>Compare all plan entitlements &amp; school bulk licensing</span>
-            <span aria-hidden="true">&rarr;</span>
-          </Link>
+              {/* Core Feature Pillars */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs sm:text-sm text-slate-800 dark:text-slate-200 mb-6">
+                <div className="flex items-start gap-2.5 rounded-xl bg-white dark:bg-slate-800/80 p-3 border border-slate-200/80 dark:border-slate-700/80 shadow-2xs">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-cyan-100 dark:bg-cyan-950 text-cyan-700 dark:text-cyan-400 mt-0.5" aria-hidden="true">
+                    <svg className="h-3 w-3 stroke-current stroke-2 fill-none" viewBox="0 0 24 24">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  </span>
+                  <div>
+                    <strong className="text-slate-950 dark:text-white block font-bold">UTME 4-Subject Simulator</strong>
+                    <span className="text-slate-600 dark:text-slate-400 text-xs">Authentic 4-subject 400-mark timed mock exams with 8-key parity.</span>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-2.5 rounded-xl bg-white dark:bg-slate-800/80 p-3 border border-slate-200/80 dark:border-slate-700/80 shadow-2xs">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 mt-0.5" aria-hidden="true">
+                    <svg className="h-3 w-3 stroke-current stroke-2 fill-none" viewBox="0 0 24 24">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  </span>
+                  <div>
+                    <strong className="text-slate-950 dark:text-white block font-bold">O Level Curriculum Bank</strong>
+                    <span className="text-slate-600 dark:text-slate-400 text-xs">Verified past questions across WAEC, NECO, and GCE with derivations.</span>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-2.5 rounded-xl bg-white dark:bg-slate-800/80 p-3 border border-slate-200/80 dark:border-slate-700/80 shadow-2xs">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-400 mt-0.5" aria-hidden="true">
+                    <svg className="h-3 w-3 stroke-current stroke-2 fill-none" viewBox="0 0 24 24">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  </span>
+                  <div>
+                    <strong className="text-slate-950 dark:text-white block font-bold">Post-UTME Screening Drills</strong>
+                    <span className="text-slate-600 dark:text-slate-400 text-xs">Timed university screening papers with composite aggregate calculator.</span>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-2.5 rounded-xl bg-white dark:bg-slate-800/80 p-3 border border-slate-200/80 dark:border-slate-700/80 shadow-2xs">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-400 mt-0.5" aria-hidden="true">
+                    <svg className="h-3 w-3 stroke-current stroke-2 fill-none" viewBox="0 0 24 24">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  </span>
+                  <div>
+                    <strong className="text-slate-950 dark:text-white block font-bold">Virtual STEM Studio 3D</strong>
+                    <span className="text-slate-600 dark:text-slate-400 text-xs">Interactive 3D molecular structures, circuits, and physics mechanics.</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <Link
+                href="/cbt"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-600 hover:bg-blue-700 px-6 py-3 text-sm font-black text-white shadow-md shadow-blue-500/20 transition active:scale-95 bl-focus-ring"
+              >
+                <span>Launch Free CBT Simulator</span>
+                <span aria-hidden="true">&rarr;</span>
+              </Link>
+              <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                No credit card required &bull; 100% Free Starter
+              </span>
+            </div>
+          </div>
+
+          {/* 2. THE DEEP NAVY HIGHLIGHT CARD (Cohort Intensive Upgrade) */}
+          <div className="lg:col-span-5 rounded-3xl p-6 sm:p-8 lg:p-9 border-2 border-blue-500/40 bg-[#0B1536] text-white shadow-2xl relative overflow-hidden flex flex-col justify-between">
+            {/* Top Coral & Blue Accent Glow */}
+            <div className="pointer-events-none absolute -top-16 -right-16 h-48 w-48 rounded-full bg-blue-500/20 blur-3xl" aria-hidden="true" />
+            <div className="pointer-events-none absolute -bottom-16 -left-16 h-48 w-48 rounded-full bg-[#FF5238]/15 blur-3xl" aria-hidden="true" />
+
+            <div className="relative z-10">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-black bg-gradient-to-r from-blue-600 to-cyan-500 text-white mb-4 shadow-sm">
+                <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
+                <span>INTENSIVE CANDIDATE ACCELERATOR</span>
+              </div>
+
+              <h3 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+                {cohortConfig.active_cohort_name}
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-300 mt-1 mb-6">
+                Structured mentorship, live weekly national mock rankings, and rapid diagnostic intervention.
+              </p>
+
+              {/* Dynamic Rate Display */}
+              <div
+                className="rounded-2xl border border-white/10 bg-white/5 p-4 mb-6 backdrop-blur-xs"
+                data-plan-rate={plan.price_naira.toLocaleString()}
+              >
+                <div className="text-[11px] font-mono text-cyan-300 uppercase tracking-wider">
+                  Verified Plan Rate
+                </div>
+                <div className="flex items-baseline gap-2 mt-1">
+                  <span className="text-3xl sm:text-4xl font-black text-white font-mono">
+                    ₦{plan.price_naira.toLocaleString()}
+                  </span>
+                  <span className="text-xs text-slate-400">/ candidate</span>
+                </div>
+                <span className="text-[11px] text-emerald-400 font-semibold block mt-1">
+                  Includes full mock series &amp; instructor diagnostic reviews
+                </span>
+              </div>
+
+              {/* Value Add Bullets */}
+              <ul className="space-y-2.5 text-xs text-slate-200 mb-6">
+                <li className="flex items-center gap-2">
+                  <svg className="h-4 w-4 text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  <span>Weekly Timed All-Nigeria National Mock Exams</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <svg className="h-4 w-4 text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  <span>Personalized Topic Weakness Diagnostic Radar</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <svg className="h-4 w-4 text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  <span>Priority Socratic AI Hints &amp; Offline Syncing</span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="relative z-10 pt-4 border-t border-white/10 flex flex-col gap-2">
+              <Link
+                href="/pricing"
+                className="w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 px-6 py-3.5 text-sm font-black text-white shadow-lg shadow-blue-500/25 transition active:scale-95 bl-focus-ring"
+              >
+                <span>View Full Plans Breakdown</span>
+                <span aria-hidden="true">&rarr;</span>
+              </Link>
+              <div className="text-[11px] text-slate-400 text-center">
+                Instant activation upon enrolment
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
