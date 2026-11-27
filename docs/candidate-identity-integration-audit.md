@@ -99,3 +99,12 @@ A read-only inspection of the staging table constraints confirms:
 ### SQL draft review status
 
 The draft is not ready to become a migration. The next review must explicitly resolve the assessment/attempt relationship invariant, validate function ownership and ACLs after rename/wrapper creation, confirm that `learning_private` is not exposed through the Supabase Data API, and test the compatibility wrapper against every existing start caller. No SQL was applied and no tests were executed in this follow-up.
+
+
+## Permission-contract verification — 27 November 2026
+
+Read-only inspection of the current staging `public.admin_has_permission(text)` confirms its argument name is `permission_key` and it is a `STABLE SECURITY DEFINER` function with a pinned `public, pg_temp` search path. Existing server handlers call it using the caller's JWT-bound Supabase client (not the service-role client) before performing a narrowly scoped service-role write. The branch should follow that pattern.
+
+The current staging permission matrix grants `learning.content.manage` to `super_admin`, `platform_admin`, `ai_learning_admin`, and `teacher`; it does not grant it to `cbt_admin`. The assessment workspace is currently exposed in the admin shell under `learning.content.manage`, so use that key for assessment-policy management only if that is the intended product authorization. There is no dedicated candidate-PII permission in the current `ADMIN_PERMISSION_KEYS` catalogue or the inspected staging RPC. Do not silently treat `learning.content.manage` as blanket permission to inspect personal candidate details; define and approve a narrower reporting permission before building identity-value reporting.
+
+This verification is specific to the connected staging project. Production's authorization implementation is known to differ and must not be overwritten or assumed equivalent during any later environment migration.
