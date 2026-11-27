@@ -18,6 +18,14 @@ const draftPath = resolve(
   "docs/sql/cbt-access-code-transaction-v1-draft.sql",
 );
 const migration = await readFile(draftPath, "utf8");
+const routeSource = await readFile(
+  resolve(process.cwd(), "app/api/exam/start/route.ts"),
+  "utf8",
+);
+const engineSource = await readFile(
+  resolve(process.cwd(), "app/lib/examEngine/index.ts"),
+  "utf8",
+);
 const db = new PGlite();
 
 const fixture = `
@@ -170,6 +178,13 @@ async function expectFailureWithoutPartialWrite(
 
 const checks: string[] = [];
 try {
+  assert.match(routeSource, /persistSnapshot:\s*false/);
+  assert.match(routeSource, /await freezeAttemptSnapshot\(/);
+  assert.doesNotMatch(routeSource, /STAGING-MASTER-TEST-001/);
+  assert.match(engineSource, /persistSnapshot\?: boolean/);
+  assert.match(engineSource, /options\.persistSnapshot === false/);
+  checks.push("route defers snapshot persistence until the actual session exists and has no hard-coded staging master code");
+
   await db.exec(fixture);
   await db.exec(migration);
   checks.push("draft SQL parses and installs against the synthetic staging-shaped schema");
