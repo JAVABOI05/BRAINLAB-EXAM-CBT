@@ -171,7 +171,7 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
         className="flex min-h-screen items-center justify-center bg-[#F4F6FA] px-6 text-center text-[#012153] dark:bg-[#050811] dark:text-slate-200"
       >
         <div className="w-full max-w-md space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <p className="text-base font-extrabold">We couldn't verify your session</p>
+          <p className="text-base font-extrabold">We couldn&apos;t verify your session</p>
           <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">{authError}</p>
           <div className="flex flex-col justify-center gap-2 sm:flex-row">
             <button
