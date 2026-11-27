@@ -64,11 +64,12 @@ export default function AssessmentRunnerPage() {
         return;
       }
 
+      // Candidate-facing metadata must come from the restricted public view.
+      // Direct reads from learning_assessments are intentionally blocked for anon users.
       const { data, error: err } = await supabase
-        .from("learning_assessments")
+        .from("public_learning_assessment_metadata")
         .select("id, title, description, assessment_type, question_count, duration_seconds, max_attempts, access_code_required, result_release")
         .eq("id", assessmentId)
-        .eq("is_published", true)
         .single();
 
       if (!active) return;
