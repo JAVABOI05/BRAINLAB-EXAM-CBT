@@ -118,10 +118,8 @@ async function count(table: "access_codes" | "exam_sessions") {
 
 async function expectFailureWithoutPartialWrite(
   triggerName: string,
-  triggerSql: string,
   overrideToken: string,
 ) {
-  await db.exec(triggerSql);
   const beforeSessions = await count("exam_sessions");
   const beforeCode = await db.query(
     "select is_used, exam_session_id from public.access_codes where code = 'SYNTHETIC-CODE-001'",
@@ -248,7 +246,6 @@ try {
   `);
   await expectFailureWithoutPartialWrite(
     "reject_session_insert",
-    "create function public.reject_exam_session_insert() returns trigger language plpgsql as $$ begin raise exception 'synthetic insert failure'; end; $$; create trigger reject_session_insert before insert on public.exam_sessions for each row execute function public.reject_exam_session_insert();",
     "77777777-7777-4777-8777-777777777777",
   );
   await db.exec("drop function public.reject_exam_session_insert();");
@@ -265,7 +262,6 @@ try {
   `);
   await expectFailureWithoutPartialWrite(
     "reject_access_code_update",
-    "create function public.reject_access_code_update() returns trigger language plpgsql as $$ begin raise exception 'synthetic update failure'; end; $$; create trigger reject_access_code_update before update on public.access_codes for each row execute function public.reject_access_code_update();",
     "88888888-8888-4888-8888-888888888888",
   );
   await db.exec("drop function public.reject_access_code_update();");
