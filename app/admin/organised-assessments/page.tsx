@@ -182,6 +182,7 @@ export default function OrganisedAssessmentsAdminPage() {
           description: description.trim() || null,
           instructions: instructions.trim() || null,
           assessment_type: kind,
+          organisation_id: organisationId || null,
           question_source: "bank",
           subjects: selectedSubjects,
           categories: categories.split(",").map((x) => x.trim()).filter(Boolean),
