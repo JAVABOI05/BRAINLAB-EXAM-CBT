@@ -27,7 +27,7 @@ The existing production project is materially different: it does not have `used_
 
 The server route generates and validates the paper before calling the database. The new RPC receives only the server-prepared session payload and returns a compact result: `ok`, stable `error`, and `session_id`. It must not return the attempt token or a complete session row.
 
-For a normal code, the transaction must lock all rows matching the normalized code, reject zero or multiple matches, reject an already-used code, recheck an active session, insert the session, update exactly that one code row with usage metadata and the new session ID, and commit both changes together.
+For a normal code, the migration must first reject existing normalized duplicates and create a unique expression index on `upper(btrim(code))`. The transaction then takes an advisory lock for the normalized code, locks the matching row, rejects zero or multiple matches, rejects an already-used code, rechecks an active session, inserts the session, updates exactly that one code row with usage metadata and the new session ID, and commits both changes together.
 
 For open/master access, it must take a transaction-scoped advisory lock keyed by access mode + normalized session code + normalized phone, then recheck for an active session before inserting. It must validate master-code status against the server-side `exam_config.master_access_code`; a caller-supplied boolean must never be sufficient proof. Open/master attempts must not consume any normal code row. The advisory lock prevents duplicate launches; it does not authenticate the candidate or authorize phone-only recovery.
 
@@ -54,7 +54,7 @@ The function must be callable only by `service_role`, with execution revoked fro
 | T15 | Candidate-controlled `used_by` / session linkage tampering | Function derives or validates values from the payload/session insert; arbitrary unrelated session IDs cannot be attached |
 | T16 | Existing CBT lifecycle | Start, save, resume, submit, result retrieval, and question exposure behavior remain unchanged |
 | T17 | Lost HTTP response after successful commit | Retry does not create a second attempt; normal-code retry resolves through the existing recovery path |
-| T18 | Master-code trigger interaction | No attempt is made to mark the configured master-code row used; trigger cannot silently produce a successful-looking but unconsumed normal-code transaction |
+| T18 | Master-code trigger interaction | No attempt is made to mark the configured master-code row used; trigger cannot silently produce a successful-looking but unconsumed normal-code transaction |\n| T19 | Normalized-code unique index | Migration preflight rejects pre-existing case/whitespace collisions; after index creation, concurrent issuance cannot create two rows with the same normalized code |
 
 ## 5. Failure injection
 
