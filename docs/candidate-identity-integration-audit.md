@@ -152,3 +152,16 @@ A direct re-read of the current branch's assessment handlers confirms the follow
 ### Current implementation decision
 
 No permission helper or route mutation has been made yet. The correct next slice is to add and test request-token extraction plus a caller-JWT permission helper, define the new permission keys and role matrix, then add the corresponding reviewed SQL migration draft. Only after that contract is stable should the five assessment handlers be changed. Candidate-PII reporting remains a later, separate slice. This review did not execute a migration, change either database, trigger a deployment, or alter production.
+
+
+## Frontend authorization compatibility check — 27 November 2026
+
+The assessment admin page was checked against the route-authentication patterns before selecting an implementation:
+
+- The page's initial workspace gate calls the browser-side `adminHasPermission("institution.manage")` or `adminHasPermission("learning.content.manage")`. This is a UI gate only; it does not protect the API routes.
+- The page loads organisations, assessments, question catalog and assessment access-code metadata directly through the browser Supabase client. It also toggles publication directly against `learning_assessments`. Those operations rely on database grants/RLS and must be checked against the actual staging policies; adding API route checks alone will not secure the direct-client path.
+- The create request currently sends only `Content-Type: application/json`; it does not explicitly attach a bearer token. `getAdminSession(request)` can authenticate supported auth cookies, but the existing `exam-access-policy` route's granular permission pattern requires an explicit bearer token and returns 401 without one. Therefore, copying that route's token-only pattern into the assessment routes without changing the frontend would break cookie-authenticated calls.
+- The safe implementation choices are either (a) a tested request-token extractor that supports the exact Supabase cookie formats used by this app and fails closed, or (b) updating every assessment API caller to send the current session access token and verifying all callers. Do not assume that `getUser()` returns the access token; use the session API when choosing option (b).
+- The page's direct table operations need their own RLS permission enforcement or should be moved behind the same permission-checked API boundary. Candidate identity configuration should not be added to the direct browser update path.
+
+This is a source audit only. No route, UI, RLS policy, or database object was changed in this step.
