@@ -121,7 +121,9 @@ async function callRpc(overrides: Record<string, unknown> = {}) {
     ...overrides,
   };
 
-  const result = await db.query(
+  const result = await db.query<{
+    result: { ok: boolean; error?: string; session_id?: string };
+  }>(
     `select public.create_exam_session_and_consume_code(
       $1::text, $2::text, $3::text, $4::text, $5::text, $6::bigint[],
       $7::integer, $8::timestamptz, $9::uuid, $10::boolean, $11::text
@@ -140,7 +142,7 @@ async function callRpc(overrides: Record<string, unknown> = {}) {
       args.elective,
     ],
   );
-  return result.rows[0]?.result as { ok: boolean; error?: string; session_id?: string };
+  return result.rows[0]?.result;
 }
 
 async function count(table: "access_codes" | "exam_sessions") {
@@ -156,7 +158,7 @@ async function expectFailureWithoutPartialWrite(
   overrideToken: string,
 ) {
   const beforeSessions = await count("exam_sessions");
-  const beforeCode = await db.query(
+  const beforeCode = await db.query<{ is_used: boolean; exam_session_id: string | null }>(
     "select is_used, exam_session_id from public.access_codes where code = $1",
     [code],
   );
@@ -168,7 +170,7 @@ async function expectFailureWithoutPartialWrite(
   }
   assert.equal(rejected, true, `${triggerName} should force the RPC to fail`);
   assert.equal(await count("exam_sessions"), beforeSessions, `${triggerName}: session insert must roll back`);
-  const afterCode = await db.query(
+  const afterCode = await db.query<{ is_used: boolean; exam_session_id: string | null }>(
     "select is_used, exam_session_id from public.access_codes where code = $1",
     [code],
   );
@@ -213,7 +215,11 @@ try {
   assert.equal(missingCode.error, "invalid_code");
   checks.push("missing normal code returns invalid_code without a session");
 
-  const grants = await db.query(
+  const grants = await db.query<{
+    anon_exec: boolean;
+    authenticated_exec: boolean;
+    service_exec: boolean;
+  }>(
     `select
       has_function_privilege('anon', 'public.create_exam_session_and_consume_code(text,text,text,text,text,bigint[],integer,timestamptz,uuid,boolean,text)', 'EXECUTE') as anon_exec,
       has_function_privilege('authenticated', 'public.create_exam_session_and_consume_code(text,text,text,text,text,bigint[],integer,timestamptz,uuid,boolean,text)', 'EXECUTE') as authenticated_exec,
@@ -268,7 +274,11 @@ try {
   assert.equal(success.ok, true);
   assert.ok(success.session_id);
   assert.equal(await count("exam_sessions"), 1);
-  const consumed = await db.query(
+  const consumed = await db.query<{
+    is_used: boolean;
+    has_used_at: boolean;
+    exam_session_id: string | null;
+  }>(
     "select is_used, used_at is not null as has_used_at, exam_session_id from public.access_codes where code = 'SYNTHETIC-CODE-001'",
   );
   assert.equal(consumed.rows[0].is_used, true);
@@ -292,7 +302,7 @@ try {
     attempt_token: "33333333-3333-4333-8333-333333333333",
   });
   assert.equal(staleSubject.error, "code_subject_changed");
-  const staleRow = await db.query(
+  const staleRow = await db.query<{ is_used: boolean }>(
     "select is_used from public.access_codes where code = 'SYNTHETIC-STALE-SUBJECT'",
   );
   assert.equal(staleRow.rows[0].is_used, false);
@@ -305,7 +315,7 @@ try {
     attempt_token: "44444444-4444-4444-8444-444444444444",
   });
   assert.equal(openAttempt.ok, true);
-  const openSession = await db.query(
+  const openSession = await db.query<{ access_code: string; is_master_code: boolean }>(
     "select access_code, is_master_code from public.exam_sessions where id = $1",
     [openAttempt.session_id],
   );
@@ -329,7 +339,7 @@ try {
     attempt_token: "55555555-5555-4555-8555-555555555555",
   });
   assert.equal(masterAttempt.ok, true);
-  const masterSession = await db.query(
+  const masterSession = await db.query<{ access_code: string; is_master_code: boolean }>(
     "select access_code, is_master_code from public.exam_sessions where id = $1",
     [masterAttempt.session_id],
   );
@@ -337,7 +347,12 @@ try {
     access_code: "SYNTHETIC-MASTER-ONLY",
     is_master_code: true,
   });
-  const masterCodeRow = await db.query(
+  const masterCodeRow = await db.query<{
+    is_used: boolean;
+    used_by: string | null;
+    used_at: string | null;
+    exam_session_id: string | null;
+  }>(
     "select is_used, used_by, used_at, exam_session_id from public.access_codes where code = 'SYNTHETIC-MASTER-ONLY'",
   );
   assert.deepEqual(masterCodeRow.rows[0], {
@@ -356,7 +371,12 @@ try {
     attempt_token: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
   });
   assert.equal(spoofedMaster.error, "invalid_access_mode");
-  const masterAfterSpoof = await db.query(
+  const masterAfterSpoof = await db.query<{
+    is_used: boolean;
+    used_by: string | null;
+    used_at: string | null;
+    exam_session_id: string | null;
+  }>(
     "select is_used, used_by, used_at, exam_session_id from public.access_codes where code = 'SYNTHETIC-MASTER-ONLY'",
   );
   assert.deepEqual(masterAfterSpoof.rows[0], {
