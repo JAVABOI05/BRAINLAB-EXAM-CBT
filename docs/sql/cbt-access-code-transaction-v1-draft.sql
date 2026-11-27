@@ -102,10 +102,6 @@ begin
       for update
     loop
       v_match_count := v_match_count + 1;
-      if v_match_count = 1 then
-        -- Keep the sole row's fields for the checks below.
-        v_code_row := v_code_row;
-      end if;
     end loop;
 
     if v_match_count = 0 then
@@ -209,6 +205,29 @@ grant execute on function public.create_exam_session_and_consume_code(
   text, text, text, text, bigint[], integer, timestamptz, uuid, boolean, text
 ) to service_role;
 
+-- Required normalized-code uniqueness preflight for a migration (run before
+-- creating the RPC; fail closed if legacy variants collide):
+--
+-- do $preflight$
+-- begin
+--   if exists (
+--     select 1
+--     from public.access_codes
+--     group by upper(btrim(code))
+--     having count(*) > 1
+--   ) then
+--     raise exception 'Cannot install normalized access-code uniqueness: duplicate normalized codes exist';
+--   end if;
+-- end;
+-- $preflight$;
+--
+-- create unique index idx_access_codes_normalized_code_unique
+--   on public.access_codes (upper(btrim(code)));
+--
+-- The transaction-level advisory lock serializes consumers of the same
+-- normalized code. The unique expression index is still required to prevent
+-- concurrent code issuance from introducing a normalized duplicate.
+--
 -- Review notes before this draft can become a migration:
 -- 1. Revisit loop-record assignment/locking implementation and verify with real
 --    concurrent tests in a disposable database.
