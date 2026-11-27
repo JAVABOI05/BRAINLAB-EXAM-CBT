@@ -2,6 +2,24 @@
 -- Intended for a disposable database after schema/migration reconciliation.
 -- This is a staging-shaped first draft; production requires a separately reconciled migration.
 
+-- Fail closed if historical case/whitespace variants collide. Do not auto-merge
+-- or rewrite access-code rows as part of this migration.
+do $preflight$
+begin
+  if exists (
+    select 1
+    from public.access_codes
+    group by upper(btrim(code))
+    having count(*) > 1
+  ) then
+    raise exception 'Cannot install normalized access-code uniqueness: duplicate normalized codes exist';
+  end if;
+end;
+$preflight$;
+
+create unique index idx_access_codes_normalized_code_unique
+  on public.access_codes (upper(btrim(code)));
+
 create or replace function public.create_exam_session_and_consume_code(
   p_candidate_name text,
   p_phone text,
@@ -92,6 +110,11 @@ begin
       );
     end if;
   else
+    -- Serialize normal-code consumers of the same normalized value.
+    perform pg_catalog.pg_advisory_xact_lock(
+      pg_catalog.hashtextextended('access-code:' || v_code, 0)
+    );
+
     -- Lock every normalized match so legacy whitespace/case variants cannot
     -- cause an arbitrary row to be selected. Raw-code uniqueness is not enough.
     for v_code_row in
@@ -205,28 +228,8 @@ grant execute on function public.create_exam_session_and_consume_code(
   text, text, text, text, bigint[], integer, timestamptz, uuid, boolean, text
 ) to service_role;
 
--- Required normalized-code uniqueness preflight for a migration (run before
--- creating the RPC; fail closed if legacy variants collide):
---
--- do $preflight$
--- begin
---   if exists (
---     select 1
---     from public.access_codes
---     group by upper(btrim(code))
---     having count(*) > 1
---   ) then
---     raise exception 'Cannot install normalized access-code uniqueness: duplicate normalized codes exist';
---   end if;
--- end;
--- $preflight$;
---
--- create unique index idx_access_codes_normalized_code_unique
---   on public.access_codes (upper(btrim(code)));
---
--- The transaction-level advisory lock serializes consumers of the same
--- normalized code. The unique expression index is still required to prevent
--- concurrent code issuance from introducing a normalized duplicate.
+-- The advisory lock serializes code consumers. The expression unique index above
+-- also prevents concurrent issuance from introducing a normalized duplicate.
 --
 -- Review notes before this draft can become a migration:
 -- 1. Revisit loop-record assignment/locking implementation and verify with real
