@@ -6,46 +6,46 @@ begin;
 select plan(14);
 
 select ok(
-  learning_private.is_valid_candidate_identity_config(null),
+  learning_learning_private.is_valid_candidate_identity_config(null),
   'NULL identity config preserves legacy behaviour'
 );
 
 select ok(
-  private.is_valid_candidate_identity_config(
+  learning_private.is_valid_candidate_identity_config(
     '{"version":1,"fields":{"full_name":"required","candidate_number":"optional","email":"hidden"}}'::jsonb
   ),
   'accepts a valid version 1 policy'
 );
 
 select ok(
-  not private.is_valid_candidate_identity_config('{"version":2,"fields":{"full_name":"required"}}'::jsonb),
+  not learning_private.is_valid_candidate_identity_config('{"version":2,"fields":{"full_name":"required"}}'::jsonb),
   'rejects unsupported policy versions'
 );
 
 select ok(
-  not private.is_valid_candidate_identity_config('{"version":1,"fields":{"unknown":"required"}}'::jsonb),
+  not learning_private.is_valid_candidate_identity_config('{"version":1,"fields":{"unknown":"required"}}'::jsonb),
   'rejects unknown identity fields'
 );
 
 select ok(
-  not private.is_valid_candidate_identity_config('{"version":1,"fields":{"full_name":"mandatory"}}'::jsonb),
+  not learning_private.is_valid_candidate_identity_config('{"version":1,"fields":{"full_name":"mandatory"}}'::jsonb),
   'rejects unknown field modes'
 );
 
 select ok(
-  not learning_private.is_valid_candidate_identity_config('{"version":1,"fields":{"full_name":"hidden"}}'::jsonb),
+  not learning_learning_private.is_valid_candidate_identity_config('{"version":1,"fields":{"full_name":"hidden"}}'::jsonb),
   'requires at least one visible identity field'
 );
 
 select ok(
-  not learning_private.is_valid_candidate_identity_config(
+  not learning_learning_private.is_valid_candidate_identity_config(
     jsonb_build_object('version', 1, 'fields', jsonb_build_object('full_name', repeat('x', 2050)))
   ),
   'rejects oversized identity policies'
 );
 
 select is(
-  learning_private.normalize_candidate_identity(
+  learning_learning_private.normalize_candidate_identity(
     '{"version":1,"fields":{"full_name":"required","email":"optional"}}'::jsonb,
     '{"full_name":"  Ada   Lovelace ","email":" ADA@EXAMPLE.COM "}'::jsonb
   )->>'full_name',
@@ -54,7 +54,7 @@ select is(
 );
 
 select is(
-  private.normalize_candidate_identity(
+  learning_private.normalize_candidate_identity(
     '{"version":1,"fields":{"full_name":"required","email":"optional"}}'::jsonb,
     '{"full_name":"Ada Lovelace","email":" ADA@EXAMPLE.COM "}'::jsonb
   )->>'email',
@@ -63,7 +63,7 @@ select is(
 );
 
 select is(
-  private.normalize_candidate_identity(
+  learning_private.normalize_candidate_identity(
     '{"version":1,"fields":{"full_name":"required","candidate_number":"optional"}}'::jsonb,
     '{"full_name":"Ada Lovelace","candidate_number":"   "}'::jsonb
   )->>'candidate_number',
@@ -72,7 +72,7 @@ select is(
 );
 
 select throws_ok(
-  $$select private.normalize_candidate_identity(
+  $$select learning_private.normalize_candidate_identity(
     '{"version":1,"fields":{"full_name":"required","phone":"hidden"}}'::jsonb,
     '{"full_name":"Ada Lovelace","phone":"+2348012345678"}'::jsonb
   )$$,
@@ -82,7 +82,7 @@ select throws_ok(
 );
 
 select throws_ok(
-  $$select private.normalize_candidate_identity(
+  $$select learning_private.normalize_candidate_identity(
     '{"version":1,"fields":{"full_name":"required"}}'::jsonb,
     '{}'::jsonb
   )$$,
@@ -92,7 +92,7 @@ select throws_ok(
 );
 
 select throws_ok(
-  $$select private.normalize_candidate_identity(
+  $$select learning_private.normalize_candidate_identity(
     '{"version":1,"fields":{"full_name":"required"}}'::jsonb,
     '{"full_name":"Ada","unexpected":"value"}'::jsonb
   )$$,
@@ -102,7 +102,7 @@ select throws_ok(
 );
 
 select throws_ok(
-  $select learning_private.normalize_candidate_identity(
+  $select learning_learning_private.normalize_candidate_identity(
     '{"version":1,"fields":{"full_name":"required"}}'::jsonb,
     jsonb_build_object('full_name', repeat('A', 4100))
   )$,
