@@ -119,3 +119,38 @@ Run against an isolated disposable database or CI database, not production and n
 8. Reconcile production schema and migration history separately; request separate approval before any production change.
 
 **No staging migration, production migration, privilege change, merge, or deployment is authorized by this design document.**
+
+
+## 8. Environment-specific catalog verification — 27 November 2026
+
+Read-only catalog queries were run separately against staging project `eusgwsuoloomphebrepe` and existing production project `bupkyppvtkrmzmluzjmf`. No table rows were read and no database objects or privileges were changed.
+
+### Staging
+
+- `access_codes.used_at` and `access_codes.exam_session_id` exist.
+- `exam_sessions` contains the columns currently inserted by the route: candidate name, phone, subject, access code, status, paper IDs, time-left, duration, deadline, attempt token, master-code flag and elective. It also has a non-null `draft_answers` column with a default.
+- `access_codes.code` has a unique constraint/index, plus a second unique index on the same raw `code` column and a non-unique lookup index. The duplicate unique indexes are redundant but must not be dropped as part of this repair without a separate index review.
+- `mark_access_code_used(text,text,uuid)` exists as SECURITY DEFINER and its ACL includes PUBLIC, anon, authenticated and service_role.
+
+### Existing production project
+
+- `access_codes.used_at` and `access_codes.exam_session_id` do not exist.
+- The inspected production catalog has no `mark_access_code_used(text,text,uuid)` function.
+- `access_codes.code` has a unique constraint/index and a second unique index on the same raw column.
+- The inspected `exam_sessions` columns otherwise include the fields required by the current route, including `attempt_token`, `paper_ids`, `draft_answers`, `duration_seconds`, `deadline_at`, and `is_master_code`.
+
+### Consequences
+
+1. The new transaction migration must be reconciled independently for staging and production. The production migration must add the tracking columns as part of the new transaction contract (or avoid those columns and return linkage another way); it must not assume they already exist.
+2. The old `mark_access_code_used` function is a staging-only object in this comparison. A production migration should not attempt to revoke it without an existence guard, and production must not depend on it.
+3. Raw-code uniqueness does not prove normalized-code uniqueness. The new function must query all rows matching `upper(trim(code)) = upper(trim(p_code))`, reject zero matches and reject more than one match, and only then lock the single row. A later data/constraint migration may normalize codes only after a duplicate audit and explicit approval.
+4. The staging RPC's PUBLIC/anon/authenticated grants are confirmed by its live ACL. Revoke them only after the replacement route is deployed and caller inventory is complete; the replacement function should be executable only by service_role.
+5. No data counts or code values were queried. No code was consumed, no session was created, and no student records were inspected.
+
+## 9. Revised migration guardrails
+
+- Use a forward-only migration for each target environment; do not edit the already-applied `20261101230000` migration as the only fix.
+- In staging, create the new server-only RPC and retain the old RPC temporarily with its legacy grant only until the route cutover is verified; then revoke the unsafe grants in a separate approved step.
+- In the existing production project, add missing tracking columns and create the new RPC only after production's actual migration history and schema baseline have been reconciled. Do not copy staging migration history wholesale.
+- Keep the two unique raw-code indexes untouched in this work; redundant-index cleanup is separate.
+- Treat this catalog snapshot as valid for the inspection date only. Recheck schema, grants, and deployment environment immediately before any migration.
