@@ -267,6 +267,8 @@ export async function POST(request: NextRequest) {
       durationSeconds,
       excludeQuestionIds: masteredQuestionIds,
       previouslySeenQuestionIds,
+      // Persist the immutable snapshot only after the real session row exists.
+      persistSnapshot: false,
     });
 
     if (!generated.success || generated.paperIds.length !== 180 || generated.clientQuestions.length !== 180) {
@@ -421,7 +423,7 @@ export async function POST(request: NextRequest) {
 
     // 6. Freeze immutable attempt snapshot using actual session ID
     if (generated.snapshot?.questions_snapshot) {
-      void freezeAttemptSnapshot(
+      await freezeAttemptSnapshot(
         sessionRow.id,
         generated.snapshot.blueprint_id || "jamb_utme_full_mock",
         generated.snapshot.blueprint_version || 1,
