@@ -127,3 +127,56 @@ Do not generate a single cross-environment migration and do not apply this desig
 ## Current status
 
 This document records read-only source and database catalog verification plus the conservative access decision. No migration SQL has been applied, no candidate data has been read, no application authorization code has been changed, no tests/builds have been run, and no deployment or merge has occurred.
+
+
+## Additional route and RPC audit — 27 November 2026
+
+The following application files were inspected on the repair branch:
+
+### Admin assessment API
+
+- `app/api/admin/assessments/route.ts`: GET and POST require only `getAdminSession()`. The route then uses `getSupabaseServerClient()`, which selects the service-role key when configured. No feature-level permission RPC is called. GET returns aggregate attempt counts/scores; POST creates the assessment, optionally inserts an assessment access code, and writes a configuration audit event.
+- `app/api/admin/assessments/[id]/route.ts`: GET, PATCH, and DELETE also require only an administrator session before using the service-role client. GET uses `select("*")` for assessment configuration and returns the latest 100 attempts including `user_id`. This is a direct identity correlation leak into the general admin detail endpoint, even though it does not return candidate names or phone numbers. PATCH/DELETE have no explicit assessment feature permission check.
+- `app/api/admin/assessments/[id]/code/route.ts`: GET, POST, and DELETE require only an administrator session before service-role operations. They expose code metadata and permit code lifecycle changes without a dedicated assessment-code permission check. POST revokes existing active codes, inserts a replacement, and enables `access_code_required`; these are privileged writes and need explicit authorization and atomicity review.
+
+### Browser-direct admin access
+
+- `app/admin/organised-assessments/page.tsx`: reads organisations, assessments, the question catalogue, and assessment access-code metadata directly from the browser Supabase client. Its UI gate checks `institution.manage` OR `learning.content.manage`, but those checks are not a substitute for database RLS. The publish toggle directly updates `learning_assessments`. The create flow calls the admin API and currently does not explicitly attach an Authorization bearer token.
+- `app/admin/academy-results/page.tsx`: reads the assessment list directly from the browser client and invokes `get_organisation_assessment_results`. Its UI gate checks analytics/results/institution permissions, but the database RPC must be treated as the real security boundary.
+- `app/admin/academy-access/page.tsx`: directly reads organisations, assessments, and access-code rows; it also directly updates code revocation and organisation status. It invokes database RPCs for code creation and entitlement operations. UI-level role checks do not protect those direct calls; each RPC and table policy must enforce its own permission and scope.
+
+### Result-reporting RPC is an independent authorization boundary
+
+The checked-in migration `20261018143242_assessment_attempt_limits_and_admin_results.sql` defines `public.get_organisation_assessment_results(uuid)` as `SECURITY DEFINER`. It returns every attempt for the selected assessment, including `user_id`, and has no pagination.
+
+Its authorization currently accepts any of:
+
+- `learning_can_manage_all()`;
+- organisation management for the assessment's organisation;
+- `admin_has_permission('analytics.read')`; or
+- `admin_has_permission('cbt.results.read')`.
+
+This means a role with broad analytics or CBT-results permission can read attempt-level identifiers across assessments, independently of the page's UI gate. That is broader than the selected candidate-identity policy. The RPC should be split into (a) aggregate/score reporting with no user identifier by default and (b) a separately audited, assessment-scoped identity-review endpoint. If identifiable result review is genuinely needed for a non-Super Admin, it should require an active reviewer assignment to the exact assessment. Any export path must apply the same server-side check.
+
+The result RPC's current `jsonb_agg` returns the entire attempt set in one response. Add bounded pagination and stable ordering in a revised API/RPC contract; do not simply add a page-size parameter while retaining an unbounded aggregate internally.
+
+### Key conclusion
+
+The existing security boundary is not just three admin route handlers. It includes:
+
+1. Assessment list/create/detail/update/delete API routes.
+2. Assessment access-code GET/create/revoke API routes.
+3. Browser-direct reads/writes in the organised-assessment admin page.
+4. Browser-direct reads/writes and security-definer RPCs in the Academy Access page.
+5. The security-definer results RPC and any CSV export fed by its output.
+6. Candidate-facing public assessment reads, which should remain limited to published safe fields.
+
+Do not implement a partial patch that secures only the admin API while leaving the browser/RPC paths unchanged.
+
+### Explicitly deferred implementation
+
+No application authorization changes are included in this commit. The current repository has no `@supabase/ssr` dependency; the existing request auth helper manually inspects cookie strings and does not robustly reconstruct chunked/base64 Supabase SSR cookies. A safe first implementation should either:
+- pass the verified current access token explicitly from every browser caller to these APIs and fail closed when absent; or
+- add and configure the supported Supabase SSR cookie integration across the app, with tests for chunked cookie reconstruction and token verification.
+
+Do not treat a raw cookie value longer than 20 characters as a verified bearer token. A token must be verified by Supabase Auth before it is used for role/permission checks.
