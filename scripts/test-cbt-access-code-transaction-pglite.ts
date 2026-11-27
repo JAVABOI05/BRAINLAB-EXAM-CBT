@@ -63,8 +63,34 @@ const fixture = `
   insert into public.exam_config(config_key, config_value)
   values ('master_access_code', '"SYNTHETIC-MASTER-ONLY"');
 
+  -- Reproduce Staging's master-code safeguard: the configured master row
+  -- must never become consumed, even if a future code path tries to update it.
+  create function public.protect_master_code_from_being_used()
+  returns trigger language plpgsql as $
+  declare
+    configured_master text;
+  begin
+    select upper(btrim(config_value #>> '{}'))
+      into configured_master
+    from public.exam_config
+    where config_key = 'master_access_code';
+
+    if upper(btrim(new.code)) = configured_master then
+      new.is_used := false;
+      new.used_by := null;
+    end if;
+    return new;
+  end;
+  $;
+
+  create trigger trg_protect_master_code_on_access_codes
+  before update on public.access_codes
+  for each row execute function public.protect_master_code_from_being_used();
+
   insert into public.access_codes(code, subject, is_used)
-  values ('SYNTHETIC-CODE-001', 'Mathematics', false);
+  values
+    ('SYNTHETIC-CODE-001', 'Mathematics', false),
+    ('SYNTHETIC-MASTER-ONLY', 'Mathematics', false);
 `;
 
 const paperIds = Array.from({ length: 180 }, (_, index) => index + 1);
@@ -247,7 +273,16 @@ try {
     access_code: "SYNTHETIC-MASTER-ONLY",
     is_master_code: true,
   });
-  checks.push("master code is verified from synthetic server config and is not consumed as a normal code");
+  const masterCodeRow = await db.query(
+    "select is_used, used_by, used_at, exam_session_id from public.access_codes where code = 'SYNTHETIC-MASTER-ONLY'",
+  );
+  assert.deepEqual(masterCodeRow.rows[0], {
+    is_used: false,
+    used_by: null,
+    used_at: null,
+    exam_session_id: null,
+  });
+  checks.push("master launch leaves the configured master row untouched under the staging protection trigger");
 
   const spoofedMaster = await callRpc({
     code: "SYNTHETIC-MASTER-ONLY",
@@ -269,6 +304,17 @@ try {
   });
   assert.equal(invalidPaper.error, "invalid_paper_ids");
   checks.push("duplicate question IDs are rejected");
+
+  const nullPaper = [...paperIds];
+  nullPaper[179] = null as unknown as number;
+  const invalidNullPaper = await callRpc({
+    code: "",
+    phone: "08000000006",
+    paper_ids: nullPaper,
+    attempt_token: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+  });
+  assert.equal(invalidNullPaper.error, "invalid_paper_ids");
+  checks.push("paper payload containing a null question ID is rejected");
 
   await db.exec("insert into public.access_codes(code, subject, is_used) values ('SYNTHETIC-INSERT-FAIL', 'Mathematics', false)");
   await db.exec(`
