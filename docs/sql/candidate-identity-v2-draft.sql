@@ -34,7 +34,8 @@ begin
   if octet_length(p_config::text) > 2048
      or jsonb_typeof(p_config) <> 'object'
      or (p_config - array['version', 'fields']) <> '{}'::jsonb
-     or p_config->>'version' <> '1'
+     or jsonb_typeof(p_config->'version') <> 'number'
+     or p_config->'version' <> '1'::jsonb
      or jsonb_typeof(p_config->'fields') <> 'object'
      or (p_config->'fields' - array['full_name', 'candidate_number', 'phone', 'email']) <> '{}'::jsonb then
     return false;
@@ -60,6 +61,8 @@ end;
 $$;
 
 -- This helper returns only a boolean; no identity payload is exposed.
+revoke all on function learning_private.is_valid_candidate_identity_config(jsonb)
+  from public, anon;
 grant execute on function learning_private.is_valid_candidate_identity_config(jsonb) to authenticated, service_role;
 
 alter table public.learning_assessments
