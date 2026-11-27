@@ -271,3 +271,15 @@ The route has not been refactored to call this function. The SQL draft remains u
 - Aligned `used_by` formatting in the SQL draft with the route's current placeholder-phone behavior: normal phones are recorded as `Candidate Name (phone)`; the known placeholder phone records only the candidate name.
 
 **Execution status:** the harness and command are committed but have not been run. The current container has Node.js but no repository checkout, installed project dependencies, `psql`, PostgreSQL server, or Docker. No package installation, CI run, hosted branch, or database connection was initiated. Therefore no SQL syntax, PGlite compatibility, rollback, or privilege result is being claimed.
+
+
+## 15. CBT start-path safeguards and regression wiring
+
+Two narrow route safeguards were implemented while preparing the atomic transaction cutover:
+
+- `generateExamPaper` now accepts optional `persistSnapshot` (default `true` for legacy callers). The full-mock start route passes `false`, so paper generation does not write a snapshot under a provisional session UUID before a session exists. After the actual session row is created, the route persists the snapshot once using the real session ID.
+- Removed the route's hard-coded `STAGING-MASTER-TEST-001` fallback. A master-code configuration lookup error now fails closed with HTTP 503; a missing/empty setting does not activate a test master code.
+
+The PGlite harness `scripts/test-cbt-access-code-transaction-pglite.ts` now checks these route/engine invariants as well as the SQL draft's single-session transaction cases. Its package script is `npm run test:cbt-transaction:pglite`, and the CI workflow includes that command for this repair branch.
+
+A CI workflow definition commit was created, but the GitHub Actions runs endpoint currently reports zero runs for this branch. Therefore the test has **not** been executed and no pass is claimed. The harness cannot prove multi-connection concurrency; that still requires a disposable real PostgreSQL runner. No connected BrainLab database has been used as a test target.
