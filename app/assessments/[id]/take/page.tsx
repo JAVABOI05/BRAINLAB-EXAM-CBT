@@ -134,12 +134,18 @@ export default function AssessmentTakePage() {
 
   // 3. Start Assessment
   async function handleStart() {
+    const currentAssessment = assessment;
+    if (!currentAssessment) {
+      setError("Assessment details are still loading. Please try again.");
+      return;
+    }
+
     setError("");
     setLoading(true);
 
     try {
       const { data, error: rpcErr } = await supabase.rpc("start_organisation_assessment", {
-        p_assessment_id: assessment.id,
+        p_assessment_id: currentAssessment.id,
         p_access_code: accessCode.trim() || null,
       });
 
