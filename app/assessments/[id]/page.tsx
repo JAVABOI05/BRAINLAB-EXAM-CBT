@@ -16,6 +16,7 @@ interface AssessmentLandingInfo {
   duration_seconds: number | null;
   max_attempts: number;
   access_code_required: boolean;
+  requires_sign_in: boolean;
 }
 
 export default function AssessmentLandingPage() {
@@ -31,16 +32,9 @@ export default function AssessmentLandingPage() {
     async function loadAssessment() {
       setLoading(true);
       setError("");
-      const { data: auth, error: authError } = await supabase.auth.getUser();
-      if (authError || !auth.user) {
-        router.replace(`/login?next=/assessments/${encodeURIComponent(assessmentId)}`);
-        return;
-      }
-
       const lookup = supabase
-        .from("learning_assessments")
-        .select("id, slug, title, description, instructions, assessment_type, question_count, duration_seconds, max_attempts, access_code_required")
-        .eq("is_published", true);
+        .from("public_learning_assessment_metadata")
+        .select("id, slug, title, description, instructions, assessment_type, question_count, duration_seconds, max_attempts, access_code_required, requires_sign_in");
       const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(assessmentId);
       const { data, error: queryError } = await (isUuid
         ? lookup.eq("id", assessmentId)
@@ -48,8 +42,16 @@ export default function AssessmentLandingPage() {
       ).single();
 
       if (!active) return;
-      if (queryError || !data) setError("This assessment could not be found or is not currently available.");
-      else setAssessment(data as AssessmentLandingInfo);
+      if (queryError || !data) {
+        setError("This assessment could not be found or is not currently available.");
+      } else {
+        const { data: auth } = await supabase.auth.getUser();
+        if (data.requires_sign_in && !auth.user) {
+          router.replace(`/login?next=/assessments/${encodeURIComponent(assessmentId)}`);
+          return;
+        }
+        setAssessment(data as AssessmentLandingInfo);
+      }
       setLoading(false);
     }
     if (assessmentId) void loadAssessment();
