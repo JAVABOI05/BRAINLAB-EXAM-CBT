@@ -319,9 +319,6 @@ begin
       left(
         coalesce(
           nullif(v_identity->>'full_name', ''),
-          nullif(v_identity->>'candidate_number', ''),
-          nullif(v_identity->>'email', ''),
-          nullif(v_identity->>'phone', ''),
           'Candidate'
         ),
         120
