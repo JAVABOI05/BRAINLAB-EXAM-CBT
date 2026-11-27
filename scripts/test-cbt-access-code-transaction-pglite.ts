@@ -75,7 +75,7 @@ const fixture = `
   -- Reproduce Staging's master-code safeguard: the configured master row
   -- must never become consumed, even if a future code path tries to update it.
   create function public.protect_master_code_from_being_used()
-  returns trigger language plpgsql as $
+  returns trigger language plpgsql as $$
   declare
     configured_master text;
   begin
@@ -90,7 +90,7 @@ const fixture = `
     end if;
     return new;
   end;
-  $;
+  $$;
 
   create trigger trg_protect_master_code_on_access_codes
   before update on public.access_codes
