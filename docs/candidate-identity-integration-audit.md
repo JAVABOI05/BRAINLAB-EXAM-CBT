@@ -186,3 +186,27 @@ Read-only inspection of `pg_policies` and the helper function definitions found 
 5. Verify policies with positive and negative role tests (including a generic admin row, teacher, CBT admin, AI learning admin, platform admin, organisation owner/admin, and unrelated authenticated user) on an isolated database clone.
 
 This inspection was read-only. It did not modify RLS, helper functions, grants, application code, or data.
+
+
+## Permission-source verification — staging, read-only, 27 November 2026
+
+A live read-only query of staging `eusgwsuoloomphebrepe` confirms that the currently connected database does **not** have `public.access_permissions`, `public.access_roles`, or `public.access_role_permissions`. The query failed at the first missing relation, so no counts or catalogue membership can be inferred.
+
+The live staging definition of `public.admin_has_permission(text)` is still a hard-coded `CASE` over `admin_profiles.role`. It does not consult the centralized role/permission tables. Its current role grants are:
+
+- `super_admin`: unconditional true for any permission key (including unknown/new keys).
+- `platform_admin`: explicit allow-list including `learning.content.manage` and `institution.manage`, but no assessment-specific key.
+- `cbt_admin`: CBT question/results/session/code/config keys; no learning assessment-management key.
+- `ai_learning_admin`: AI and learning content keys, including `learning.content.manage`; no assessment-specific key.
+- `teacher`: learning content and student support only in the live staging function, despite broader grants in a newer checked-in centralized-access migration draft.
+- Other roles follow the current live function's explicit lists.
+
+This establishes that the checked-in centralized-access migration and the connected staging database are not at the same schema state. Do not assume the access-role catalogue exists or that its seed grants are active. Do not add a new key only to TypeScript or to a migration draft and expect staging authorization to recognize it.
+
+### Permission-contract decision required
+
+The current database supports a safe, narrow interim pattern only if a new key is added to the live `admin_has_permission(text)` implementation through a reviewed additive migration, with explicit per-role grants and tests. However, the function's unconditional `super_admin` branch means a new permission is not actually deny-by-default for that role; it grants every key, including future candidate-PII keys. A dedicated candidate-data permission therefore needs either a separate function with an explicit allow-list (including explicit super-admin grant) or a redesigned permission evaluator. Do not route candidate identity access through the legacy generic function until that semantic is addressed.
+
+For assessment configuration, the current `learning_assessments_manage_admin` RLS policy also grants any `admin_users` row ALL operations, independently of `admin_has_permission`. Any dedicated permission migration must narrow or replace that policy and reconcile the other permissive policies; adding a new function alone does not secure direct table access.
+
+No migration, function, role grant, RLS policy, or application code was changed. This was a read-only schema/function verification.
