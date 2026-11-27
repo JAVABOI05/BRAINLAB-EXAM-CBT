@@ -18,6 +18,7 @@ type ValidationResult<T> = { ok: true; value: T } | { ok: false; error: string }
 const FIELD_SET = new Set<string>(CANDIDATE_IDENTITY_FIELDS);
 const MODE_SET = new Set<string>(["hidden", "optional", "required"]);
 const CONFIG_MAX_LENGTH = 2_048;
+const IDENTITY_MAX_LENGTH = 4_096;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -97,7 +98,11 @@ export function validateCandidateIdentityValues(
   config: CandidateIdentityConfig,
   input: unknown,
 ): ValidationResult<CandidateIdentityValues> {
-  if (!isRecord(input) || Object.keys(input).some((key) => !FIELD_SET.has(key))) {
+  if (
+    !isRecord(input) ||
+    JSON.stringify(input).length > IDENTITY_MAX_LENGTH ||
+    Object.keys(input).some((key) => !FIELD_SET.has(key))
+  ) {
     return { ok: false, error: "Candidate details contain an unsupported field." };
   }
 
