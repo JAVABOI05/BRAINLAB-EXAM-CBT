@@ -34,6 +34,18 @@ begin
   end if;
 
   if learning_private.is_valid_candidate_identity_config(
+    '{"fields":{"full_name":"required"}}'::jsonb
+  ) then
+    raise exception 'FAIL: missing policy version accepted';
+  end if;
+
+  if learning_private.is_valid_candidate_identity_config(
+    '{"version":1}'::jsonb
+  ) then
+    raise exception 'FAIL: missing policy fields accepted';
+  end if;
+
+  if learning_private.is_valid_candidate_identity_config(
     '{"version":1,"fields":{"unknown":"required"}}'::jsonb
   ) then
     raise exception 'FAIL: unknown field accepted';
