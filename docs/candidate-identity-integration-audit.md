@@ -108,3 +108,16 @@ Read-only inspection of the current staging `public.admin_has_permission(text)` 
 The current staging permission matrix grants `learning.content.manage` to `super_admin`, `platform_admin`, `ai_learning_admin`, and `teacher`; it does not grant it to `cbt_admin`. The assessment workspace is currently exposed in the admin shell under `learning.content.manage`, so use that key for assessment-policy management only if that is the intended product authorization. There is no dedicated candidate-PII permission in the current `ADMIN_PERMISSION_KEYS` catalogue or the inspected staging RPC. Do not silently treat `learning.content.manage` as blanket permission to inspect personal candidate details; define and approve a narrower reporting permission before building identity-value reporting.
 
 This verification is specific to the connected staging project. Production's authorization implementation is known to differ and must not be overwritten or assumed equivalent during any later environment migration.
+
+
+## Server authorization and data-exposure review — 27 November 2026
+
+A further source-level check of `app/lib/adminAuth.ts` and `app/lib/supabaseServer.ts` confirms that `getAdminSession(request)` authenticates the caller and resolves an administrator role, but does not evaluate a feature permission. Assessment handlers must not treat a non-null admin session as sufficient authorization for assessment management or candidate identity data. Reuse the existing permission-check pattern with the request's JWT-bound Supabase client; do not call `admin_has_permission` through the service-role client because that would not carry the caller's permission context.
+
+The current `GET /api/admin/assessments/[id]` response selects `user_id` for up to 100 attempts. This is not candidate identity data, but it is an unnecessary personal identifier in a broad assessment-detail response. Review whether the endpoint needs raw user IDs; prefer aggregate or pseudonymous candidate identifiers unless an explicitly authorized workflow requires account linkage. Never add candidate identity values to this endpoint or its broad `select(*)` assessment response.
+
+The POST and PATCH assessment routes use the server client helper, which selects the service-role key when configured. Any permission check must run first using a client bound to the caller's bearer token, followed by a narrowly scoped service-role write only after authorization succeeds. Role authentication and feature authorization are separate gates.
+
+The SQL policy validator compares `p_config->>'version'` with text `'1'`, accepting both JSON number `1` and JSON string `"1"`; TypeScript accepts only numeric `1`. Align the contracts before migration by requiring `jsonb_typeof(p_config->'version') = 'number'` in SQL.
+
+No application code, database, deployment, or production environment was changed in this review.
