@@ -118,22 +118,25 @@ async function count(table: "access_codes" | "exam_sessions") {
 
 async function expectFailureWithoutPartialWrite(
   triggerName: string,
+  code: string,
   overrideToken: string,
 ) {
   const beforeSessions = await count("exam_sessions");
   const beforeCode = await db.query(
-    "select is_used, exam_session_id from public.access_codes where code = 'SYNTHETIC-CODE-001'",
+    "select is_used, exam_session_id from public.access_codes where code = $1",
+    [code],
   );
   let rejected = false;
   try {
-    await callRpc({ attempt_token: overrideToken });
+    await callRpc({ code, expected_code_subject: "Mathematics", attempt_token: overrideToken });
   } catch {
     rejected = true;
   }
   assert.equal(rejected, true, `${triggerName} should force the RPC to fail`);
   assert.equal(await count("exam_sessions"), beforeSessions, `${triggerName}: session insert must roll back`);
   const afterCode = await db.query(
-    "select is_used, exam_session_id from public.access_codes where code = 'SYNTHETIC-CODE-001'",
+    "select is_used, exam_session_id from public.access_codes where code = $1",
+    [code],
   );
   assert.deepEqual(afterCode.rows, beforeCode.rows, `${triggerName}: code state must roll back`);
   await db.exec(`drop trigger ${triggerName} on public.${triggerName === "reject_session_insert" ? "exam_sessions" : "access_codes"};`);
@@ -235,6 +238,7 @@ try {
   assert.equal(invalidPaper.error, "invalid_paper_ids");
   checks.push("duplicate question IDs are rejected");
 
+  await db.exec("insert into public.access_codes(code, subject, is_used) values ('SYNTHETIC-INSERT-FAIL', 'Mathematics', false)");
   await db.exec(`
     create function public.reject_exam_session_insert()
     returns trigger language plpgsql as $$
@@ -246,11 +250,13 @@ try {
   `);
   await expectFailureWithoutPartialWrite(
     "reject_session_insert",
+    "SYNTHETIC-INSERT-FAIL",
     "77777777-7777-4777-8777-777777777777",
   );
   await db.exec("drop function public.reject_exam_session_insert();");
   checks.push("forced session-insert failure leaves code state unchanged");
 
+  await db.exec("insert into public.access_codes(code, subject, is_used) values ('SYNTHETIC-UPDATE-FAIL', 'Mathematics', false)");
   await db.exec(`
     create function public.reject_access_code_update()
     returns trigger language plpgsql as $$
@@ -262,6 +268,7 @@ try {
   `);
   await expectFailureWithoutPartialWrite(
     "reject_access_code_update",
+    "SYNTHETIC-UPDATE-FAIL",
     "88888888-8888-4888-8888-888888888888",
   );
   await db.exec("drop function public.reject_access_code_update();");
