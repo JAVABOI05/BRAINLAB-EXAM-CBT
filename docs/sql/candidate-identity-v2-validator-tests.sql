@@ -1,115 +1,119 @@
 -- REVIEW DRAFT ONLY. Run against an isolated Supabase clone after applying
--- the reviewed migration draft. This file tests the private validator only;
--- full RPC atomicity/concurrency tests require isolated Auth + assessment fixtures.
+-- the reviewed migration draft. Uses plain PostgreSQL DO assertions; pgTAP is
+-- not installed in the current staging project.
+--
+-- This tests the private policy/value validator only. Full RPC atomicity,
+-- RLS and concurrency tests require isolated Auth + assessment fixtures.
 
 begin;
-select plan(14);
 
-select ok(
-  learning_private.is_valid_candidate_identity_config(null),
-  'NULL identity config preserves legacy behaviour'
-);
+do $candidate_identity_tests$
+declare
+  v_value jsonb;
+begin
+  if not learning_private.is_valid_candidate_identity_config(null) then
+    raise exception 'FAIL: NULL policy must preserve legacy behaviour';
+  end if;
 
-select ok(
-  learning_private.is_valid_candidate_identity_config(
+  if not learning_private.is_valid_candidate_identity_config(
     '{"version":1,"fields":{"full_name":"required","candidate_number":"optional","email":"hidden"}}'::jsonb
-  ),
-  'accepts a valid version 1 policy'
-);
+  ) then
+    raise exception 'FAIL: valid v1 policy rejected';
+  end if;
 
-select ok(
-  not learning_private.is_valid_candidate_identity_config('{"version":2,"fields":{"full_name":"required"}}'::jsonb),
-  'rejects unsupported policy versions'
-);
+  if learning_private.is_valid_candidate_identity_config(
+    '{"version":2,"fields":{"full_name":"required"}}'::jsonb
+  ) then
+    raise exception 'FAIL: unsupported policy version accepted';
+  end if;
 
-select ok(
-  not learning_private.is_valid_candidate_identity_config('{"version":1,"fields":{"unknown":"required"}}'::jsonb),
-  'rejects unknown identity fields'
-);
+  if learning_private.is_valid_candidate_identity_config(
+    '{"version":1,"fields":{"unknown":"required"}}'::jsonb
+  ) then
+    raise exception 'FAIL: unknown field accepted';
+  end if;
 
-select ok(
-  not learning_private.is_valid_candidate_identity_config('{"version":1,"fields":{"full_name":"mandatory"}}'::jsonb),
-  'rejects unknown field modes'
-);
+  if learning_private.is_valid_candidate_identity_config(
+    '{"version":1,"fields":{"full_name":"mandatory"}}'::jsonb
+  ) then
+    raise exception 'FAIL: unknown field mode accepted';
+  end if;
 
-select ok(
-  not learning_private.is_valid_candidate_identity_config('{"version":1,"fields":{"full_name":"hidden"}}'::jsonb),
-  'requires at least one visible identity field'
-);
+  if learning_private.is_valid_candidate_identity_config(
+    '{"version":1,"fields":{"full_name":"hidden"}}'::jsonb
+  ) then
+    raise exception 'FAIL: policy with no visible field accepted';
+  end if;
 
-select ok(
-  not learning_private.is_valid_candidate_identity_config(
+  if learning_private.is_valid_candidate_identity_config(
     jsonb_build_object('version', 1, 'fields', jsonb_build_object('full_name', repeat('x', 2050)))
-  ),
-  'rejects oversized identity policies'
-);
+  ) then
+    raise exception 'FAIL: oversized policy accepted';
+  end if;
 
-select is(
-  learning_private.normalize_candidate_identity(
+  v_value := learning_private.normalize_candidate_identity(
     '{"version":1,"fields":{"full_name":"required","email":"optional"}}'::jsonb,
     '{"full_name":"  Ada   Lovelace ","email":" ADA@EXAMPLE.COM "}'::jsonb
-  )->>'full_name',
-  'Ada Lovelace',
-  'normalizes full name whitespace'
-);
+  );
+  if v_value->>'full_name' is distinct from 'Ada Lovelace' then
+    raise exception 'FAIL: full name whitespace normalization';
+  end if;
+  if v_value->>'email' is distinct from 'ada@example.com' then
+    raise exception 'FAIL: email normalization';
+  end if;
 
-select is(
-  learning_private.normalize_candidate_identity(
-    '{"version":1,"fields":{"full_name":"required","email":"optional"}}'::jsonb,
-    '{"full_name":"Ada Lovelace","email":" ADA@EXAMPLE.COM "}'::jsonb
-  )->>'email',
-  'ada@example.com',
-  'normalizes email case and whitespace'
-);
-
-select is(
-  learning_private.normalize_candidate_identity(
+  v_value := learning_private.normalize_candidate_identity(
     '{"version":1,"fields":{"full_name":"required","candidate_number":"optional"}}'::jsonb,
     '{"full_name":"Ada Lovelace","candidate_number":"   "}'::jsonb
-  )->>'candidate_number',
-  null,
-  'converts blank optional values to JSON null'
-);
+  );
+  if v_value->'candidate_number' is distinct from 'null'::jsonb then
+    raise exception 'FAIL: blank optional value must normalize to JSON null';
+  end if;
 
-select throws_ok(
-  $$select learning_private.normalize_candidate_identity(
-    '{"version":1,"fields":{"full_name":"required","phone":"hidden"}}'::jsonb,
-    '{"full_name":"Ada Lovelace","phone":"+2348012345678"}'::jsonb
-  )$$,
-  'P0001',
-  'candidate_identity_hidden_field',
-  'rejects values for hidden fields'
-);
+  -- Expected error: a hidden field must not be submitted.
+  begin
+    perform learning_private.normalize_candidate_identity(
+      '{"version":1,"fields":{"full_name":"required","phone":"hidden"}}'::jsonb,
+      '{"full_name":"Ada Lovelace","phone":"+2348012345678"}'::jsonb
+    );
+    raise exception using errcode='ZX001', message='FAIL: hidden field accepted';
+  exception when sqlstate 'P0001' then
+    if sqlerrm <> 'candidate_identity_hidden_field' then raise; end if;
+  end;
 
-select throws_ok(
-  $$select learning_private.normalize_candidate_identity(
-    '{"version":1,"fields":{"full_name":"required"}}'::jsonb,
-    '{}'::jsonb
-  )$$,
-  'P0001',
-  'candidate_identity_required_field_missing',
-  'rejects missing required fields'
-);
+  -- Expected error: required values must be supplied.
+  begin
+    perform learning_private.normalize_candidate_identity(
+      '{"version":1,"fields":{"full_name":"required"}}'::jsonb,
+      '{}'::jsonb
+    );
+    raise exception using errcode='ZX001', message='FAIL: missing required field accepted';
+  exception when sqlstate 'P0001' then
+    if sqlerrm <> 'candidate_identity_required_field_missing' then raise; end if;
+  end;
 
-select throws_ok(
-  $$select learning_private.normalize_candidate_identity(
-    '{"version":1,"fields":{"full_name":"required"}}'::jsonb,
-    '{"full_name":"Ada","unexpected":"value"}'::jsonb
-  )$$,
-  'P0001',
-  'candidate_identity_fields_invalid',
-  'rejects unknown submitted fields'
-);
+  -- Expected error: unknown submitted keys must be rejected.
+  begin
+    perform learning_private.normalize_candidate_identity(
+      '{"version":1,"fields":{"full_name":"required"}}'::jsonb,
+      '{"full_name":"Ada Lovelace","unexpected":"value"}'::jsonb
+    );
+    raise exception using errcode='ZX001', message='FAIL: unknown submitted key accepted';
+  exception when sqlstate 'P0001' then
+    if sqlerrm <> 'candidate_identity_fields_invalid' then raise; end if;
+  end;
 
-select throws_ok(
-  $select learning_private.normalize_candidate_identity(
-    '{"version":1,"fields":{"full_name":"required"}}'::jsonb,
-    jsonb_build_object('full_name', repeat('A', 4100))
-  )$,
-  'P0001',
-  'candidate_identity_fields_invalid',
-  'rejects oversized candidate identity payloads'
-);
+  -- Expected error: oversized submitted identity payload must be rejected.
+  begin
+    perform learning_private.normalize_candidate_identity(
+      '{"version":1,"fields":{"full_name":"required"}}'::jsonb,
+      jsonb_build_object('full_name', repeat('A', 4100))
+    );
+    raise exception using errcode='ZX001', message='FAIL: oversized identity accepted';
+  exception when sqlstate 'P0001' then
+    if sqlerrm <> 'candidate_identity_fields_invalid' then raise; end if;
+  end;
+end;
+$candidate_identity_tests$;
 
-select * from finish();
 rollback;
