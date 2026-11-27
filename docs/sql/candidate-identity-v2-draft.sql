@@ -75,10 +75,6 @@ alter table public.learning_assessments
 create table if not exists public.learning_assessment_candidate_identities (
   attempt_id uuid primary key
     references public.learning_practice_attempts(id) on delete cascade,
-  assessment_id uuid not null
-    references public.learning_assessments(id) on delete cascade,
-  user_id uuid not null
-    references auth.users(id) on delete cascade,
   full_name text,
   candidate_number text,
   phone text,
@@ -96,12 +92,6 @@ create table if not exists public.learning_assessment_candidate_identities (
   constraint learning_assessment_candidate_identities_display_label_length
     check (char_length(display_label) between 1 and 120)
 );
-
-create index if not exists learning_assessment_candidate_identities_assessment_created_idx
-  on public.learning_assessment_candidate_identities (assessment_id, created_at desc);
-
-create index if not exists learning_assessment_candidate_identities_user_created_idx
-  on public.learning_assessment_candidate_identities (user_id, created_at desc);
 
 alter table public.learning_assessment_candidate_identities enable row level security;
 
@@ -303,8 +293,6 @@ begin
 
     insert into public.learning_assessment_candidate_identities (
       attempt_id,
-      assessment_id,
-      user_id,
       full_name,
       candidate_number,
       phone,
@@ -313,8 +301,6 @@ begin
     )
     values (
       v_attempt_id,
-      p_assessment_id,
-      v_user,
       v_identity->>'full_name',
       v_identity->>'candidate_number',
       v_identity->>'phone',
