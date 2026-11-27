@@ -26,7 +26,19 @@ interface QuestionItem {
   option_b: string;
   option_c: string;
   option_d: string;
-  question_image_url?: string;
+  option_e?: string | null;
+  question_image_url?: string | null;
+  question_image_alt?: string | null;
+  option_a_image_url?: string | null;
+  option_a_image_alt?: string | null;
+  option_b_image_url?: string | null;
+  option_b_image_alt?: string | null;
+  option_c_image_url?: string | null;
+  option_c_image_alt?: string | null;
+  option_d_image_url?: string | null;
+  option_d_image_alt?: string | null;
+  option_e_image_url?: string | null;
+  option_e_image_alt?: string | null;
 }
 
 export default function AssessmentRunnerPage() {
@@ -390,12 +402,26 @@ export default function AssessmentRunnerPage() {
                       {q.question}
                     </h3>
 
+                    {q.question_image_url && (
+                      <figure className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
+                        <img
+                          src={q.question_image_url}
+                          alt={q.question_image_alt || "Assessment question illustration"}
+                          loading="lazy"
+                          className="mx-auto max-h-[420px] w-full object-contain"
+                        />
+                      </figure>
+                    )}
+
                     {/* Options */}
                     <div className="mt-6 space-y-3">
-                      {(["A", "B", "C", "D"] as const).map((optKey) => {
-                        const optionKey = `option_${optKey.toLowerCase()}` as "option_a" | "option_b" | "option_c" | "option_d";
+                      {(["A", "B", "C", "D", "E"] as const).map((optKey) => {
+                        const optionKey = `option_${optKey.toLowerCase()}` as "option_a" | "option_b" | "option_c" | "option_d" | "option_e";
+                        const imageKey = `option_${optKey.toLowerCase()}_image_url` as "option_a_image_url" | "option_b_image_url" | "option_c_image_url" | "option_d_image_url" | "option_e_image_url";
+                        const altKey = `option_${optKey.toLowerCase()}_image_alt` as "option_a_image_alt" | "option_b_image_alt" | "option_c_image_alt" | "option_d_image_alt" | "option_e_image_alt";
                         const optText = q[optionKey];
-                        if (!optText) return null;
+                        const optImage = q[imageKey];
+                        if (!optText && !optImage) return null;
                         const isChosen = selected === optKey;
 
                         return (
@@ -416,8 +442,16 @@ export default function AssessmentRunnerPage() {
                             >
                               {optKey}
                             </span>
-                            <span className="pt-0.5 text-sm font-medium text-slate-800">
+                            <span className="min-w-0 flex-1 pt-0.5 text-sm font-medium text-slate-800">
                               {optText}
+                              {optImage && (
+                                <img
+                                  src={optImage}
+                                  alt={q[altKey] || `Option ${optKey} illustration`}
+                                  loading="lazy"
+                                  className="mt-3 max-h-56 max-w-full rounded-xl border border-slate-200 object-contain"
+                                />
+                              )}
                             </span>
                           </button>
                         );
