@@ -60,6 +60,7 @@ export default function AssessmentTakePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [resultScore, setResultScore] = useState<{ score: number; total: number; percentage: number } | null>(null);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -174,25 +175,44 @@ export default function AssessmentTakePage() {
     const nextAnswers = { ...answers, [String(q.id)]: option };
     setAnswers(nextAnswers);
 
-    // Debounced autosave
+    // Debounced autosave with an explicit server acknowledgement state.
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
-    autoSaveTimerRef.current = setTimeout(() => {
-      if (attemptId && attemptToken) {
-        void supabase.rpc("save_organisation_assessment_progress", {
-          p_attempt_id: attemptId,
-          p_attempt_token: attemptToken,
-          p_answers: nextAnswers,
-        });
-      }
-    }, 1200);
+    setSaveStatus("saving");
+    autoSaveTimerRef.current = setTimeout(async () => {
+      if (!attemptId || !attemptToken) return;
+      const { data, error: saveError } = await supabase.rpc("save_organisation_assessment_progress", {
+        p_attempt_id: attemptId,
+        p_attempt_token: attemptToken,
+        p_answers: nextAnswers,
+      });
+      setSaveStatus(saveError || data?.ok === false ? "error" : "saved");
+    }, 900);
   }
 
   // 5. Submit Attempt
   const submitAttempt = useCallback(async () => {
     if (!attemptId || !attemptToken) return;
     setPhase("submitting");
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+      autoSaveTimerRef.current = null;
+    }
 
     try {
+      // Flush the latest local answer map before final submission.
+      const { data: saved, error: saveError } = await supabase.rpc("save_organisation_assessment_progress", {
+        p_attempt_id: attemptId,
+        p_attempt_token: attemptToken,
+        p_answers: answers,
+      });
+      if (saveError || saved?.ok === false) {
+        setError("We could not confirm that your latest answers were saved. Please retry submission.");
+        setSaveStatus("error");
+        setPhase("running");
+        return;
+      }
+      setSaveStatus("saved");
+
       const { data, error: submitErr } = await supabase.rpc("submit_organisation_assessment", {
         p_attempt_id: attemptId,
         p_attempt_token: attemptToken,
@@ -371,6 +391,9 @@ export default function AssessmentTakePage() {
                   <span className="text-xs text-slate-500">
                     Question {currentIndex + 1} of {questions.length} · Answered{" "}
                     {Object.keys(answers).length} / {questions.length}
+                  </span>
+                  <span className={`mt-1 block text-[10px] font-semibold ${saveStatus === "error" ? "text-rose-600" : saveStatus === "saved" ? "text-emerald-600" : "text-slate-400"}`} role="status" aria-live="polite">
+                    {saveStatus === "saving" ? "Saving answers…" : saveStatus === "saved" ? "All answers saved" : saveStatus === "error" ? "Save failed — retry needed" : "Answers save automatically"}
                   </span>
                 </div>
 
