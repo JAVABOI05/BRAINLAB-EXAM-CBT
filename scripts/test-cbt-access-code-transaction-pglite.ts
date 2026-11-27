@@ -271,10 +271,15 @@ try {
   assert.equal(serviceRoleResult?.ok, true);
   checks.push("service_role can invoke the RPC through the server-only privilege");
 
+  const sessionsBeforeNormalSuccess = await count("exam_sessions");
   const success = await callRpc();
   assert.equal(success.ok, true);
   assert.ok(success.session_id);
-  assert.equal(await count("exam_sessions"), 1);
+  assert.equal(
+    await count("exam_sessions"),
+    sessionsBeforeNormalSuccess + 1,
+    "normal-code success must add exactly one session",
+  );
   const consumed = await db.query<{
     is_used: boolean;
     has_used_at: boolean;
@@ -290,7 +295,11 @@ try {
   const duplicateUse = await callRpc({ attempt_token: "22222222-2222-4222-8222-222222222222" });
   assert.equal(duplicateUse.ok, false);
   assert.equal(duplicateUse.error, "code_used");
-  assert.equal(await count("exam_sessions"), 1);
+  assert.equal(
+    await count("exam_sessions"),
+    sessionsBeforeNormalSuccess + 1,
+    "duplicate code use must not add another session",
+  );
   checks.push("used code cannot create a second session");
 
   await db.exec(`
