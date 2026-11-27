@@ -200,3 +200,21 @@ The dedicated isolated regression specification is now in `docs/sql/cbt-access-c
 - No migration SQL has been applied; no live test records or access codes have been read or changed.
 - No route refactor, privilege revocation, merge, or deployment has occurred.
 - The next implementation step is to draft the staging-shaped forward-only SQL migration and route contract against the verified schema, then test it only in a disposable database. A separate production migration cannot be finalized until the intended production database target and its migration baseline are reconciled.
+
+
+## 14. First staging-shaped SQL draft
+
+Added `docs/sql/cbt-access-code-transaction-v1-draft.sql` as a reviewable SQL draft, not an executable instruction for either connected BrainLab project.
+
+The draft now includes:
+
+- A fail-closed preflight that aborts if existing codes collide after `upper(btrim(code))`.
+- A unique expression index on `upper(btrim(code))`, required because the existing raw unique index does not prevent concurrent issuance of case/whitespace variants.
+- A transaction-scoped advisory lock for normal-code consumers, in addition to row locking.
+- A separate advisory lock for open/master attempts keyed by mode, session code, and normalized phone.
+- Server-side verification of the configured master code before treating a request as master mode.
+- One session insert and one linked code update in the same transaction.
+- A compact response containing only `ok`, `error`, and `session_id`.
+- Execution revoked from PUBLIC, anon, and authenticated, with execute granted only to service_role.
+
+This remains a first draft. It has not been parsed or executed by PostgreSQL, and the disposable concurrency/failure-injection tests have not run. In particular, review the exact function signature, RPC argument names, index rollout/lock impact, and master-code config representation before promoting it to a migration. The test plan now includes T19 for normalized-code index preflight and issuance-race protection.
