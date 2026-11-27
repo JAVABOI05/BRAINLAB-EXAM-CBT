@@ -230,3 +230,20 @@ A further read-only catalog query confirmed the SQL draft's principal parameter 
 - The selected candidate, subject, access-code, status, elective, and tracking fields are text/boolean/UUID/timestamptz as expected by the draft.
 
 This validates type compatibility only. It does not validate function execution, route behavior, constraints under all inputs, locking behavior, or production compatibility. The draft still requires a disposable database run and code review before it can become a migration.
+
+
+## 16. Static integration review — 27 November 2026
+
+A read-only comparison of the current `app/api/exam/start/route.ts` with the SQL draft found integration blockers that must be resolved before route refactoring:
+
+1. **Open-code argument mapping:** the current route uses an empty `cleanCode` to represent open access, but persists `OPEN-CBT` in `exam_sessions.access_code`. The RPC draft correctly recognizes open mode from an empty code. The future route must pass the original empty code as `p_code`; the RPC itself should write `OPEN-CBT` as the session label. Do not pass the persisted label as the RPC's normal-code argument.
+2. **Code-subject time-of-check/time-of-use race:** the route reads the normal code's configured subject before paper generation. The draft locks and consumes the code later but does not verify that the locked row still has the subject used to generate the paper. Add a separate expected-code-subject argument and compare it null-safely against the locked row. On mismatch, return a stable conflict and make no session or code mutation. Keep paper generation outside the row lock.
+3. **Paper identity:** validating that `p_paper_ids` contains 180 entries does not prove the IDs are distinct. Confirm the generator's uniqueness invariant and reject duplicates in the RPC if uniqueness is part of the server/database contract.
+4. **Payload completeness:** the draft should define validation for non-empty subject data and the relationship between `p_duration_seconds` and `p_deadline_at`. These must be specified before the RPC is considered production-ready.
+5. **Lost-response handling:** the current route already has an active-session recovery path before new launch work. The RPC's duplicate-attempt conflict must not disclose an existing attempt token. Preserve the current recovery rules and do not blindly retry create after an uncertain commit.
+
+The regression plan has been expanded with T20–T23 for stale subject settings, open-access argument mapping, exact PostgREST signature matching, and paper-ID integrity. The SQL draft itself has not yet been changed to resolve these findings, parsed, or executed.
+
+### Zero-cost validation decision
+
+The repository already declares `@electric-sql/pglite` as a development dependency, but the existing GitHub Actions workflows do not currently run this transaction's SQL regression suite. PGlite may be a candidate for a local/CI-only PostgreSQL-compatible harness, but compatibility for advisory transaction locks, PL/pgSQL, expression indexes, and role/privilege checks must be verified rather than assumed. No workflow was triggered and no hosted database branch was created. Do not use either connected BrainLab Supabase project as a substitute.
