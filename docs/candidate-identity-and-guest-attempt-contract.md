@@ -41,11 +41,12 @@ Allowed keys are exactly `full_name`, `candidate_number`, `phone`, and `email`. 
 ## Data separation
 
 Candidate identity should be stored in a dedicated table linked one-to-one to the attempt, not copied into the attempt JSON, question snapshot, or leaderboard record. The table should contain:
-- attempt ID (unique FK, cascade delete);
-- assessment ID (FK for scope checks and admin reporting);
+- attempt ID as its sole ownership FK (unique primary key, cascade delete);
 - nullable full name, candidate number, phone and email, matching the configured schema;
 - a server-generated display label that is safe for public results;
-- created/updated timestamps and a retention/deletion marker.
+- a creation timestamp.
+
+Assessment and user scope must be derived by joining the authoritative attempt row. Do not duplicate assessment_id or user_id in the identity table: duplicated ownership attributes can drift. Retention/deletion policy is not yet decided and must be approved before collection is enabled; do not imply that an unimplemented retention marker exists.
 
 Enable RLS. Do not grant direct anonymous table access. Candidate reads/writes must go through narrowly scoped server-side functions that prove attempt ownership. Admin reads must use the existing assessment-management authorization model. Candidate identity must not be added to generic admin/list API responses unless that screen explicitly needs it.
 
@@ -91,3 +92,10 @@ Before enabling guest mode:
 ## Delivery decision
 
 Implement the authenticated candidate-details flow first, preserving current login and attempt ownership. Guest mode is a separate release gate and must not be exposed in the admin UI until its backend credential model and every dependent RPC have passed the tests above. No production or staging schema change is authorized by this design document.
+
+
+## Authenticated-first implementation checkpoint — 27 November 2026
+
+The current authenticated v2 SQL draft follows the one-to-one attempt ownership rule: `learning_assessment_candidate_identities.attempt_id` is the sole FK. The draft stores `created_at` only; retention duration and deletion workflow remain explicit release blockers pending a product/privacy decision. Guest access remains a separate security principal and is not part of the authenticated v2 migration.
+
+The authenticated flow must not be described as guest-capable. Keep `require_login` defaulting to true for all existing assessments. Guest mode should not appear as an enabled admin option until guest start, credential storage, resume, save, submit, result retrieval, revocation, expiry and rate-limit enforcement have been implemented and independently tested.
