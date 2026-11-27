@@ -59,7 +59,7 @@ The function must be callable only by `service_role`, with execution revoked fro
 | T20 | Access-code subject changes after pre-read | RPC compares the locked row's raw subject with the exact raw subject observed by the route using null-safe equality; any change rejects the stale launch without inserting a session or consuming the code |
 | T21 | Open-access RPC argument mapping | Route passes an empty original code to the RPC for open access; `OPEN-CBT` is assigned as the persisted session label inside the transaction, not passed as if it were a normal code |
 | T22 | Exact PostgREST RPC signature | Route argument names, SQL parameter names, PostgreSQL types, nullable values, and returned JSON keys match exactly; a contract test catches drift before route cutover |
-| T23 | Paper payload integrity | Reject null/empty subject data, malformed paper payloads, and any 180-item paper array containing null or duplicate IDs; exactly 180 distinct IDs are required by the revised SQL draft |
+| T23 | Paper payload integrity | Reject null/empty subject data, malformed paper payloads, and any 180-item paper array containing null or duplicate IDs; exactly 180 distinct IDs are required by the revised SQL draft |\n| T24 | Snapshot persistence ordering | Paper generation must not persist a snapshot before the authoritative session row exists; the route persists the snapshot using the returned real session ID only after the transaction succeeds |\n| T25 | Master-code configuration failure | If the master-code configuration query errors, fail closed with a service-unavailable response; never fall back to a hard-coded staging/test master code |
 
 ## 5. Failure injection
 
@@ -112,3 +112,13 @@ npm run test:cbt-transaction:pglite
 It builds a synthetic schema in memory, reads the SQL draft from the repository, and checks draft installation, function grants, normal-code success/consumption, duplicate use, stale-subject rejection, OPEN-CBT mapping, master-code validation, the Staging-style master-code protection trigger, duplicate/null paper IDs, and rollback under injected session-insert/code-update failures. The trigger fixture is a minimal behavioral reproduction of the audited safeguard, not a byte-for-byte export of the live trigger function. It does not read environment variables and does not connect to Supabase.
 
 **Not yet executed.** The current working environment does not contain the repository checkout/dependencies, and no install or CI job has been triggered. PGlite is single-session, so this harness cannot prove two independent requests serialize correctly. A separate real-PostgreSQL multi-connection test remains required for T02 and T10.
+
+
+## 11. Additional application-level findings — 27 November 2026
+
+A focused read of `app/lib/examEngine/index.ts`, `app/lib/examEngine/snapshotManager.ts`, and `app/api/exam/start/route.ts` found two launch-path issues and applied narrow safeguards:
+
+1. **Premature/orphan snapshot writes:** `generateExamPaper()` called `freezeAttemptSnapshot()` before the authoritative `exam_sessions` row existed. The route then persisted another snapshot against the real session ID. This could leave an orphan keyed by a provisional UUID, and incomplete paper generation could also persist an unusable snapshot. Added an optional `persistSnapshot` flag (default `true` for legacy callers); the CBT start route now passes `false` and persists once, after the real session insert, using the actual session ID.
+2. **Hard-coded staging master-code fallback:** the route previously accepted `STAGING-MASTER-TEST-001` when the database configuration row was absent. Removed that fallback. A master-code configuration query error now returns a fail-closed 503 response; an absent/empty configuration does not activate any master code.
+
+The PGlite regression harness was extended with static checks for these two application safeguards. These code changes and test additions have been committed, but the harness has not been run. They do not implement the new transaction route yet; the legacy multi-request consume/insert flow remains in place until the SQL draft has passed isolated testing and the route refactor is reviewed.
