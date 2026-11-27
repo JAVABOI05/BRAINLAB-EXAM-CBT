@@ -109,6 +109,6 @@ A local-only PGlite harness now exists at `scripts/test-cbt-access-code-transact
 npm run test:cbt-transaction:pglite
 ```
 
-It builds a synthetic schema in memory, reads the SQL draft from the repository, and checks draft installation, function grants, normal-code success/consumption, duplicate use, stale-subject rejection, OPEN-CBT mapping, master-code validation, duplicate paper IDs, and rollback under injected session-insert/code-update failures. It does not read environment variables and does not connect to Supabase.
+It builds a synthetic schema in memory, reads the SQL draft from the repository, and checks draft installation, function grants, normal-code success/consumption, duplicate use, stale-subject rejection, OPEN-CBT mapping, master-code validation, the Staging-style master-code protection trigger, duplicate/null paper IDs, and rollback under injected session-insert/code-update failures. The trigger fixture is a minimal behavioral reproduction of the audited safeguard, not a byte-for-byte export of the live trigger function. It does not read environment variables and does not connect to Supabase.
 
 **Not yet executed.** The current working environment does not contain the repository checkout/dependencies, and no install or CI job has been triggered. PGlite is single-session, so this harness cannot prove two independent requests serialize correctly. A separate real-PostgreSQL multi-connection test remains required for T02 and T10.
