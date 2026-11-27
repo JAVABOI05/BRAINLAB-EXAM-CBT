@@ -41,7 +41,8 @@
     "test:community": "node scripts/test-community-phase1.cjs && node scripts/test-community-phase2.cjs && node scripts/test-community-phase3.cjs && node scripts/test-community-phase4.cjs && node scripts/test-community-phase5.cjs && node scripts/test-cohort-instructor-studio.cjs",
     "test:cohort:studio": "node scripts/test-cohort-instructor-studio.cjs",
     "test:oauth-redirect": "npx tsx scripts/test-google-oauth-pin-reset.ts",
-    "test:candidate-identity": "npx tsx scripts/test-candidate-identity-validation.ts"
+    "test:candidate-identity": "npx tsx scripts/test-candidate-identity-validation.ts",
+    "test:cbt-transaction:pglite": "npx tsx scripts/test-cbt-access-code-transaction-pglite.ts"
   },
   "dependencies": {
     "@google/genai": "^2.30.0",
