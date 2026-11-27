@@ -146,7 +146,7 @@ function CentralLoginForm() {
       const adminObj: AdminUser = {
         id: session.user.id,
         email: session.user.email || "",
-        role: roleStr as any,
+        role: roleStr as AdminUser["role"],
       };
       setCachedAdminSession(adminObj);
 
@@ -219,7 +219,14 @@ function CentralLoginForm() {
               full_name: displayName,
               username: cleanIdentifier,
             },
-            emailRedirectTo: getAuthRedirectUrl("/auth/callback"),
+            emailRedirectTo: getAuthRedirectUrl(
+              `/auth/callback?redirect=${encodeURIComponent(
+                sanitizeRedirectUrl(
+                  searchParams.get("redirect") || searchParams.get("next"),
+                  "/dashboard"
+                )
+              )}`
+            ),
           },
         });
 
@@ -323,7 +330,14 @@ function CentralLoginForm() {
         type: "signup",
         email: clean,
         options: {
-          emailRedirectTo: getAuthRedirectUrl("/auth/callback"),
+            emailRedirectTo: getAuthRedirectUrl(
+              `/auth/callback?redirect=${encodeURIComponent(
+                sanitizeRedirectUrl(
+                  searchParams.get("redirect") || searchParams.get("next"),
+                  "/dashboard"
+                )
+              )}`
+            ),
         },
       });
       if (resendErr) {

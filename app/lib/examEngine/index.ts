@@ -53,6 +53,8 @@ export async function generateExamPaper(options: {
   durationSeconds?: number;
   excludeQuestionIds?: number[];
   previouslySeenQuestionIds?: number[];
+  /** Defer persistence until the authoritative exam_sessions row exists. Defaults to true for legacy callers. */
+  persistSnapshot?: boolean;
 }): Promise<GeneratePaperResult> {
   const { sessionId, token, durationSeconds = 7200 } = options;
   const excludedIds = new Set(options.excludeQuestionIds || []);
@@ -177,15 +179,37 @@ export async function generateExamPaper(options: {
   }
 
   // 3. Freeze immutable attempt snapshot in database
-  const snapshot = await freezeAttemptSnapshot(
-    sessionId,
-    "jamb_utme_full_mock",
-    1,
-    paperIds,
-    chosenSubjects,
-    allPaperQuestions,
-    "english_90_to_100"
-  );
+  const snapshot: AttemptSnapshot = options.persistSnapshot === false
+    ? {
+        session_id: sessionId,
+        blueprint_id: "jamb_utme_full_mock",
+        blueprint_version: 1,
+        paperIds,
+        subjects: chosenSubjects,
+        questions_snapshot: allPaperQuestions,
+        marking_rules: {
+          conversion_formula: "english_90_to_100",
+          raw_max_marks: allPaperQuestions.reduce((total, question) => total + (question.marks > 0 ? question.marks : (question.subject.toLowerCase().includes("english") ? 1 : 2.5)), 0),
+          converted_max_marks: chosenSubjects.length * 100,
+          subject_blueprints: Object.fromEntries(chosenSubjects.map((subject) => [subject, {
+            conversion_formula: subject.toLowerCase().includes("english") ? "english_90_to_100" : "direct",
+            raw_max_marks: subject.toLowerCase().includes("english") ? 90 : 100,
+            converted_max_marks: 100,
+            total_questions: subject.toLowerCase().includes("english") ? 60 : 40,
+          }])),
+          question_marks: Object.fromEntries(allPaperQuestions.map((question) => [question.id, question.marks > 0 ? question.marks : (question.subject.toLowerCase().includes("english") ? 1 : 2.5)])),
+        },
+        created_at: new Date().toISOString(),
+      }
+    : await freezeAttemptSnapshot(
+        sessionId,
+        "jamb_utme_full_mock",
+        1,
+        paperIds,
+        chosenSubjects,
+        allPaperQuestions,
+        "english_90_to_100"
+      );
 
   // 4. Strip answer keys and explanations before returning client payload (Security Boundary)
   const clientQuestions = allPaperQuestions.map((q) => {

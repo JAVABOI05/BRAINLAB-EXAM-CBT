@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createHash, randomBytes } from "node:crypto";
 import { getAdminSession } from "@/app/lib/adminAuth";
 import { getSupabaseServerClient } from "@/app/lib/supabaseServer";
 
@@ -16,7 +17,7 @@ export async function GET(request: NextRequest) {
     // 1. Fetch assessments
     const { data: assessments, error: assessErr } = await supabase
       .from("learning_assessments")
-      .select("id, title, description, assessment_type, question_source, subjects, categories, question_count, duration_seconds, max_attempts, pass_percentage, shuffle_questions, starts_at, ends_at, access_code_required, result_release, is_published, status, custom_questions, created_at")
+      .select("id, slug, title, description, assessment_type, question_source, subjects, categories, question_count, duration_seconds, max_attempts, pass_percentage, shuffle_questions, starts_at, ends_at, access_code_required, result_release, is_published, status, custom_questions, created_at")
       .order("created_at", { ascending: false });
 
     if (assessErr) {
@@ -120,9 +121,16 @@ export async function POST(request: NextRequest) {
 
     const description = String(body.description || "").trim() || null;
     const instructions = String(body.instructions || "").trim() || null;
-    const scopeType = String(body.scope_type || "single_subject");
     const assessmentType = String(body.assessment_type || "academic_quiz");
     const questionSource = String(body.question_source || "bank"); // bank | custom_builder | csv_import
+    const organisationId = body.organisation_id ? String(body.organisation_id) : null;
+
+    if (assessmentType === "organisation_quiz" && !organisationId) {
+      return NextResponse.json({
+        ok: false,
+        error: "Choose an organisation before creating an organisation assessment.",
+      }, { status: 400 });
+    }
 
     const rawSubjects = Array.isArray(body.subjects) ? body.subjects : [String(body.subject || "Mathematics")];
     const subjects = rawSubjects.map((s: string) => s.trim()).filter(Boolean);
@@ -140,8 +148,24 @@ export async function POST(request: NextRequest) {
     const accessCodeRequired = Boolean(body.access_code_required);
     const resultRelease = String(body.result_release || "after_submit");
 
-    const startsAt = body.starts_at ? new Date(body.starts_at).toISOString() : null;
-    const endsAt = body.ends_at ? new Date(body.ends_at).toISOString() : null;
+    const startsAtDate = body.starts_at ? new Date(body.starts_at) : null;
+    const endsAtDate = body.ends_at ? new Date(body.ends_at) : null;
+
+    if (startsAtDate && Number.isNaN(startsAtDate.getTime())) {
+      return NextResponse.json({ ok: false, error: "The assessment start date is invalid." }, { status: 400 });
+    }
+    if (endsAtDate && Number.isNaN(endsAtDate.getTime())) {
+      return NextResponse.json({ ok: false, error: "The assessment end date is invalid." }, { status: 400 });
+    }
+    if (startsAtDate && endsAtDate && endsAtDate.getTime() <= startsAtDate.getTime()) {
+      return NextResponse.json({
+        ok: false,
+        error: "The assessment end date must be later than its start date. Leave either date blank for an open-ended schedule.",
+      }, { status: 400 });
+    }
+
+    const startsAt = startsAtDate?.toISOString() ?? null;
+    const endsAt = endsAtDate?.toISOString() ?? null;
 
     const status = String(body.status || "open"); // draft | open | closed
     const isPublished = status === "open";
@@ -189,6 +213,7 @@ export async function POST(request: NextRequest) {
       description,
       instructions,
       assessment_type: assessmentType,
+      organisation_id: organisationId,
       question_source: questionSource === "bank" ? "legacy_questions" : questionSource,
       subjects,
       categories,
@@ -200,6 +225,7 @@ export async function POST(request: NextRequest) {
       starts_at: startsAt,
       ends_at: endsAt,
       access_code_required: accessCodeRequired,
+      requires_sign_in: body.requires_sign_in !== false,
       result_release: resultRelease,
       is_published: isPublished,
       status,
@@ -223,9 +249,9 @@ export async function POST(request: NextRequest) {
       const rawCustom = body.custom_code ? String(body.custom_code).trim().toUpperCase() : null;
       const finalCode = rawCustom && rawCustom.length >= 4 && rawCustom.length <= 64
         ? rawCustom
-        : `BLT-${require("crypto").randomBytes(4).toString("hex").toUpperCase()}`;
+        : `BLT-${randomBytes(4).toString("hex").toUpperCase()}`;
 
-      const codeHash = require("crypto").createHash("sha256").update(finalCode).digest("hex");
+      const codeHash = createHash("sha256").update(finalCode).digest("hex");
       const maxRedemptions = Math.min(100000, Math.max(1, parseInt(body.max_redemptions || "500", 10)));
       const expiryDate = endsAt || new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString();
 

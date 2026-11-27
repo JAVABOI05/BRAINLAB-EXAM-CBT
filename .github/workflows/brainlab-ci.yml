@@ -8,6 +8,7 @@ on:
       - fix/learning-hub-assessment-atomicity
       - arena/full-implementation
       - feat/candidate-session-recovery
+      - fix/assessment-auth-repair-on-current-production
 
 permissions:
   contents: read
@@ -61,6 +62,8 @@ jobs:
         run: npx tsc --noEmit
       - name: Candidate session recovery regression tests
         run: npm run test:session-recovery
+      - name: CBT access-code transaction PGlite regression tests
+        run: npm run test:cbt-transaction:pglite
       - name: Offline exam sync and local recovery regression tests
         run: npm run test:offline-sync
       - name: Cloze passage rotation regression tests

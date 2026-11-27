@@ -13,6 +13,7 @@ type Organisation = { id: string; name: string; status: string };
 type Subject = { name: string; question_count: number; categories: string[] };
 type Assessment = {
   id: string;
+  slug: string;
   assessment_type: string;
   title: string;
   organisation_id: string | null;
@@ -22,6 +23,7 @@ type Assessment = {
   starts_at: string | null;
   ends_at: string | null;
   access_code_required: boolean;
+  requires_sign_in: boolean;
   result_release: string;
   is_published: boolean;
 };
@@ -48,6 +50,7 @@ export default function OrganisedAssessmentsAdminPage() {
   const [organisationId, setOrganisationId] = useState("");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [instructions, setInstructions] = useState("");
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
   const [categories, setCategories] = useState("");
   const [questionCount, setQuestionCount] = useState(20);
@@ -56,6 +59,7 @@ export default function OrganisedAssessmentsAdminPage() {
   const [startsAt, setStartsAt] = useState("");
   const [endsAt, setEndsAt] = useState("");
   const [accessRequired, setAccessRequired] = useState(false);
+  const [requiresSignIn, setRequiresSignIn] = useState(true);
   const [customCodeInput, setCustomCodeInput] = useState("");
   const [maxRedemptionsInput, setMaxRedemptionsInput] = useState(500);
   const [resultRelease, setResultRelease] = useState<"after_submit" | "after_close" | "admin_only">("after_submit");
@@ -63,7 +67,7 @@ export default function OrganisedAssessmentsAdminPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
-  const [newlyCreatedCode, setNewlyCreatedCode] = useState<{ title: string; code: string; id: string } | null>(null);
+  const [newlyCreatedCode, setNewlyCreatedCode] = useState<{ title: string; code: string; id: string; slug: string } | null>(null);
 
   // Modal for managing code on an existing assessment
   const [modalAssessment, setModalAssessment] = useState<Assessment | null>(null);
@@ -78,7 +82,7 @@ export default function OrganisedAssessmentsAdminPage() {
       supabase.from("learning_organisations").select("id,name,status").order("name"),
       supabase
         .from("learning_assessments")
-        .select("id,assessment_type,title,organisation_id,question_count,duration_seconds,max_attempts,starts_at,ends_at,access_code_required,result_release,is_published")
+        .select("id,slug,assessment_type,title,organisation_id,question_count,duration_seconds,max_attempts,starts_at,ends_at,access_code_required,requires_sign_in,result_release,is_published")
         .order("created_at", { ascending: false }),
       supabase.rpc("get_self_practice_catalog"),
       supabase
@@ -178,7 +182,9 @@ export default function OrganisedAssessmentsAdminPage() {
         body: JSON.stringify({
           title: title.trim(),
           description: description.trim() || null,
+          instructions: instructions.trim() || null,
           assessment_type: kind,
+          organisation_id: organisationId || null,
           question_source: "bank",
           subjects: selectedSubjects,
           categories: categories.split(",").map((x) => x.trim()).filter(Boolean),
@@ -188,6 +194,7 @@ export default function OrganisedAssessmentsAdminPage() {
           starts_at: startsAt || null,
           ends_at: endsAt || null,
           access_code_required: accessRequired,
+          requires_sign_in: requiresSignIn,
           custom_code: accessRequired && customCodeInput.trim() ? customCodeInput.trim() : undefined,
           max_redemptions: accessRequired ? maxRedemptionsInput : undefined,
           result_release: resultRelease,
@@ -206,11 +213,13 @@ export default function OrganisedAssessmentsAdminPage() {
           title: created.title,
           code: data.access_code,
           id: created.id,
+          slug: created.slug || created.id,
         });
       }
 
       setTitle("");
       setDescription("");
+      setInstructions("");
       setCategories("");
       setCustomCodeInput("");
       setMessage(
@@ -264,6 +273,7 @@ export default function OrganisedAssessmentsAdminPage() {
         title: a.title,
         code: data.code,
         id: a.id,
+        slug: a.slug || a.id,
       });
       setMessage(`New examination code generated: ${data.code}`);
       setModalAssessment(null);
@@ -371,14 +381,14 @@ export default function OrganisedAssessmentsAdminPage() {
                   type="button"
                   onClick={() => {
                     const host = typeof window !== "undefined" ? window.location.origin : "https://www.brainlabacademy.com.ng";
-                    copyToClipboard(`${host}/assessments/${newlyCreatedCode.id}?code=${encodeURIComponent(newlyCreatedCode.code)}`, "Direct Examination Link");
+                    copyToClipboard(`${host}/assessments/${newlyCreatedCode.slug || newlyCreatedCode.id}?code=${encodeURIComponent(newlyCreatedCode.code)}`, "Direct Examination Link");
                   }}
                   className="px-4 py-2 rounded-xl border border-blue-300 bg-white dark:bg-slate-900 hover:bg-blue-100 dark:hover:bg-slate-800 text-xs font-bold text-blue-900 dark:text-cyan-300 transition text-center cursor-pointer"
                 >
                   🔗 Copy Direct Exam Link
                 </button>
                 <a
-                  href={`https://wa.me/?text=${encodeURIComponent(`Hello, here is your examination link and code for ${newlyCreatedCode.title}:\n\nCode: ${newlyCreatedCode.code}\nLink: https://www.brainlabacademy.com.ng/cbt`)}`}
+                  href={`https://wa.me/?text=${encodeURIComponent(`Hello, here is your examination link and code for ${newlyCreatedCode.title}:\n\nCode: ${newlyCreatedCode.code}\nLink: ${typeof window !== "undefined" ? window.location.origin : "https://www.brainlabacademy.com.ng"}/assessments/${newlyCreatedCode.slug || newlyCreatedCode.id}?code=${encodeURIComponent(newlyCreatedCode.code)}`)}`}
                   target="_blank"
                   rel="noreferrer"
                   className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition text-center cursor-pointer"
@@ -427,8 +437,11 @@ export default function OrganisedAssessmentsAdminPage() {
             <label className="admin-label">Title</label>
             <input className="admin-input" value={title} onChange={(e) => setTitle(e.target.value)} required maxLength={255} />
 
-            <label className="admin-label">Description and instructions</label>
-            <textarea className="admin-input" value={description} onChange={(e) => setDescription(e.target.value)} rows={3} />
+            <label className="admin-label">Candidate-facing description</label>
+            <textarea className="admin-input" value={description} onChange={(e) => setDescription(e.target.value)} rows={3} placeholder="A short introduction displayed on the assessment landing page." />
+            <label className="admin-label mt-4">Assessment instructions</label>
+            <textarea className="admin-input" value={instructions} onChange={(e) => setInstructions(e.target.value)} rows={6} maxLength={12000} placeholder="Explain the rules, timing, permitted materials, navigation and submission requirements candidates must follow." />
+            <p className="mt-1 text-xs text-slate-500">These instructions are displayed before candidates enter the examination. Keep them clear and specific.</p>
 
             <fieldset className="mt-4">
               <legend className="admin-label">Question subjects</legend>
@@ -470,6 +483,14 @@ export default function OrganisedAssessmentsAdminPage() {
 
             <label className="admin-label">End time (optional)</label>
             <input className="admin-input" type="datetime-local" value={endsAt} onChange={(e) => setEndsAt(e.target.value)} />
+
+            <div className="border border-slate-200 dark:border-slate-800 rounded-xl p-4 mt-3 bg-white dark:bg-slate-950 space-y-2">
+              <label className="admin-toggle">
+                <input type="checkbox" checked={requiresSignIn} onChange={(e) => setRequiresSignIn(e.target.checked)} />
+                <span className="font-bold">Require students to sign in before taking this assessment</span>
+              </label>
+              <p className="pl-6 text-[11px] text-slate-500">Turn this off to allow candidates to take the assessment as guests, without a BrainLab account. Guest attempt support is being completed before this option is enabled for candidates.</p>
+            </div>
 
             {/* Access Code Options */}
             <div className="border border-slate-200 dark:border-slate-800 rounded-xl p-4 mt-3 bg-slate-50/50 dark:bg-slate-900/40 space-y-3">
@@ -592,7 +613,7 @@ export default function OrganisedAssessmentsAdminPage() {
                           type="button"
                           onClick={() => {
                             const host = typeof window !== "undefined" ? window.location.origin : "https://www.brainlabacademy.com.ng";
-                            copyToClipboard(`${host}/assessments/${a.id}`, "Assessment Link");
+                            copyToClipboard(`${host}/assessments/${a.slug || a.id}`, "Assessment Link");
                           }}
                           className="px-2.5 py-1 text-xs font-bold rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer"
                         >

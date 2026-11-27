@@ -71,6 +71,37 @@ export async function PATCH(
     const body = await request.json().catch(() => ({}));
     const supabase = getSupabaseServerClient();
 
+    // Validate the complete resulting schedule, including whichever date is unchanged.
+    const { data: currentAssessment, error: currentAssessmentError } = await supabase
+      .from("learning_assessments")
+      .select("starts_at, ends_at")
+      .eq("id", assessmentId)
+      .maybeSingle();
+
+    if (currentAssessmentError || !currentAssessment) {
+      return NextResponse.json({ ok: false, error: "Assessment not found or could not be loaded." }, { status: 404 });
+    }
+
+    const proposedStartsAt = body.starts_at !== undefined
+      ? (body.starts_at ? new Date(body.starts_at) : null)
+      : (currentAssessment.starts_at ? new Date(currentAssessment.starts_at) : null);
+    const proposedEndsAt = body.ends_at !== undefined
+      ? (body.ends_at ? new Date(body.ends_at) : null)
+      : (currentAssessment.ends_at ? new Date(currentAssessment.ends_at) : null);
+
+    if (proposedStartsAt && Number.isNaN(proposedStartsAt.getTime())) {
+      return NextResponse.json({ ok: false, error: "The assessment start date is invalid." }, { status: 400 });
+    }
+    if (proposedEndsAt && Number.isNaN(proposedEndsAt.getTime())) {
+      return NextResponse.json({ ok: false, error: "The assessment end date is invalid." }, { status: 400 });
+    }
+    if (proposedStartsAt && proposedEndsAt && proposedEndsAt.getTime() <= proposedStartsAt.getTime()) {
+      return NextResponse.json({
+        ok: false,
+        error: "The assessment end date must be later than its start date. Leave either date blank for an open-ended schedule.",
+      }, { status: 400 });
+    }
+
     const updates: Record<string, unknown> = {
       updated_at: new Date().toISOString(),
     };
@@ -89,8 +120,8 @@ export async function PATCH(
     if (body.shuffle_questions !== undefined) updates.shuffle_questions = Boolean(body.shuffle_questions);
     if (body.access_code_required !== undefined) updates.access_code_required = Boolean(body.access_code_required);
     if (body.result_release !== undefined) updates.result_release = String(body.result_release);
-    if (body.starts_at !== undefined) updates.starts_at = body.starts_at ? new Date(body.starts_at).toISOString() : null;
-    if (body.ends_at !== undefined) updates.ends_at = body.ends_at ? new Date(body.ends_at).toISOString() : null;
+    if (body.starts_at !== undefined) updates.starts_at = proposedStartsAt?.toISOString() ?? null;
+    if (body.ends_at !== undefined) updates.ends_at = proposedEndsAt?.toISOString() ?? null;
     if (body.custom_questions !== undefined) updates.custom_questions = body.custom_questions;
 
     // Handle status toggle (draft, open, closed)
