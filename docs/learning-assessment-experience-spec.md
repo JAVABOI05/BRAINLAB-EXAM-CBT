@@ -167,3 +167,33 @@ Before adding columns/tables, reconcile the staging and production schemas, all 
 - The current start RPC call is user-session based and passes the resolved assessment UUID. The underlying staging RPC requires authentication, so anonymous attempts cannot be enabled safely by changing only the page.
 - The admin API currently accepts title/description, question source/count, duration, attempts, access code and one result-release setting. It does not yet expose the requested preview image, candidate identity, login policy, independent correction release, or leaderboard controls.
 - The admin list/editor page currently uses the older `result_release` setting. Expand the admin UX only alongside the corresponding database/API contract so the UI cannot advertise unsupported controls.
+
+
+## Implementation gate — live staging schema inspection (27 Nov 2026)
+
+A fresh read-only inspection of the live staging schema confirms that the candidate experience cannot be completed safely as a front-end-only change:
+
+- `learning_assessments` currently has title, description, instructions, question count, duration, attempt limit, access-code flag, publication/status, and slug. It does not yet have preview-image path, login policy, candidate-field configuration, independent score/correction release policies, release timestamps, or leaderboard settings.
+- `learning_practice_attempts.user_id` is NOT NULL. The current attempt row also has a required UUID `attempt_token`; the current start RPC requires an authenticated actor. Guest support therefore needs an explicit guest identity/credential model and ownership policies, not a nullable user ID patch.
+- Existing result policy is represented by one `result_release` text field. It cannot express independently controlled score release and correction release.
+- Candidate identity fields are not present on the assessment or attempt schema. Candidate details need a dedicated data model with minimal PII, retention rules, and separate public display labels.
+- The current assessment page checks `supabase.auth.getUser()` and redirects to login before loading the assessment. Public metadata/landing-page access must be explicitly supported by RLS and a safe public read contract before that redirect can be conditionally removed.
+- The runner previously rendered A–E after the image/question enhancement, but its answer-selection handler accepted only A–D. This was corrected in the current branch so option E can be selected and saved.
+
+### Required backend design before guest access
+
+Do not make `learning_practice_attempts.user_id` nullable without reviewing all self-practice, XP, analytics, RLS and ownership paths. Prefer a dedicated guest-attempt identity/access table linked to the attempt, with a high-entropy random secret whose hash is stored server-side, expiry/revocation, rate limits, and exact assessment/attempt scoping. The start, save, resume, submit, results, corrections and leaderboard APIs must all enforce the same ownership credential.
+
+### Required result and leaderboard design
+
+Keep score and correction visibility as separate server-enforced policies. Candidate-facing RPCs must omit unreleased score, answer keys, explanations, ranks and aggregates. Leaderboard publication must be separately enabled and timed; it must never reveal candidate phone/email, account IDs, guest credentials, or unreleased results. Default leaderboard visibility should be off.
+
+### Safe implementation order
+
+1. Preserve current login-required behaviour while building the visual shell and public metadata contract.
+2. Add the preview image and instructions display only after admin upload, storage access and public image URL policy are defined.
+3. Add per-assessment login/candidate field configuration and server validation.
+4. Implement guest attempt credentials and ownership-checked RPCs.
+5. Split score release from correction release and implement candidate retrieval.
+6. Implement leaderboard aggregation with explicit privacy and release rules.
+7. Test anonymous/authenticated/admin/service-role access on an isolated clone before any migration or deployment.
