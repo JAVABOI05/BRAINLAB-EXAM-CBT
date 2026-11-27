@@ -227,11 +227,44 @@ export default function AssessmentRunnerPage() {
 
   if (loading && phase === "briefing") {
     return (
-      <div className="assessment-detail-page flex min-h-screen flex-col bg-slate-50 text-slate-900">
-                <main className="flex flex-1 items-center justify-center p-6">
-          <p className="text-sm font-semibold text-slate-500">Loading assessment details...</p>
-        </main>
-      </div>
+      <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#07152f] px-6 text-white">
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+          <div className="absolute -left-24 -top-24 h-72 w-72 rounded-full bg-blue-500/10 blur-3xl" />
+          <div className="absolute -bottom-28 -right-20 h-80 w-80 rounded-full bg-cyan-400/10 blur-3xl" />
+          <div className="absolute inset-0 opacity-[0.12] [background-image:radial-gradient(#8cc9ff_1px,transparent_1px)] [background-size:28px_28px]" />
+        </div>
+        <section className="relative z-10 flex w-full max-w-md flex-col items-center text-center" aria-live="polite" aria-busy="true">
+          <div className="relative mb-8 flex h-36 w-36 items-center justify-center">
+            <div className="absolute inset-0 rounded-full border border-cyan-300/20" />
+            <div className="absolute inset-2 rounded-full border-2 border-transparent border-t-cyan-300 border-r-blue-400 motion-safe:animate-spin" />
+            <div className="absolute inset-5 rounded-full bg-blue-500/10 blur-xl" />
+            <img
+              src="/app-icon-512.png"
+              alt="BrainLab Academy"
+              width="88"
+              height="88"
+              className="relative h-[88px] w-[88px] object-contain motion-safe:animate-pulse motion-reduce:animate-none"
+            />
+          </div>
+          <p className="text-xs font-bold uppercase tracking-[0.32em] text-cyan-300">BrainLab Academy</p>
+          <h1 className="mt-3 text-2xl font-black tracking-tight sm:text-3xl">Preparing your assessment</h1>
+          <p className="mt-2 max-w-xs text-sm leading-6 text-slate-300">
+            Securely loading your assessment details and examination environment.
+          </p>
+          <div className="mt-8 h-1.5 w-48 overflow-hidden rounded-full bg-white/10">
+            <div className="h-full w-1/3 rounded-full bg-gradient-to-r from-blue-400 to-cyan-300 motion-safe:animate-[assessment-loading_1.4s_ease-in-out_infinite]" />
+          </div>
+          <style jsx>{`
+            @keyframes assessment-loading {
+              0% { transform: translateX(-110%); }
+              100% { transform: translateX(350%); }
+            }
+            @media (prefers-reduced-motion: reduce) {
+              .motion-safe\\:animate-\\[assessment-loading_1\\.4s_ease-in-out_infinite\\] { animation: none; }
+            }
+          `}</style>
+        </section>
+      </main>
     );
   }
 
