@@ -2,11 +2,12 @@
 -- Generate the final migration with the Supabase CLI, test on an isolated clone,
 -- then review grants/advisors before any staging application.
 --
--- Architecture: preserve the current start implementation under a private
--- internal name; expose compatibility and v2 wrappers. The wrappers lock the
--- assessment row before calling the original implementation, making its
--- max-attempt count serial for concurrent starts of the same assessment.
--- The v2 wrapper inserts candidate identity after the original start call.
+-- Architecture: preserve the current start implementation under an internal
+-- name; expose compatibility and v2 wrappers. Each wrapper takes a
+-- transaction-scoped advisory lock keyed by assessment + authenticated user.
+-- This protects the per-user max-attempt count without serializing every
+-- candidate starting the same assessment. The v2 wrapper inserts identity
+-- after the original start call; any failure rolls back the attempt too.
 -- Any failure rolls back the attempt and the question-exposure trigger effects
 -- because the nested function call shares the caller's transaction.
 
@@ -224,20 +225,23 @@ set search_path = public, pg_temp
 as $$
 declare
   v_config jsonb;
+  v_user uuid := auth.uid();
 begin
-  -- Serializes the attempt count inside the preserved implementation.
-  perform 1
-  from public.learning_assessments
-  where id = p_assessment_id
-  for update;
-
-  if not found then
-    return public._start_organisation_assessment_internal(p_assessment_id, p_access_code);
+  -- The legacy implementation counts attempts for auth.uid(). Lock only this
+  -- candidate + assessment pair; a hash collision can only add serialization.
+  if v_user is not null then
+    perform pg_advisory_xact_lock(
+      hashtextextended('learning-assessment-start:' || p_assessment_id::text || ':' || v_user::text, 0)
+    );
   end if;
 
   select candidate_identity_config into v_config
   from public.learning_assessments
   where id = p_assessment_id;
+
+  if not found then
+    return public._start_organisation_assessment_internal(p_assessment_id, p_access_code);
+  end if;
 
   if v_config is not null then
     return public._err(
@@ -271,19 +275,18 @@ begin
     return public._err('authentication_required', 'Sign in to start this assessment.');
   end if;
 
-  -- Lock the assessment before the legacy implementation counts attempts.
-  perform 1
-  from public.learning_assessments
-  where id = p_assessment_id
-  for update;
-
-  if not found then
-    return public._start_organisation_assessment_internal(p_assessment_id, p_access_code);
-  end if;
+  -- Protect this user's attempt counter without blocking other candidates.
+  perform pg_advisory_xact_lock(
+    hashtextextended('learning-assessment-start:' || p_assessment_id::text || ':' || v_user::text, 0)
+  );
 
   select candidate_identity_config into v_config
   from public.learning_assessments
   where id = p_assessment_id;
+
+  if not found then
+    return public._start_organisation_assessment_internal(p_assessment_id, p_access_code);
+  end if;
 
   v_identity := learning_private.normalize_candidate_identity(v_config, p_candidate_identity);
 
