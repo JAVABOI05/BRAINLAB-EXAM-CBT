@@ -23,6 +23,7 @@ type Assessment = {
   starts_at: string | null;
   ends_at: string | null;
   access_code_required: boolean;
+  requires_sign_in: boolean;
   result_release: string;
   is_published: boolean;
 };
@@ -58,6 +59,7 @@ export default function OrganisedAssessmentsAdminPage() {
   const [startsAt, setStartsAt] = useState("");
   const [endsAt, setEndsAt] = useState("");
   const [accessRequired, setAccessRequired] = useState(false);
+  const [requiresSignIn, setRequiresSignIn] = useState(true);
   const [customCodeInput, setCustomCodeInput] = useState("");
   const [maxRedemptionsInput, setMaxRedemptionsInput] = useState(500);
   const [resultRelease, setResultRelease] = useState<"after_submit" | "after_close" | "admin_only">("after_submit");
@@ -80,7 +82,7 @@ export default function OrganisedAssessmentsAdminPage() {
       supabase.from("learning_organisations").select("id,name,status").order("name"),
       supabase
         .from("learning_assessments")
-        .select("id,slug,assessment_type,title,organisation_id,question_count,duration_seconds,max_attempts,starts_at,ends_at,access_code_required,result_release,is_published")
+        .select("id,slug,assessment_type,title,organisation_id,question_count,duration_seconds,max_attempts,starts_at,ends_at,access_code_required,requires_sign_in,result_release,is_published")
         .order("created_at", { ascending: false }),
       supabase.rpc("get_self_practice_catalog"),
       supabase
@@ -192,6 +194,7 @@ export default function OrganisedAssessmentsAdminPage() {
           starts_at: startsAt || null,
           ends_at: endsAt || null,
           access_code_required: accessRequired,
+          requires_sign_in: requiresSignIn,
           custom_code: accessRequired && customCodeInput.trim() ? customCodeInput.trim() : undefined,
           max_redemptions: accessRequired ? maxRedemptionsInput : undefined,
           result_release: resultRelease,
@@ -480,6 +483,14 @@ export default function OrganisedAssessmentsAdminPage() {
 
             <label className="admin-label">End time (optional)</label>
             <input className="admin-input" type="datetime-local" value={endsAt} onChange={(e) => setEndsAt(e.target.value)} />
+
+            <div className="border border-slate-200 dark:border-slate-800 rounded-xl p-4 mt-3 bg-white dark:bg-slate-950 space-y-2">
+              <label className="admin-toggle">
+                <input type="checkbox" checked={requiresSignIn} onChange={(e) => setRequiresSignIn(e.target.checked)} />
+                <span className="font-bold">Require students to sign in before taking this assessment</span>
+              </label>
+              <p className="pl-6 text-[11px] text-slate-500">Turn this off to allow candidates to take the assessment as guests, without a BrainLab account. Guest attempt support is being completed before this option is enabled for candidates.</p>
+            </div>
 
             {/* Access Code Options */}
             <div className="border border-slate-200 dark:border-slate-800 rounded-xl p-4 mt-3 bg-slate-50/50 dark:bg-slate-900/40 space-y-3">
