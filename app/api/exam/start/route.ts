@@ -182,15 +182,24 @@ export async function POST(request: NextRequest) {
 
     if (cleanCode) {
       // Check master code in exam_config
-      const { data: masterRow } = await supabase
+      const { data: masterRow, error: masterCodeError } = await supabase
         .from("exam_config")
         .select("config_value")
         .eq("config_key", "master_access_code")
         .maybeSingle();
 
-      const masterCode = String(masterRow?.config_value || "STAGING-MASTER-TEST-001").trim().toUpperCase();
+      if (masterCodeError) {
+        console.error("[exam/start] Master-code configuration lookup failed:", masterCodeError.message);
+        return NextResponse.json(
+          { ok: false, error: "master_code_config_unavailable", message: "Exam access settings are temporarily unavailable. Please try again shortly." },
+          { status: 503 }
+        );
+      }
 
-      if (cleanCode === masterCode) {
+      // Never fall back to a hard-coded staging/test master code in a live route.
+      const masterCode = String(masterRow?.config_value ?? "").trim().toUpperCase();
+
+      if (masterCode && cleanCode === masterCode) {
         isMasterCode = true;
       } else {
         // Check normal access codes
