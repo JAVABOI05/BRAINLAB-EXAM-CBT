@@ -242,8 +242,21 @@ A read-only comparison of the current `app/api/exam/start/route.ts` with the SQL
 4. **Payload completeness:** the draft should define validation for non-empty subject data and the relationship between `p_duration_seconds` and `p_deadline_at`. These must be specified before the RPC is considered production-ready.
 5. **Lost-response handling:** the current route already has an active-session recovery path before new launch work. The RPC's duplicate-attempt conflict must not disclose an existing attempt token. Preserve the current recovery rules and do not blindly retry create after an uncertain commit.
 
-The regression plan has been expanded with T20–T23 for stale subject settings, open-access argument mapping, exact PostgREST signature matching, and paper-ID integrity. The SQL draft itself has not yet been changed to resolve these findings, parsed, or executed.
+The regression plan has been expanded with T20–T23 for stale subject settings, open-access argument mapping, exact PostgREST signature matching, and paper-ID integrity. The SQL draft has since been revised to add the expected raw code-subject parameter, null-safe subject comparison, non-empty subject validation, future-deadline validation, and distinct 180-question-ID validation. These are static draft changes only; the SQL has not been parsed or executed.
 
 ### Zero-cost validation decision
 
 The repository already declares `@electric-sql/pglite` as a development dependency, but the existing GitHub Actions workflows do not currently run this transaction's SQL regression suite. PGlite may be a candidate for a local/CI-only PostgreSQL-compatible harness, but compatibility for advisory transaction locks, PL/pgSQL, expression indexes, and role/privilege checks must be verified rather than assumed. No workflow was triggered and no hosted database branch was created. Do not use either connected BrainLab Supabase project as a substitute.
+
+
+## 17. Revised SQL draft after static integration review
+
+The SQL draft was revised after comparing it with the current route:
+
+- Added `p_expected_code_subject text`. For normal codes, the function compares this exact raw value with the locked `access_codes.subject` using `IS DISTINCT FROM`. The route must pass the raw subject it observed before paper generation, not the filtered `preconfiguredSubject` value. A mismatch returns `code_subject_changed` without inserting a session or consuming the code.
+- Added non-empty `p_subject` validation and a future-deadline check.
+- Added a distinct-ID count check so a paper array must contain exactly 180 distinct question IDs, not merely 180 array elements.
+- Updated the function signature and matching REVOKE/GRANT statements to include the new text parameter.
+- Clarified that open access must pass an empty original code to the RPC; the RPC persists `OPEN-CBT` as the session label.
+
+The route has not been refactored to call this function. The SQL draft remains unparsed and unexecuted. The next zero-cost validation step is to establish whether the existing PGlite development dependency supports every PostgreSQL feature used here, or to use a local PostgreSQL binary/container already available without downloading or creating a hosted resource. Do not create a paid branch or run this against connected BrainLab databases.
