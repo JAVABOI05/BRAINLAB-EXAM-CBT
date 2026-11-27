@@ -28,6 +28,12 @@ begin
   end if;
 
   if learning_private.is_valid_candidate_identity_config(
+    '{"version":"1","fields":{"full_name":"required"}}'::jsonb
+  ) then
+    raise exception 'FAIL: string-valued policy version accepted';
+  end if;
+
+  if learning_private.is_valid_candidate_identity_config(
     '{"version":1,"fields":{"unknown":"required"}}'::jsonb
   ) then
     raise exception 'FAIL: unknown field accepted';
