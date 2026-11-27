@@ -226,6 +226,44 @@ try {
   });
   checks.push("RPC execution grants are restricted to service_role");
 
+  for (const role of ["anon", "authenticated"] as const) {
+    await db.exec(`set role ${role};`);
+    let denied = false;
+    try {
+      await callRpc({
+        code: "SYNTHETIC-CODE-001",
+        attempt_token: role === "anon"
+          ? "dddddddd-dddd-4ddd-8ddd-dddddddddddd"
+          : "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+      });
+    } catch (error) {
+      denied = /permission denied|not authorized/i.test(String(error));
+    } finally {
+      await db.exec("reset role;");
+    }
+    assert.equal(denied, true, `${role} direct RPC invocation must be denied`);
+    checks.push(`${role} direct RPC invocation is denied by PostgreSQL`);
+  }
+
+  await db.exec(`
+    insert into public.access_codes(code, subject, is_used)
+    values ('SYNTHETIC-SERVICE-ROLE', 'Mathematics', false);
+  `);
+  await db.exec("set role service_role;");
+  let serviceRoleResult;
+  try {
+    serviceRoleResult = await callRpc({
+      code: "SYNTHETIC-SERVICE-ROLE",
+      expected_code_subject: "Mathematics",
+      phone: "08000000007",
+      attempt_token: "ffffffff-ffff-4fff-8fff-ffffffffffff",
+    });
+  } finally {
+    await db.exec("reset role;");
+  }
+  assert.equal(serviceRoleResult?.ok, true);
+  checks.push("service_role can invoke the RPC through the server-only privilege");
+
   const success = await callRpc();
   assert.equal(success.ok, true);
   assert.ok(success.session_id);
