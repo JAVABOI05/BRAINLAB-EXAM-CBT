@@ -180,3 +180,43 @@ No application authorization changes are included in this commit. The current re
 - add and configure the supported Supabase SSR cookie integration across the app, with tests for chunked cookie reconstruction and token verification.
 
 Do not treat a raw cookie value longer than 20 characters as a verified bearer token. A token must be verified by Supabase Auth before it is used for role/permission checks.
+
+
+## Additional live staging SECURITY DEFINER inventory — 27 November 2026
+
+A read-only catalog inventory was run against staging for public functions with assessment, organisation, entitlement, and access-code names. Function execute grants are part of the attack surface: RLS does not protect operations performed inside a `SECURITY DEFINER` function. The following findings require separate treatment from the candidate identity work.
+
+### Critical: unauthenticated legacy access-code consumption
+
+Live staging exposes `public.mark_access_code_used(text,text,uuid)` to `anon`, `authenticated`, and `service_role`. It is `SECURITY DEFINER` with `search_path = public, pg_temp`.
+
+Its body:
+- accepts an access code and caller-supplied `p_used_by`;
+- locks a matching legacy `public.access_codes` row;
+- if unused, marks it used and stores the caller-supplied identity;
+- does not require `auth.uid()`, verify an exam session, verify a candidate phone, or prove that the caller has authority to consume that code.
+
+This is a potential unauthenticated denial-of-service / code-poisoning path: anyone able to call the RPC and obtain/guess a valid code can consume it and set the recorded `used_by`. Do not test this against live data. The repair should revoke execute from `anon` immediately in a separately approved staging change, then review whether authenticated callers still need this legacy function. If a legitimate candidate flow depends on it, replace it with a server-controlled operation bound to a validated exam session and verified candidate identity. Do not leave a public caller-supplied `p_used_by` parameter as the authority.
+
+### Other public or broadly executable functions needing review
+
+- `check_access_code(text,text)` is `SECURITY DEFINER` and executable by `anon` and `authenticated`. It validates a supplied legacy code/phone pair and returns whether the code is valid, including a master-code success type. It has throttling through phone-based helpers, but the public exposure should be explicitly justified and rate-limited at the edge. Never return the master code itself. Do not remove it until the candidate CBT flow dependency is mapped.
+- `create_learning_access_code(...)` has a legacy 9-argument overload executable by `authenticated` and a newer 10-argument overload executable by `authenticated`. Both require `auth.uid()` and perform internal role/scope checks. The 10-argument overload resolves an assigned email to an auth user, then delegates to the 9-argument function. Verify that the 9-argument overload cannot be abused to bypass assigned-account binding for permanent codes; its body enforces one redemption but does not accept `assigned_user_id`. Prefer to revoke the legacy overload after caller inventory confirms it is unused.
+- `create_learning_organisation(text,text)` is `SECURITY DEFINER`, authenticated-only, and requires `learning_can_manage_all()`. This means the live helper currently permits platform and AI learning admins, not only a narrowly scoped organisation-management permission. Align that policy with the approved role matrix before changing it.
+- `redeem_learning_access_code(text)` is authenticated-only, but first checks legacy `public.access_codes` and delegates matching codes to `redeem_plan_voucher`. This creates a cross-system redemption path with subscription/plan side effects. Assessment-only access codes should not be routed through plan-voucher redemption; a dedicated assessment-only code path is required before relying on this RPC for the new assessment experience.
+- `list_learning_entitlements(uuid)` is authenticated-only and returns `user_id` and entitlement details. Its body allows global learning managers or qualifying organisation managers. Treat this as a restricted identity-bearing admin endpoint, not a general learning-content read. Its organisation branch should be tested for cross-organisation leakage, especially when `p_organisation_id` is null.
+- `revoke_learning_entitlement(uuid)` is authenticated-only and checks global learning management or organisation management before revoking. Verify its scope against the entitlement's organisation and assessment, and ensure it cannot revoke assessment access outside the caller's scope.
+- `export_fresh_access_codes(integer)`, `generate_access_codes(integer)`, and `reset_used_access_codes_preserve_master()` are `SECURITY DEFINER` functions that call `_require_admin()`; retain their server-side guard and confirm execute grants remain limited to authenticated/service roles.
+- `validate_published_learning_assessment()` is a trigger function, not an application RPC; it is not a public user-facing operation.
+- Assessment attempt RPCs (`start_organisation_assessment`, `resume_organisation_assessment`, `save_organisation_assessment_progress`, `submit_organisation_assessment`) are `SECURITY DEFINER` and executable by authenticated users. Their attempt-token and ownership checks must remain intact; do not revoke or alter them as part of admin authorization work without separately testing candidate start/resume/save/submit behavior.
+
+### Prioritised remediation order
+
+1. **P0 — `mark_access_code_used`:** prepare a narrowly scoped privilege-revocation patch for `anon` and verify whether any live candidate flow depends on it. Do not execute the patch without explicit approval and a rollback plan.
+2. **P1 — Results and entitlement identity exposure:** split aggregate reporting from identifiable candidate review; paginate both; require assessment-scoped reviewer assignment for identity-bearing outputs.
+3. **P1 — Legacy voucher cross-over:** isolate assessment-only redemption from `redeem_plan_voucher` and subscription side effects.
+4. **P2 — Legacy function overloads:** inventory callers and retire unused overloads with explicit execute grants.
+5. **P2 — Admin feature permissions:** replace broad role assumptions with explicit permission checks while preserving legitimate organisation owner/admin scope.
+6. **P2 — Public candidate code validation:** retain only if required by the current CBT UX; add edge rate limits, abuse monitoring, and a documented public threat model.
+
+This catalog inventory was read-only. No RPC was invoked against live records, no code was consumed, and no privileges or function definitions were changed.
