@@ -56,10 +56,10 @@ The function must be callable only by `service_role`, with execution revoked fro
 | T17 | Lost HTTP response after successful commit | Retry does not create a second attempt; normal-code retry resolves through the existing recovery path |
 | T18 | Master-code trigger interaction | No attempt is made to mark the configured master-code row used; trigger cannot silently produce a successful-looking but unconsumed normal-code transaction |
 | T19 | Normalized-code unique index | Migration preflight rejects pre-existing case/whitespace collisions; after index creation, concurrent issuance cannot create two rows with the same normalized code |
-| T20 | Access-code subject changes after pre-read | If the code's subject changes between route pre-validation/paper generation and RPC execution, the RPC rejects the stale launch; it must not consume the code for a paper generated from stale subject settings |
+| T20 | Access-code subject changes after pre-read | RPC compares the locked row's raw subject with the exact raw subject observed by the route using null-safe equality; any change rejects the stale launch without inserting a session or consuming the code |
 | T21 | Open-access RPC argument mapping | Route passes an empty original code to the RPC for open access; `OPEN-CBT` is assigned as the persisted session label inside the transaction, not passed as if it were a normal code |
 | T22 | Exact PostgREST RPC signature | Route argument names, SQL parameter names, PostgreSQL types, nullable values, and returned JSON keys match exactly; a contract test catches drift before route cutover |
-| T23 | Paper payload integrity | Reject null/empty required subject data and malformed paper payloads; verify all 180 question IDs are distinct if that is an invariant guaranteed by the paper generator |
+| T23 | Paper payload integrity | Reject null/empty subject data, malformed paper payloads, and any 180-item paper array containing null or duplicate IDs; exactly 180 distinct IDs are required by the revised SQL draft |
 
 ## 5. Failure injection
 
