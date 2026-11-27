@@ -225,6 +225,7 @@ export async function POST(request: NextRequest) {
       starts_at: startsAt,
       ends_at: endsAt,
       access_code_required: accessCodeRequired,
+      requires_sign_in: body.requires_sign_in !== false,
       result_release: resultRelease,
       is_published: isPublished,
       status,
