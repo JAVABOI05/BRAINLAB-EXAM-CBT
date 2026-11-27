@@ -7,9 +7,10 @@ import { supabase } from "../../lib/supabase";
 
 interface AssessmentInfo {
   id: string;
+  slug: string;
   title: string;
   description?: string;
-  assessment_type: "organisation_quiz" | "competition";
+  assessment_type: "organisation_quiz" | "competition" | "academic_quiz" | "topic_test" | "subject_assessment" | "general_quiz" | "custom_assessment";
   question_count: number;
   duration_seconds: number | null;
   max_attempts: number;
@@ -64,12 +65,15 @@ export default function AssessmentRunnerPage() {
         return;
       }
 
-      const { data, error: err } = await supabase
+      const assessmentLookup = supabase
         .from("learning_assessments")
-        .select("id, title, description, assessment_type, question_count, duration_seconds, max_attempts, access_code_required, result_release")
-        .eq("id", assessmentId)
-        .eq("is_published", true)
-        .single();
+        .select("id, slug, title, description, assessment_type, question_count, duration_seconds, max_attempts, access_code_required, result_release")
+        .eq("is_published", true);
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(assessmentId);
+      const { data, error: err } = await (isUuid
+        ? assessmentLookup.eq("id", assessmentId)
+        : assessmentLookup.eq("slug", assessmentId)
+      ).single();
 
       if (!active) return;
 
@@ -122,7 +126,7 @@ export default function AssessmentRunnerPage() {
 
     try {
       const { data, error: rpcErr } = await supabase.rpc("start_organisation_assessment", {
-        p_assessment_id: assessmentId,
+        p_assessment_id: assessment.id,
         p_access_code: accessCode.trim() || null,
       });
 
