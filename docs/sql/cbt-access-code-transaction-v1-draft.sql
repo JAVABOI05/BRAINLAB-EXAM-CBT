@@ -25,6 +25,7 @@ create or replace function public.create_exam_session_and_consume_code(
   p_phone text,
   p_subject text,
   p_code text,
+  p_expected_code_subject text,
   p_paper_ids bigint[],
   p_duration_seconds integer,
   p_deadline_at timestamptz,
@@ -45,6 +46,7 @@ declare
   v_session_code text;
   v_mode text;
   v_match_count integer := 0;
+  v_distinct_paper_count integer := 0;
   v_code_row record;
   v_session_id uuid;
   v_used_by text;
@@ -53,13 +55,23 @@ begin
     return jsonb_build_object('ok', false, 'error', 'invalid_candidate');
   end if;
 
-  if coalesce(cardinality(p_paper_ids), 0) <> 180
+  if nullif(btrim(coalesce(p_subject, '')), '') is null
+     or coalesce(cardinality(p_paper_ids), 0) <> 180
      or p_duration_seconds is null
      or p_duration_seconds < 1
      or p_duration_seconds > 86400
      or p_deadline_at is null
+     or p_deadline_at <= pg_catalog.now()
      or p_attempt_token is null then
     return jsonb_build_object('ok', false, 'error', 'invalid_session_payload');
+  end if;
+
+  select count(distinct ids.paper_id)::integer
+    into v_distinct_paper_count
+  from unnest(p_paper_ids) as ids(paper_id);
+
+  if v_distinct_paper_count <> 180 then
+    return jsonb_build_object('ok', false, 'error', 'invalid_paper_ids');
   end if;
 
   select e.config_value #>> '{}'
@@ -116,9 +128,10 @@ begin
     );
 
     -- Lock every normalized match so legacy whitespace/case variants cannot
-    -- cause an arbitrary row to be selected. Raw-code uniqueness is not enough.
+    -- cause an arbitrary row to be selected. The unique expression index
+    -- should guarantee one match after the preflight succeeds.
     for v_code_row in
-      select ac.id, ac.is_used
+      select ac.id, ac.is_used, ac.subject
       from public.access_codes ac
       where upper(btrim(ac.code)) = v_code
       order by ac.id
@@ -134,14 +147,18 @@ begin
       return jsonb_build_object('ok', false, 'error', 'ambiguous_code');
     end if;
 
-    -- Re-read the locked unique match. This avoids relying on an arbitrary
-    -- loop-record assignment if normalized duplicates are ever encountered.
-    select ac.id, ac.is_used
+    -- Re-read the locked unique match, including the exact raw subject value
+    -- observed by the route before it generated the paper.
+    select ac.id, ac.is_used, ac.subject
       into v_code_row
     from public.access_codes ac
     where upper(btrim(ac.code)) = v_code
     order by ac.id
     limit 1;
+
+    if v_code_row.subject is distinct from p_expected_code_subject then
+      return jsonb_build_object('ok', false, 'error', 'code_subject_changed');
+    end if;
 
     if coalesce(v_code_row.is_used, false) then
       return jsonb_build_object('ok', false, 'error', 'code_used');
@@ -221,19 +238,20 @@ end;
 $function$;
 
 revoke all on function public.create_exam_session_and_consume_code(
-  text, text, text, text, bigint[], integer, timestamptz, uuid, boolean, text
+  text, text, text, text, text, bigint[], integer, timestamptz, uuid, boolean, text
 ) from public, anon, authenticated;
 
 grant execute on function public.create_exam_session_and_consume_code(
-  text, text, text, text, bigint[], integer, timestamptz, uuid, boolean, text
+  text, text, text, text, text, bigint[], integer, timestamptz, uuid, boolean, text
 ) to service_role;
 
 -- The advisory lock serializes code consumers. The expression unique index above
 -- also prevents concurrent issuance from introducing a normalized duplicate.
 --
 -- Review notes before this draft can become a migration:
--- 1. Revisit loop-record assignment/locking implementation and verify with real
---    concurrent tests in a disposable database.
+-- 1. The route must pass the original empty code for OPEN-CBT, not the persisted
+--    OPEN-CBT session label, and must pass the exact raw code subject it observed
+--    before paper generation as p_expected_code_subject.
 -- 2. Confirm the configured master-code representation and whether blank config
 --    values are valid.
 -- 3. Confirm the service-role PostgREST call uses the exact argument names/types.
@@ -241,3 +259,5 @@ grant execute on function public.create_exam_session_and_consume_code(
 --    are independently reconciled.
 -- 5. Do not revoke legacy mark_access_code_used until all callers are inventoried
 --    and the new route has been deployed and verified.
+-- 6. This SQL has not been parsed or executed. Verify advisory-lock and PL/pgSQL
+--    support in the chosen zero-cost isolated harness before relying on it.
