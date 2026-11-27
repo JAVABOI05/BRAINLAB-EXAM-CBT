@@ -54,7 +54,12 @@ The function must be callable only by `service_role`, with execution revoked fro
 | T15 | Candidate-controlled `used_by` / session linkage tampering | Function derives or validates values from the payload/session insert; arbitrary unrelated session IDs cannot be attached |
 | T16 | Existing CBT lifecycle | Start, save, resume, submit, result retrieval, and question exposure behavior remain unchanged |
 | T17 | Lost HTTP response after successful commit | Retry does not create a second attempt; normal-code retry resolves through the existing recovery path |
-| T18 | Master-code trigger interaction | No attempt is made to mark the configured master-code row used; trigger cannot silently produce a successful-looking but unconsumed normal-code transaction |\n| T19 | Normalized-code unique index | Migration preflight rejects pre-existing case/whitespace collisions; after index creation, concurrent issuance cannot create two rows with the same normalized code |
+| T18 | Master-code trigger interaction | No attempt is made to mark the configured master-code row used; trigger cannot silently produce a successful-looking but unconsumed normal-code transaction |
+| T19 | Normalized-code unique index | Migration preflight rejects pre-existing case/whitespace collisions; after index creation, concurrent issuance cannot create two rows with the same normalized code |
+| T20 | Access-code subject changes after pre-read | If the code's subject changes between route pre-validation/paper generation and RPC execution, the RPC rejects the stale launch; it must not consume the code for a paper generated from stale subject settings |
+| T21 | Open-access RPC argument mapping | Route passes an empty original code to the RPC for open access; `OPEN-CBT` is assigned as the persisted session label inside the transaction, not passed as if it were a normal code |
+| T22 | Exact PostgREST RPC signature | Route argument names, SQL parameter names, PostgreSQL types, nullable values, and returned JSON keys match exactly; a contract test catches drift before route cutover |
+| T23 | Paper payload integrity | Reject null/empty required subject data and malformed paper payloads; verify all 180 question IDs are distinct if that is an invariant guaranteed by the paper generator |
 
 ## 5. Failure injection
 
@@ -82,3 +87,15 @@ In the disposable database, inspect `has_function_privilege` for PUBLIC/anon/aut
 - Confirm which Supabase project the existing Vercel Production deployment is intended to use before any production-specific migration or route rollout.
 - Run the full test suite and CBT lifecycle tests after the route cutover.
 - Require explicit approval before applying any migration, changing privileges, merging, or deploying.
+
+## 9. Static-review findings — 27 November 2026
+
+These are code-review findings, not database test results:
+
+1. **Open-access argument mismatch:** the current route persists `OPEN-CBT` as the session's `access_code`, while the draft RPC infers open mode from an empty `p_code`. The future route must pass the original empty code to the RPC. The RPC should assign `OPEN-CBT` only to the inserted session row. Passing `OPEN-CBT` as `p_code` would route it through normal-code lookup and fail or behave incorrectly.
+2. **Stale code-subject race:** the route reads `access_codes.subject` before paper generation, but the draft RPC does not currently receive or verify that observed value. Add a dedicated expected-code-subject parameter (separate from the complete selected-subject string) and compare it with the locked row using null-safe equality. If it changed, return a stable conflict and do not insert a session or consume the code. Do not hold a row lock while generating the 180-question paper.
+3. **Paper-ID uniqueness:** cardinality 180 does not prove 180 distinct question IDs. Confirm the generator's invariant and enforce it in the RPC if the database contract is intended to defend against malformed server payloads.
+4. **Subject/payload validation:** the draft currently validates candidate name, phone, paper count, duration, deadline presence, and attempt token, but it does not validate non-empty subject text or the relationship between duration and deadline. Define the intended contract before treating the RPC as production-ready.
+5. **Retry semantics:** a committed transaction followed by a lost HTTP response must be reconciled with the route's existing recovery lookup. Do not blindly retry the create RPC, particularly for OPEN/master access, because the draft intentionally returns a conflict for an existing active attempt rather than disclosing its token.
+
+The SQL draft remains unparsed and unexecuted. These findings must be resolved in the draft and then tested in an isolated, zero-cost CI Postgres environment before route refactoring. No connected BrainLab database may be used as a test target.
