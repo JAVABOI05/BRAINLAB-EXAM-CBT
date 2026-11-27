@@ -34,9 +34,9 @@ begin
   if octet_length(p_config::text) > 2048
      or jsonb_typeof(p_config) <> 'object'
      or (p_config - array['version', 'fields']) <> '{}'::jsonb
-     or jsonb_typeof(p_config->'version') <> 'number'
-     or p_config->'version' <> '1'::jsonb
-     or jsonb_typeof(p_config->'fields') <> 'object'
+     or jsonb_typeof(p_config->'version') is distinct from 'number'
+     or p_config->'version' is distinct from '1'::jsonb
+     or jsonb_typeof(p_config->'fields') is distinct from 'object'
      or (p_config->'fields' - array['full_name', 'candidate_number', 'phone', 'email']) <> '{}'::jsonb then
     return false;
   end if;
