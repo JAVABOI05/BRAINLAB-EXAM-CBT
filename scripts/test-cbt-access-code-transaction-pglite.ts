@@ -13,6 +13,7 @@ import { resolve } from "node:path";
 import assert from "node:assert/strict";
 import { PGlite } from "@electric-sql/pglite";
 
+async function main() {
 const draftPath = resolve(
   process.cwd(),
   "docs/sql/cbt-access-code-transaction-v1-draft.sql",
@@ -451,3 +452,9 @@ try {
 } finally {
   await db.close();
 }
+
+
+main().catch((error: unknown) => {
+  console.error(error);
+  process.exitCode = 1;
+});
