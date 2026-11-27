@@ -292,7 +292,16 @@ try {
     attempt_token: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
   });
   assert.equal(spoofedMaster.error, "invalid_access_mode");
-  checks.push("configured master code cannot be consumed through normal-code mode");
+  const masterAfterSpoof = await db.query(
+    "select is_used, used_by, used_at, exam_session_id from public.access_codes where code = 'SYNTHETIC-MASTER-ONLY'",
+  );
+  assert.deepEqual(masterAfterSpoof.rows[0], {
+    is_used: false,
+    used_by: null,
+    used_at: null,
+    exam_session_id: null,
+  });
+  checks.push("configured master code is rejected in normal mode and remains untouched");
 
   const duplicatePaper = [...paperIds];
   duplicatePaper[179] = duplicatePaper[178];
