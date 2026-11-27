@@ -7,6 +7,7 @@ import { supabase } from "../lib/supabase";
 
 type Assessment = {
   id: string;
+  slug?: string;
   assessment_type: string;
   title: string;
   description: string | null;
@@ -48,7 +49,7 @@ export default function AssessmentsPage() {
       const [assessmentsRes, attemptsRes, competitionsRes] = await Promise.all([
         supabase
           .from("learning_assessments")
-          .select("id,assessment_type,title,description,organisation_id,question_count,duration_seconds,max_attempts,starts_at,ends_at,access_code_required,result_release")
+          .select("id,slug,assessment_type,title,description,organisation_id,question_count,duration_seconds,max_attempts,starts_at,ends_at,access_code_required,result_release")
           .eq("is_published", true)
           .order("starts_at", { ascending: true }),
         supabase
@@ -429,7 +430,7 @@ export default function AssessmentsPage() {
                   <div className="mt-5 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center gap-2">
                     <Link
                       aria-disabled={!canStart && !a.custom_url}
-                      href={a.custom_url || (canStart ? `/assessments/${a.id}` : "#")}
+                      href={a.custom_url || (canStart ? `/assessments/${a.slug || a.id}` : "#")}
                       className={`flex-1 inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-xs font-black transition active:scale-98 ${
                         a.custom_url
                           ? "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-md shadow-blue-500/20"
