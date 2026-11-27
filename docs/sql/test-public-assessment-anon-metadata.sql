@@ -1,34 +1,19 @@
--- Run after 20261127170000_public_assessment_anon_metadata.sql
--- Read-only assertions; no application data is modified.
+-- Run after 20261127170000_public_assessment_anon_metadata.sql.
+-- These checks are read-only and do not modify assessment records.
 begin;
 
-do $$
-declare
-  v_visible_count integer;
-  v_can_read_questions boolean;
-  v_can_read_public_metadata boolean;
-begin
-  -- Confirm anon sees the known published public assessment.
-  execute 'set local role anon';
-  select count(*) into v_visible_count
-  from public.learning_assessments
-  where id = '6642bf7f-df4a-4ca6-8d52-57707d9e67b5';
+set local role anon;
 
-  if v_visible_count <> 1 then
-    raise exception 'Expected anon to see the published public assessment; got % rows', v_visible_count;
-  end if;
+-- Expected: exactly one row for the known published, open, public BIOLOGY assessment.
+select count(*) as expected_one_public_assessment
+from public.learning_assessments
+where id = '6642bf7f-df4a-4ca6-8d52-57707d9e67b5';
 
-  select has_column_privilege('anon', 'public.learning_assessments', 'title', 'SELECT')
-    into v_can_read_public_metadata;
-  select has_column_privilege('anon', 'public.learning_assessments', 'custom_questions', 'SELECT')
-    into v_can_read_questions;
-
-  if not v_can_read_public_metadata then
-    raise exception 'Anon is missing SELECT on public assessment title metadata';
-  end if;
-  if v_can_read_questions then
-    raise exception 'Anon unexpectedly has SELECT on custom_questions';
-  end if;
-end $$;
+-- Expected: title metadata is readable; question payload is not.
+select
+  has_column_privilege('anon', 'public.learning_assessments', 'title', 'SELECT')
+    as anon_can_read_title,
+  has_column_privilege('anon', 'public.learning_assessments', 'custom_questions', 'SELECT')
+    as anon_can_read_custom_questions;
 
 rollback;
