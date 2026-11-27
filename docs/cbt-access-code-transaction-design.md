@@ -260,3 +260,14 @@ The SQL draft was revised after comparing it with the current route:
 - Clarified that open access must pass an empty original code to the RPC; the RPC persists `OPEN-CBT` as the session label.
 
 The route has not been refactored to call this function. The SQL draft remains unparsed and unexecuted. The current working container has no local PostgreSQL, psql, or Docker runtime available, and no hosted resource has been created. The repository already declares PGlite as a development dependency, so its support for PL/pgSQL, advisory transaction locks, expression indexes, and role/privilege checks is the next compatibility question. Do not install or trigger anything that incurs a charge, create a paid branch, or run this against connected BrainLab databases.
+
+
+## 18. Zero-cost local test harness and audit-label alignment
+
+- Added `scripts/test-cbt-access-code-transaction-pglite.ts`, which creates only synthetic in-memory tables/roles and loads the SQL draft. It does not read environment variables or connect to Supabase.
+- Added `npm run test:cbt-transaction:pglite` to invoke it.
+- Expanded its intended checks to include draft installation, normalized case-variant uniqueness, missing/used codes, service-role-only grants, normal success, stale subject rejection, OPEN-CBT session-label mapping and duplicate-open-attempt rejection, master-code mode validation, duplicate question IDs, and forced rollback at both insert/update failure points.
+- The repository lockfile pins PGlite `0.2.17`. PGlite is an embedded PostgreSQL build, but it operates as a single-session database in this harness. It can be used for syntax and single-connection transaction checks if the script passes; it cannot establish real concurrent-request behavior. Keep separate multi-connection PostgreSQL tests as a release gate.
+- Aligned `used_by` formatting in the SQL draft with the route's current placeholder-phone behavior: normal phones are recorded as `Candidate Name (phone)`; the known placeholder phone records only the candidate name.
+
+**Execution status:** the harness and command are committed but have not been run. The current container has Node.js but no repository checkout, installed project dependencies, `psql`, PostgreSQL server, or Docker. No package installation, CI run, hosted branch, or database connection was initiated. Therefore no SQL syntax, PGlite compatibility, rollback, or privilege result is being claimed.
