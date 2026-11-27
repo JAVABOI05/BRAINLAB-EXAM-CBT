@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createHash, randomBytes } from "node:crypto";
 import { getAdminSession } from "@/app/lib/adminAuth";
 import { getSupabaseServerClient } from "@/app/lib/supabaseServer";
 
@@ -120,7 +121,6 @@ export async function POST(request: NextRequest) {
 
     const description = String(body.description || "").trim() || null;
     const instructions = String(body.instructions || "").trim() || null;
-    const scopeType = String(body.scope_type || "single_subject");
     const assessmentType = String(body.assessment_type || "academic_quiz");
     const questionSource = String(body.question_source || "bank"); // bank | custom_builder | csv_import
     const organisationId = body.organisation_id ? String(body.organisation_id) : null;
@@ -249,9 +249,9 @@ export async function POST(request: NextRequest) {
       const rawCustom = body.custom_code ? String(body.custom_code).trim().toUpperCase() : null;
       const finalCode = rawCustom && rawCustom.length >= 4 && rawCustom.length <= 64
         ? rawCustom
-        : `BLT-${require("crypto").randomBytes(4).toString("hex").toUpperCase()}`;
+        : `BLT-${randomBytes(4).toString("hex").toUpperCase()}`;
 
-      const codeHash = require("crypto").createHash("sha256").update(finalCode).digest("hex");
+      const codeHash = createHash("sha256").update(finalCode).digest("hex");
       const maxRedemptions = Math.min(100000, Math.max(1, parseInt(body.max_redemptions || "500", 10)));
       const expiryDate = endsAt || new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString();
 
