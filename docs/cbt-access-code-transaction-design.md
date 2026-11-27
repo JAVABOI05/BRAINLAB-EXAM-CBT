@@ -218,3 +218,15 @@ The draft now includes:
 - Execution revoked from PUBLIC, anon, and authenticated, with execute granted only to service_role.
 
 This remains a first draft. It has not been parsed or executed by PostgreSQL, and the disposable concurrency/failure-injection tests have not run. In particular, review the exact function signature, RPC argument names, index rollout/lock impact, and master-code config representation before promoting it to a migration. The test plan now includes T19 for normalized-code index preflight and issuance-race protection.
+
+
+## 15. Exact staging column-type cross-check
+
+A further read-only catalog query confirmed the SQL draft's principal parameter and insert types against the live staging catalog:
+
+- `exam_config.config_value` is `jsonb`, so extracting the configured master code with `#>> '{}'` is type-compatible.
+- `exam_sessions.paper_ids` is `bigint[]` (`_int8`), matching the draft's `p_paper_ids bigint[]`.
+- `exam_sessions.attempt_token` and `id` are UUID; `deadline_at` is `timestamptz`; duration/time-left are integer; `is_master_code` is boolean.
+- The selected candidate, subject, access-code, status, elective, and tracking fields are text/boolean/UUID/timestamptz as expected by the draft.
+
+This validates type compatibility only. It does not validate function execution, route behavior, constraints under all inputs, locking behavior, or production compatibility. The draft still requires a disposable database run and code review before it can become a migration.
