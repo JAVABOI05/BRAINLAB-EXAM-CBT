@@ -49,6 +49,7 @@ export default function OrganisedAssessmentsAdminPage() {
   const [organisationId, setOrganisationId] = useState("");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [instructions, setInstructions] = useState("");
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
   const [categories, setCategories] = useState("");
   const [questionCount, setQuestionCount] = useState(20);
@@ -179,6 +180,7 @@ export default function OrganisedAssessmentsAdminPage() {
         body: JSON.stringify({
           title: title.trim(),
           description: description.trim() || null,
+          instructions: instructions.trim() || null,
           assessment_type: kind,
           question_source: "bank",
           subjects: selectedSubjects,
@@ -213,6 +215,7 @@ export default function OrganisedAssessmentsAdminPage() {
 
       setTitle("");
       setDescription("");
+      setInstructions("");
       setCategories("");
       setCustomCodeInput("");
       setMessage(
@@ -430,8 +433,11 @@ export default function OrganisedAssessmentsAdminPage() {
             <label className="admin-label">Title</label>
             <input className="admin-input" value={title} onChange={(e) => setTitle(e.target.value)} required maxLength={255} />
 
-            <label className="admin-label">Description and instructions</label>
-            <textarea className="admin-input" value={description} onChange={(e) => setDescription(e.target.value)} rows={3} />
+            <label className="admin-label">Candidate-facing description</label>
+            <textarea className="admin-input" value={description} onChange={(e) => setDescription(e.target.value)} rows={3} placeholder="A short introduction displayed on the assessment landing page." />
+            <label className="admin-label mt-4">Assessment instructions</label>
+            <textarea className="admin-input" value={instructions} onChange={(e) => setInstructions(e.target.value)} rows={6} maxLength={12000} placeholder="Explain the rules, timing, permitted materials, navigation and submission requirements candidates must follow." />
+            <p className="mt-1 text-xs text-slate-500">These instructions are displayed before candidates enter the examination. Keep them clear and specific.</p>
 
             <fieldset className="mt-4">
               <legend className="admin-label">Question subjects</legend>
