@@ -17,6 +17,7 @@ interface AssessmentInfo {
   max_attempts: number;
   access_code_required: boolean;
   result_release: string;
+  requires_sign_in: boolean;
 }
 
 interface QuestionItem {
@@ -73,16 +74,9 @@ export default function AssessmentTakePage() {
       setLoading(true);
       setError("");
 
-      const { data: auth } = await supabase.auth.getUser();
-      if (!auth.user) {
-        router.replace(`/login?next=/assessments/${assessmentId}/take`);
-        return;
-      }
-
       const assessmentLookup = supabase
-        .from("learning_assessments")
-        .select("id, slug, title, description, instructions, assessment_type, question_count, duration_seconds, max_attempts, access_code_required, result_release")
-        .eq("is_published", true);
+        .from("public_learning_assessment_metadata")
+        .select("id, slug, title, description, instructions, assessment_type, question_count, duration_seconds, max_attempts, access_code_required, result_release, requires_sign_in");
       const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(assessmentId);
       const { data, error: err } = await (isUuid
         ? assessmentLookup.eq("id", assessmentId)
@@ -94,6 +88,11 @@ export default function AssessmentTakePage() {
       if (err || !data) {
         setError("Assessment not found or is currently closed.");
       } else {
+        const { data: auth } = await supabase.auth.getUser();
+        if (data.requires_sign_in && !auth.user) {
+          router.replace(`/login?next=/assessments/${encodeURIComponent(assessmentId)}/take`);
+          return;
+        }
         setAssessment(data as AssessmentInfo);
       }
       setLoading(false);
