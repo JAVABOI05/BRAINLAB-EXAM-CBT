@@ -55,6 +55,7 @@ assert.equal(validateCandidateIdentityValues(policy, { full_name: "Ada", email: 
 assert.equal(validateCandidateIdentityValues(policy, { full_name: "Ada", email: "a@b.c" }).ok, false);
 assert.equal(validateCandidateIdentityValues(policy, { full_name: "Ada", candidate_number: "BL 01" }).ok, false);
 assert.equal(validateCandidateIdentityValues(policy, { full_name: "Ada", candidate_number: "x".repeat(41) }).ok, false);
+assert.equal(validateCandidateIdentityValues(policy, { full_name: "Ada", email: "x".repeat(4_200) }).ok, false);
 console.log("  ✓ rejects missing required, hidden, unknown, malformed, and oversized values");
 
 const optionalEmpty = validateCandidateIdentityValues(policy, { full_name: "Ada", candidate_number: "   " });
