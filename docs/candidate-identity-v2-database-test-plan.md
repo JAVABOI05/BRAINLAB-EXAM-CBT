@@ -13,8 +13,8 @@ These are review artifacts, not Supabase migrations. No database has been modifi
 
 1. The audited live start RPC is renamed to an internal function rather than re-created from a hand-edited copy. This preserves its question selection, snapshot generation, access-code checks and return shape.
 2. The existing public RPC becomes a compatibility wrapper. It continues to start assessments whose identity policy is NULL, but refuses configured assessments so old clients cannot bypass identity collection.
-3. The new `start_organisation_assessment_v2` wrapper locks the assessment row, validates candidate identity, invokes the preserved implementation, and inserts identity against the returned attempt ID. All operations share one PostgreSQL transaction.
-4. The compatibility wrapper also locks the assessment row before delegating. This serializes the existing max-attempt count for all starts on that assessment. It is intentionally coarse-grained; correctness is preferred over parallel starts until load tests justify a finer lock.
+3. The new `start_organisation_assessment_v2` wrapper takes a transaction-scoped advisory lock keyed by assessment + authenticated user, validates candidate identity, invokes the preserved implementation, and inserts identity against the returned attempt ID. All operations share one PostgreSQL transaction.
+4. The compatibility wrapper takes the same per-user/per-assessment advisory lock before delegating. This serializes starts only for the same candidate and assessment, while allowing different candidates to start concurrently.
 5. Candidate identity is stored in a separate table with no direct grants to anon, authenticated or service_role. RLS is enabled without client policies. A separate, permission-checked admin reporting endpoint/RPC is still required.
 6. The identity payload is never added to the start response, answer JSON, question snapshot or URL.
 
@@ -22,7 +22,7 @@ These are review artifacts, not Supabase migrations. No database has been modifi
 
 - Confirm the original function owner and all existing ACLs before running the rename. The wrapper must execute as the same trusted database owner.
 - Confirm whether any other database routines call the start RPC by name. Calls should resolve to the compatibility wrapper; direct execution of the renamed internal function is revoked from API roles.
-- Verify the `private` schema is not in the exposed Data API schema list. Its policy validator has only a boolean result; the payload normalizer is not executable by client roles.
+- Verify the `learning_private` schema is not in the exposed Data API schema list. Its policy validator has only a boolean result; the payload normalizer is not executable by client roles.
 - Review PostgREST schema-cache refresh behaviour after adding the v2 function.
 - The original function's legacy global `access_codes` fallback remains untouched in this draft. It is known to be production-incompatible because production lacks `used_at` and `cohort_assessment_id`; production requires a separate implementation and must not receive this staging-oriented draft unchanged.
 - The current runner still calls the original two-argument RPC. It must be switched to v2 in the same release as the schema change, while legacy assessment calls remain compatible.
@@ -45,4 +45,4 @@ These are review artifacts, not Supabase migrations. No database has been modifi
 
 ## Verification status
 
-The SQL drafts have not been applied or executed. The TypeScript validation test added earlier is also not yet executed. No staging or production writes, merge or deployment have occurred.
+The SQL drafts have not been applied or executed. The SQL validator script uses plain PostgreSQL `DO` assertions because pgTAP is not installed in staging. The TypeScript validation test added earlier is also not yet executed. No staging or production writes, merge or deployment have occurred.
