@@ -165,3 +165,24 @@ The assessment admin page was checked against the route-authentication patterns 
 - The page's direct table operations need their own RLS permission enforcement or should be moved behind the same permission-checked API boundary. Candidate identity configuration should not be added to the direct browser update path.
 
 This is a source audit only. No route, UI, RLS policy, or database object was changed in this step.
+
+
+## Staging RLS review of direct assessment-admin paths — 27 November 2026
+
+Read-only inspection of `pg_policies` and the helper function definitions found that the browser-direct assessment access path has broad existing authorization:
+
+- `learning_assessments_manage_admin` is an authenticated `ALL` policy whose predicate accepts any caller with a row in `admin_users` where `admin_users.id = auth.uid()`. It does not check a feature permission or a particular role.
+- `learning_assessments_manage_scoped` is another permissive `ALL` policy. It allows `learning_can_manage_all()` or an active organisation owner/admin for the assessment's organisation. Because PostgreSQL permissive policies are OR-combined, satisfying either policy is sufficient.
+- `learning_can_manage_all()` returns true for `super_admin`, `platform_admin`, and `ai_learning_admin`.
+- `learning_access_codes_manage_scoped` also permits `learning_can_manage_all()`, `cbt.codes.manage` for assessment-scoped codes, or scoped organisation ownership/admin.
+- The page's direct assessment and code reads/writes therefore have a separate policy surface from the assessment API. A new API-only permission check would not close that path.
+
+### Required follow-up before identity UI
+
+1. Inspect all consumers and intended role semantics of `learning_can_manage_all()`, `learning_can_manage_organisation()`, and the existing assessment/access-code policies before changing them. These functions may be relied on by other Learning Hub flows.
+2. Decide whether the assessment admin page should use the existing organisation-scoped permission model, the new dedicated assessment-management permission, or both. Make the same decision consistently for API routes and direct-client RLS.
+3. Remove or narrow the `admin_users` existence shortcut only after checking every affected workflow; do not make an isolated policy edit that unexpectedly blocks existing admins.
+4. Keep candidate identity table access fully separate from assessment configuration access. No direct authenticated table privileges should be added for identity values.
+5. Verify policies with positive and negative role tests (including a generic admin row, teacher, CBT admin, AI learning admin, platform admin, organisation owner/admin, and unrelated authenticated user) on an isolated database clone.
+
+This inspection was read-only. It did not modify RLS, helper functions, grants, application code, or data.
