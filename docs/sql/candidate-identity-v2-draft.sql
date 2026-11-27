@@ -12,9 +12,11 @@
 
 begin;
 
-create schema if not exists private;
+create schema if not exists learning_private authorization postgres;
+revoke all on schema learning_private from public, anon, authenticated, service_role;
+grant usage on schema learning_private to authenticated, service_role;
 
-create or replace function private.is_valid_candidate_identity_config(p_config jsonb)
+create or replace function learning_private.is_valid_candidate_identity_config(p_config jsonb)
 returns boolean
 language plpgsql
 immutable
@@ -28,7 +30,8 @@ begin
     return true;
   end if;
 
-  if jsonb_typeof(p_config) <> 'object'
+  if octet_length(p_config::text) > 2048
+     or jsonb_typeof(p_config) <> 'object'
      or (p_config - array['version', 'fields']) <> '{}'::jsonb
      or p_config->>'version' <> '1'
      or jsonb_typeof(p_config->'fields') <> 'object'
@@ -55,9 +58,8 @@ exception when others then
 end;
 $$;
 
--- This helper is intentionally non-sensitive and returns only a boolean.
-grant usage on schema private to anon, authenticated;
-grant execute on function private.is_valid_candidate_identity_config(jsonb) to anon, authenticated;
+-- This helper returns only a boolean; no identity payload is exposed.
+grant execute on function learning_private.is_valid_candidate_identity_config(jsonb) to authenticated, service_role;
 
 alter table public.learning_assessments
   add column if not exists candidate_identity_config jsonb;
@@ -67,7 +69,7 @@ alter table public.learning_assessments
 
 alter table public.learning_assessments
   add constraint learning_assessments_candidate_identity_config_check
-  check (private.is_valid_candidate_identity_config(candidate_identity_config));
+  check (learning_private.is_valid_candidate_identity_config(candidate_identity_config));
 
 create table if not exists public.learning_assessment_candidate_identities (
   attempt_id uuid primary key
@@ -108,7 +110,7 @@ alter table public.learning_assessment_candidate_identities enable row level sec
 revoke all on table public.learning_assessment_candidate_identities
   from public, anon, authenticated, service_role;
 
-create or replace function private.normalize_candidate_identity(
+create or replace function learning_private.normalize_candidate_identity(
   p_config jsonb,
   p_identity jsonb
 )
@@ -131,7 +133,7 @@ begin
     return '{}'::jsonb;
   end if;
 
-  if not private.is_valid_candidate_identity_config(p_config) then
+  if not learning_private.is_valid_candidate_identity_config(p_config) then
     raise exception using errcode = 'P0001', message = 'candidate_identity_policy_invalid';
   end if;
 
@@ -139,7 +141,8 @@ begin
     p_identity := '{}'::jsonb;
   end if;
 
-  if jsonb_typeof(p_identity) <> 'object'
+  if octet_length(p_identity::text) > 4096
+     or jsonb_typeof(p_identity) <> 'object'
      or (p_identity - array['full_name', 'candidate_number', 'phone', 'email']) <> '{}'::jsonb then
     raise exception using errcode = 'P0001', message = 'candidate_identity_fields_invalid';
   end if;
@@ -197,7 +200,7 @@ begin
 end;
 $$;
 
-revoke all on function private.normalize_candidate_identity(jsonb, jsonb)
+revoke all on function learning_private.normalize_candidate_identity(jsonb, jsonb)
   from public, anon, authenticated, service_role;
 
 -- Rename, do not reconstruct, the audited live RPC. Its original question
@@ -282,7 +285,7 @@ begin
   from public.learning_assessments
   where id = p_assessment_id;
 
-  v_identity := private.normalize_candidate_identity(v_config, p_candidate_identity);
+  v_identity := learning_private.normalize_candidate_identity(v_config, p_candidate_identity);
 
   -- The original implementation creates the attempt and fires the exposure
   -- trigger. Any exception in the identity insert below rolls all of it back.
