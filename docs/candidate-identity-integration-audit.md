@@ -210,3 +210,27 @@ The current database supports a safe, narrow interim pattern only if a new key i
 For assessment configuration, the current `learning_assessments_manage_admin` RLS policy also grants any `admin_users` row ALL operations, independently of `admin_has_permission`. Any dedicated permission migration must narrow or replace that policy and reconcile the other permissive policies; adding a new function alone does not secure direct table access.
 
 No migration, function, role grant, RLS policy, or application code was changed. This was a read-only schema/function verification.
+
+
+## Proposed authorization contract for implementation review
+
+This is a proposed least-privilege contract, not an applied role change:
+
+| Capability | Proposed authority | Scope |
+|---|---|---|
+| Create/edit/publish assessment configuration | Super Admin, Platform Admin, CBT Admin; designated organisation owner/admin | Global roles platform-wide; organisation roles only their organisation |
+| Read candidate identity values | Super Admin plus explicitly assigned candidate-data reviewers | Assessment-specific; organisation reviewers limited to their organisation |
+| Read aggregate assessment statistics | Assessment managers | Assessment/organisation scope |
+| Export candidate identity values | Separate future permission, disabled by default | Explicit assessment scope and audit event required |
+
+Important implementation constraints:
+
+- Do not grant candidate identity access merely because a user has `learning.content.manage`, `institution.manage`, an `admin_users` row, or an administrator role string.
+- Do not use the legacy `admin_has_permission(text)` as the sole candidate-PII gate: its super-admin branch returns true for every possible key and the current implementation has no assignment/scope-aware checks.
+- Candidate-data authorization should be an assessment-aware server-side RPC, e.g. `admin_can_read_assessment_candidate_identity(p_assessment_id uuid)`, with an explicit role allow-list and organisation-scope verification. The RPC should return false on missing assessment, missing caller, unknown role, or database error.
+- A separate assessment-management RPC should check the same assessment/organisation scope before service-role writes. For creation, where no assessment row exists yet, use a separate create permission check and validate any organisation scope in the insert transaction.
+- The identity read endpoint must query only the requested assessment's identity rows, derive candidate ownership through the authoritative attempt FK, return only configured identity fields, paginate, and create an audit event. No identity values belong in the general assessment list/detail payload.
+- The assessment page's current browser-direct reads and publication toggle must either move behind permission-checked server routes or be backed by equivalent RLS checks. Keep public/published candidate reads separate from admin management reads.
+- Every privileged write must check caller identity and feature/scope permission with a caller-JWT-bound client/RPC before using a service-role client. A cookie-only admin session is not enough unless a verified access token can be extracted and passed to the permission RPC.
+
+Before implementation, confirm whether the user's desired operational model permits Platform Admins to see all candidate identity values or whether that must be restricted to Super Admin plus named, scoped reviewers. The proposed table deliberately does not silently grant identity access to all existing assessment managers.
