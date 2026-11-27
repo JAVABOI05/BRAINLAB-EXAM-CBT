@@ -452,7 +452,7 @@ try {
 } finally {
   await db.close();
 }
-
+}
 
 main().catch((error: unknown) => {
   console.error(error);
