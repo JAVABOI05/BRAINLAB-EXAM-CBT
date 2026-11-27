@@ -154,3 +154,17 @@ Read-only catalog queries were run separately against staging project `eusgwsuol
 - In the existing production project, add missing tracking columns and create the new RPC only after production's actual migration history and schema baseline have been reconciled. Do not copy staging migration history wholesale.
 - Keep the two unique raw-code indexes untouched in this work; redundant-index cleanup is separate.
 - Treat this catalog snapshot as valid for the inspection date only. Recheck schema, grants, and deployment environment immediately before any migration.
+
+
+## 10. Concurrency and retry refinement
+
+The transaction must also close a race in the current preflight recovery lookup:
+
+- Two requests can both perform the route's initial active-session lookup before either creates a session.
+- For a normal single-use code, the row lock plus `is_used` check ensures only one transaction creates a session. The second request must return a stable conflict and must not create another session.
+- For `OPEN-CBT` and the shared master code, there is no normal code row to serialize requests. The new RPC must acquire a transaction-scoped advisory lock keyed by the access mode, normalized session code, and normalized candidate phone, then recheck for an existing started session before inserting. If one exists, return a conflict such as `active_attempt_exists_identity_required`; do not return its token or allow phone-only recovery.
+- This advisory lock is only a duplicate-launch guard. It does not authenticate the candidate and must not weaken the existing rule that shared/open attempts cannot be recovered by phone alone.
+- For a normal code, also recheck the active session inside the transaction after locking the code row. This provides a deterministic response if a prior request committed but its HTTP response was lost or if recovery lookup raced.
+- A retry after a committed normal-code launch should ordinarily be handled by the existing route recovery path. If the session is no longer recoverable, the code remains consumed and the candidate must be directed to support rather than silently creating a second attempt.
+
+The RPC should return only a compact outcome (`ok`, stable `error` code, and `session_id`) rather than serializing the full session row or exposing its attempt token to any caller other than the trusted server route. The route already generated the attempt token and retains it in memory for the candidate response.
