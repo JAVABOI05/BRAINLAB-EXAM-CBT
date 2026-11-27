@@ -168,3 +168,35 @@ The transaction must also close a race in the current preflight recovery lookup:
 - A retry after a committed normal-code launch should ordinarily be handled by the existing route recovery path. If the session is no longer recoverable, the code remains consumed and the candidate must be directed to support rather than silently creating a second attempt.
 
 The RPC should return only a compact outcome (`ok`, stable `error` code, and `session_id`) rather than serializing the full session row or exposing its attempt token to any caller other than the trusted server route. The route already generated the attempt token and retains it in memory for the candidate response.
+
+
+## 11. Additional staging constraints and master-code trigger
+
+A further read-only inspection on 27 November 2026 confirmed the following exact constraints:
+
+- `access_codes.code` has `UNIQUE (code)` and `CHECK (length(trim(code)) > 0)`.
+- `exam_sessions` has a primary key, a status check limited to `started`, `submitted`, `expired`, and `cancelled`, and non-negative checks for tab-switch count and time-left seconds.
+- `exam_sessions` has lookup indexes on access code, phone, status, started_at and created_at.
+- The access-code protection trigger calls `protect_master_code_from_being_used()`. That trigger compares the row's code to `exam_config.master_access_code` and forcibly sets `is_used=false` and `used_by=null` for the configured master code.
+- Therefore the new transaction must identify and validate master mode from the server-side configuration and must never update the configured master-code row as if it were a normal single-use code. Otherwise the trigger could silently undo the intended code update.
+
+The trigger's current SECURITY DEFINER function is pinned to `search_path=public`. Do not change or remove it in this work; it protects a separate legacy master-code invariant.
+
+## 12. Migration-history and test-harness reconciliation
+
+The connected migration catalogs were listed read-only on 27 November 2026:
+
+- Staging contains the November access-code tracking migration `20261101230000_access_codes_tracking_and_maintenance_notifications` and many subsequent staging migrations.
+- Existing Production's listed history stops at the 30 October tutor-profile sequence and does not include the staging November migration sequence. Its inspected schema also lacks staging's `used_at`, `exam_session_id`, and `mark_access_code_used` objects.
+
+This is stronger evidence that the two migration histories are not interchangeable. Do not copy staging migration versions into Production, and do not assume that a staging migration will be safe to replay against the current Production baseline. The intended Supabase target for the existing Vercel Production deployment must be confirmed before any production schema work.
+
+The dedicated isolated regression specification is now in `docs/sql/cbt-access-code-transaction-test-plan.md`. It expands the original twelve cases to include normalized-code ambiguity, the master-code trigger, open/master concurrency, lost-response retry, role privilege checks, and explicit failure injection. It is a test plan, not an executed test report.
+
+## 13. Current work status
+
+- Read-only schema, function-definition, ACL, trigger, constraint, index, and migration-history inspections completed for the connected staging and existing production projects.
+- Added the isolated regression test plan to the repair branch.
+- No migration SQL has been applied; no live test records or access codes have been read or changed.
+- No route refactor, privilege revocation, merge, or deployment has occurred.
+- The next implementation step is to draft the staging-shaped forward-only SQL migration and route contract against the verified schema, then test it only in a disposable database. A separate production migration cannot be finalized until the intended production database target and its migration baseline are reconciled.
