@@ -75,3 +75,13 @@ Implement a server-side TypeScript parser (and equivalent database validation) w
 6. Add `start_organisation_assessment_v2`, preserving both existing question-source branches and returning the same paper shape.
 7. Switch the runner to v2 only when the schema and RPC migration are present; keep legacy compatibility for old assessments.
 8. Run focused tests and CI. No staging or production deployment until separately approved.
+
+## Follow-up verification — 27 November 2026
+
+- Re-read the live staging `start_organisation_assessment(uuid,text)` definition. It returns JSONB with `ok` and `attempt_id` on success, and delegates errors to `public._err(text,text)`, which also returns JSONB. The proposed wrapper's response parsing is consistent with this exact implementation.
+- Confirmed the original RPC is `SECURITY DEFINER`, owned by `postgres`, with pinned `search_path = public, pg_temp`; its current execute grants are `postgres`, `service_role`, and `authenticated`.
+- Confirmed `learning_practice_attempts.user_id` is NOT NULL and references an authenticated user. Therefore, the current v2 proposal is authenticated-only. It does not implement guest attempts and must not be marketed or configured as guest-capable.
+- Confirmed pgTAP is not installed in the staging project. The validator regression script was changed to plain PostgreSQL `DO` assertions so it does not require installing an extension. It has not been executed.
+- Confirmed the current browser runner still invokes the legacy `start_organisation_assessment` RPC. Candidate identity is not yet wired end-to-end.
+- Reconfirmed the assessment GET/PATCH/DELETE API handlers call `getAdminSession` but do not perform a granular permission check in those handlers. The identity configuration and candidate PII reporting work must add server-side permission enforcement; client-side page gating is not sufficient.
+- The SQL remains a review draft. No migration has been generated or applied, and no staging or production data has been modified.
