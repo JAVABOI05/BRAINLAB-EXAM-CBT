@@ -99,3 +99,16 @@ These are code-review findings, not database test results:
 5. **Retry semantics:** a committed transaction followed by a lost HTTP response must be reconciled with the route's existing recovery lookup. Do not blindly retry the create RPC, particularly for OPEN/master access, because the draft intentionally returns a conflict for an existing active attempt rather than disclosing its token.
 
 The SQL draft remains unparsed and unexecuted. These findings must be resolved in the draft and then tested in an isolated, zero-cost CI Postgres environment before route refactoring. No connected BrainLab database may be used as a test target.
+
+
+## 10. Zero-cost local harness added
+
+A local-only PGlite harness now exists at `scripts/test-cbt-access-code-transaction-pglite.ts`, with command:
+
+```bash
+npm run test:cbt-transaction:pglite
+```
+
+It builds a synthetic schema in memory, reads the SQL draft from the repository, and checks draft installation, function grants, normal-code success/consumption, duplicate use, stale-subject rejection, OPEN-CBT mapping, master-code validation, duplicate paper IDs, and rollback under injected session-insert/code-update failures. It does not read environment variables and does not connect to Supabase.
+
+**Not yet executed.** The current working environment does not contain the repository checkout/dependencies, and no install or CI job has been triggered. PGlite is single-session, so this harness cannot prove two independent requests serialize correctly. A separate real-PostgreSQL multi-connection test remains required for T02 and T10.
