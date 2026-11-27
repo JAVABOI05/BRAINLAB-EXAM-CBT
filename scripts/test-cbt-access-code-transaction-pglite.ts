@@ -174,6 +174,17 @@ try {
   await db.exec(migration);
   checks.push("draft SQL parses and installs against the synthetic staging-shaped schema");
 
+  await db.exec(`
+    update public.access_codes
+    set is_used = true, used_by = 'Synthetic misuse attempt'
+    where code = 'SYNTHETIC-MASTER-ONLY';
+  `);
+  const triggerGuard = await db.query(
+    "select is_used, used_by from public.access_codes where code = 'SYNTHETIC-MASTER-ONLY'",
+  );
+  assert.deepEqual(triggerGuard.rows[0], { is_used: false, used_by: null });
+  checks.push("staging-style trigger resets attempted master-code consumption");
+
   await assert.rejects(
     () => db.exec("insert into public.access_codes(code, subject, is_used) values ('synthetic-code-001', 'Mathematics', false)"),
     /duplicate key|unique/i,
