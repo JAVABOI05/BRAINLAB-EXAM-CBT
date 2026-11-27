@@ -148,6 +148,19 @@ try {
   await db.exec(migration);
   checks.push("draft SQL parses and installs against the synthetic staging-shaped schema");
 
+  await assert.rejects(
+    () => db.exec("insert into public.access_codes(code, subject, is_used) values ('synthetic-code-001', 'Mathematics', false)"),
+    /duplicate key|unique/i,
+  );
+  checks.push("normalized expression index blocks case-variant duplicate code issuance");
+
+  const missingCode = await callRpc({
+    code: "SYNTHETIC-MISSING",
+    attempt_token: "99999999-9999-4999-8999-999999999999",
+  });
+  assert.equal(missingCode.error, "invalid_code");
+  checks.push("missing normal code returns invalid_code without a session");
+
   const grants = await db.query(
     `select
       has_function_privilege('anon', 'public.create_exam_session_and_consume_code(text,text,text,text,text,bigint[],integer,timestamptz,uuid,boolean,text)', 'EXECUTE') as anon_exec,
@@ -209,6 +222,15 @@ try {
   assert.deepEqual(openSession.rows[0], { access_code: "OPEN-CBT", is_master_code: false });
   checks.push("open access receives empty RPC code and persists OPEN-CBT session label");
 
+  const duplicateOpen = await callRpc({
+    code: "",
+    expected_code_subject: null,
+    phone: "08000000002",
+    attempt_token: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+  });
+  assert.equal(duplicateOpen.error, "active_attempt_exists_identity_required");
+  checks.push("duplicate OPEN-CBT attempt for the same phone is rejected without token disclosure");
+
   const masterAttempt = await callRpc({
     code: "SYNTHETIC-MASTER-ONLY",
     expected_code_subject: null,
@@ -226,6 +248,16 @@ try {
     is_master_code: true,
   });
   checks.push("master code is verified from synthetic server config and is not consumed as a normal code");
+
+  const spoofedMaster = await callRpc({
+    code: "SYNTHETIC-MASTER-ONLY",
+    expected_code_subject: null,
+    is_master_code: false,
+    phone: "08000000005",
+    attempt_token: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+  });
+  assert.equal(spoofedMaster.error, "invalid_access_mode");
+  checks.push("configured master code cannot be consumed through normal-code mode");
 
   const duplicatePaper = [...paperIds];
   duplicatePaper[179] = duplicatePaper[178];
