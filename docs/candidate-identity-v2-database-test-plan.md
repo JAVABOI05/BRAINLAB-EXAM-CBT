@@ -46,3 +46,8 @@ These are review artifacts, not Supabase migrations. No database has been modifi
 ## Verification status
 
 The SQL drafts have not been applied or executed. The SQL validator script uses plain PostgreSQL `DO` assertions because pgTAP is not installed in staging. The TypeScript validation test added earlier is also not yet executed. No staging or production writes, merge or deployment have occurred.
+
+
+## Ownership refinement — 27 November 2026
+
+The SQL draft now stores only `attempt_id` as the identity row's ownership link. It no longer duplicates `assessment_id` or `user_id`; both values are authoritative on `learning_practice_attempts` and should be obtained by joining the attempt row in any future reporting query. This avoids a second set of foreign keys and prevents identity metadata from being associated with a different candidate or assessment through inconsistent duplicated values. The insert path remains inside the trusted v2 start wrapper. Re-review table constraints, query indexes and cascade behaviour against an isolated clone before migration generation.
