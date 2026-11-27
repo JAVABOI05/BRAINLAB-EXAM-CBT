@@ -128,3 +128,27 @@ No application code, database, deployment, or production environment was changed
 The SQL draft's policy validator was tightened after a manual three-valued-logic review. In PL/pgSQL, a missing JSON key can make a comparison evaluate to SQL NULL; an IF condition that is NULL does not enter the rejection branch. The version and fields type checks now use `IS DISTINCT FROM`, and the version must be the JSON numeric value `1`, not the string `"1"`. The plain-PostgreSQL validator test draft now includes string-version, missing-version and missing-fields regression cases. These are source-level corrections only; the SQL test file has not been executed against a database.
 
 The guest-attempt contract was also aligned with the revised identity schema: the identity table stores only the attempt FK, with assessment/user context derived from the attempt; retention policy remains unresolved and is a release gate. No guest capability is implemented by the authenticated v2 work.
+
+
+## Route-by-route authorization findings — 27 November 2026
+
+A direct re-read of the current branch's assessment handlers confirms the following:
+
+- `GET /api/admin/assessments`, `POST /api/admin/assessments`, and the assessment detail `GET`, `PATCH`, and `DELETE` handlers call `getAdminSession(request)` but do not call `admin_has_permission` or another feature-level authorization check.
+- `getAdminSession(request)` is an administrator identity/role gate only. It does not imply permission to manage assessment content or inspect candidate information.
+- `getSupabaseServerClient()` selects `SUPABASE_SERVICE_ROLE_KEY` when configured. Consequently, route-level feature authorization must happen before any query or write made with that privileged client.
+- `getUserFromRequest(request)` can resolve the caller from a bearer token or the supported auth-cookie formats. However, `getAdminSession` only passes an explicitly supplied Authorization bearer token into `resolveAdminRole`; when the user is resolved from a cookie, role lookup can fall back to service-role table checks. A new permission helper must independently recover the request's verified access token and construct an anon/publishable-key Supabase client with that token as its Authorization header. If a valid caller JWT cannot be recovered, the permission check must fail closed.
+- The connected staging `admin_has_permission(text)` function reads `admin_profiles` using `auth.uid()`. Calling it with the service-role client would not evaluate the requesting administrator's permission and is prohibited for this purpose.
+
+### Permission boundary to implement
+
+- Assessment configuration and assessment lifecycle operations need a dedicated `learning.assessments.manage` permission, rather than silently relying on administrator role membership or treating general learning-content authoring as equivalent.
+- Candidate identity values require a distinct `learning.candidates.identity.read` permission and a separate narrow reporting endpoint. No current permission key or staging RPC mapping grants this capability.
+- The assessment-detail endpoint should stop returning `user_id` in its general attempt list. Its `select("*")` assessment read should be replaced with an explicit field allowlist; candidate identity configuration can be included only after the assessment-management permission is enforced.
+- The list endpoint currently fetches all attempt rows and computes aggregates in application memory. This should be bounded/aggregated server-side before scaling; it must not become a route for raw candidate-level data.
+- POST, PATCH and DELETE must perform the feature check using the caller-JWT client before constructing or using the service-role client. The API should return 403 for an authenticated administrator who lacks the required permission, and 401 only when the administrator session itself is invalid.
+- Permission catalogue changes in TypeScript alone are insufficient. The staging and production `admin_has_permission` implementations and their role mappings must be reconciled independently; do not overwrite production's more capable implementation with staging's function.
+
+### Current implementation decision
+
+No permission helper or route mutation has been made yet. The correct next slice is to add and test request-token extraction plus a caller-JWT permission helper, define the new permission keys and role matrix, then add the corresponding reviewed SQL migration draft. Only after that contract is stable should the five assessment handlers be changed. Candidate-PII reporting remains a later, separate slice. This review did not execute a migration, change either database, trigger a deployment, or alter production.
