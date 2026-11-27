@@ -10,6 +10,7 @@ interface AssessmentInfo {
   slug: string;
   title: string;
   description?: string;
+  instructions?: string | null;
   assessment_type: "organisation_quiz" | "competition" | "academic_quiz" | "topic_test" | "subject_assessment" | "general_quiz" | "custom_assessment";
   question_count: number;
   duration_seconds: number | null;
@@ -80,7 +81,7 @@ export default function AssessmentTakePage() {
 
       const assessmentLookup = supabase
         .from("learning_assessments")
-        .select("id, slug, title, description, assessment_type, question_count, duration_seconds, max_attempts, access_code_required, result_release")
+        .select("id, slug, title, description, instructions, assessment_type, question_count, duration_seconds, max_attempts, access_code_required, result_release")
         .eq("is_published", true);
       const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(assessmentId);
       const { data, error: err } = await (isUuid
@@ -342,6 +343,17 @@ export default function AssessmentTakePage() {
                   <span className="mt-1 text-sm font-bold text-slate-900">Auto-Graded</span>
                 </div>
               </div>
+
+              {assessment.instructions?.trim() && (
+                <section className="mt-6 rounded-2xl border border-blue-200 bg-blue-50/70 p-5" aria-labelledby="assessment-instructions-heading">
+                  <h2 id="assessment-instructions-heading" className="text-xs font-black uppercase tracking-wider text-blue-950">
+                    Candidate instructions
+                  </h2>
+                  <div className="mt-3 whitespace-pre-wrap break-words text-sm leading-7 text-slate-700">
+                    {assessment.instructions}
+                  </div>
+                </section>
+              )}
 
               {assessment.access_code_required && (
                 <div className="mt-6 rounded-2xl bg-amber-50/70 border border-amber-200 p-5">
