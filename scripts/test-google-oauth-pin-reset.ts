@@ -171,6 +171,42 @@ console.log("  ✓ Open redirect attacks neutralized");
 console.log("  ✓ Students cannot be redirected into /admin routes through OAuth callback");
 console.log("  ✓ Valid admin routes and query strings preserved for administrators");
 
+// 8. Environment-preserving callback URL resolution
+console.log("\nTEST 8: Environment-Preserving OAuth Callback URL");
+const originalWindow = (globalThis as any).window;
+const originalSiteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+try {
+  (globalThis as any).window = {
+    location: {
+      hostname: "brainlabexam-git-fix-learning-assessment-staging-repair-brainlabtutorials-3645s-projects.vercel.app",
+      origin: "https://brainlabexam-git-fix-learning-assessment-staging-repair-brainlabtutorials-3645s-projects.vercel.app",
+    },
+  };
+  process.env.NEXT_PUBLIC_SITE_URL = "https://www.brainlabacademy.com.ng";
+  assert.strictEqual(
+    getAuthRedirectUrl("/auth/callback?redirect=%2Fassessments%2Ftest"),
+    "https://brainlabexam-git-fix-learning-assessment-staging-repair-brainlabtutorials-3645s-projects.vercel.app/auth/callback?redirect=%2Fassessments%2Ftest",
+    "Vercel preview callback must stay on the preview origin even when the site URL env points to production"
+  );
+
+  (globalThis as any).window.location.hostname = "www.brainlabacademy.com.ng";
+  (globalThis as any).window.location.origin = "https://www.brainlabacademy.com.ng";
+  assert.strictEqual(
+    getAuthRedirectUrl("/auth/callback"),
+    "https://www.brainlabacademy.com.ng/auth/callback",
+    "Production callback must preserve the active branded origin"
+  );
+  console.log("  ✓ Preview callback remains on its initiating Vercel origin");
+  console.log("  ✓ Production callback remains on the branded domain");
+} finally {
+  if (originalWindow === undefined) delete (globalThis as any).window;
+  else (globalThis as any).window = originalWindow;
+  if (originalSiteUrl === undefined) delete process.env.NEXT_PUBLIC_SITE_URL;
+  else process.env.NEXT_PUBLIC_SITE_URL = originalSiteUrl;
+}
+
 console.log("\n=========================================================================");
 console.log("  GOOGLE OAUTH PIN RESET FUNCTIONAL SUITE: ALL CHECKS PASSED!");
 console.log("=========================================================================\n");
+
+
