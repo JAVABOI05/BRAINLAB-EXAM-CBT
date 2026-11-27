@@ -121,3 +121,10 @@ The POST and PATCH assessment routes use the server client helper, which selects
 The SQL policy validator compares `p_config->>'version'` with text `'1'`, accepting both JSON number `1` and JSON string `"1"`; TypeScript accepts only numeric `1`. Align the contracts before migration by requiring `jsonb_typeof(p_config->'version') = 'number'` in SQL.
 
 No application code, database, deployment, or production environment was changed in this review.
+
+
+## SQL validator hardening — 27 November 2026
+
+The SQL draft's policy validator was tightened after a manual three-valued-logic review. In PL/pgSQL, a missing JSON key can make a comparison evaluate to SQL NULL; an IF condition that is NULL does not enter the rejection branch. The version and fields type checks now use `IS DISTINCT FROM`, and the version must be the JSON numeric value `1`, not the string `"1"`. The plain-PostgreSQL validator test draft now includes string-version, missing-version and missing-fields regression cases. These are source-level corrections only; the SQL test file has not been executed against a database.
+
+The guest-attempt contract was also aligned with the revised identity schema: the identity table stores only the attempt FK, with assessment/user context derived from the attempt; retention policy remains unresolved and is a release gate. No guest capability is implemented by the authenticated v2 work.
