@@ -146,7 +146,7 @@ function CentralLoginForm() {
       const adminObj: AdminUser = {
         id: session.user.id,
         email: session.user.email || "",
-        role: roleStr as any,
+        role: roleStr as AdminUser["role"],
       };
       setCachedAdminSession(adminObj);
 
