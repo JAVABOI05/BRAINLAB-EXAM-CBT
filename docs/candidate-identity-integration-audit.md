@@ -85,3 +85,17 @@ Implement a server-side TypeScript parser (and equivalent database validation) w
 - Confirmed the current browser runner still invokes the legacy `start_organisation_assessment` RPC. Candidate identity is not yet wired end-to-end.
 - Reconfirmed the assessment GET/PATCH/DELETE API handlers call `getAdminSession` but do not perform a granular permission check in those handlers. The identity configuration and candidate PII reporting work must add server-side permission enforcement; client-side page gating is not sufficient.
 - The SQL remains a review draft. No migration has been generated or applied, and no staging or production data has been modified.
+
+
+## Additional schema and authorization review — 27 November 2026
+
+A read-only inspection of the staging table constraints confirms:
+
+- `learning_practice_attempts` has a type check requiring `assessment_id` for `organisation_quiz` and `competition` attempts, and its `user_id` foreign key is non-null by design. This reinforces that guest support needs a separate attempt ownership model rather than a nullable-user shortcut.
+- The proposed identity table stores both `attempt_id` and `assessment_id`, but its current draft foreign keys do not prove that the referenced attempt actually belongs to that assessment. The wrapper supplies matching values, but the database should enforce this invariant too (for example, with a composite unique key/FK if compatible with existing indexes, or a narrowly scoped constraint trigger). Add a regression test for mismatched attempt/assessment IDs before calling the migration review-complete.
+- The candidate identity table intentionally revokes direct privileges from all API roles. Keep it that way; a later reporting endpoint should use a narrowly scoped, permission-checked server path and must not add the table to broad assessment GET responses.
+- `getAdminSession` resolves whether the caller holds an administrator role; it does not by itself establish a per-feature permission such as assessment management or candidate-PII access. The existing assessment route handlers also lack an explicit permission check. Do not extend those handlers to write identity policy or return identity values until the project's actual permission RPC/key contract is inspected and enforced server-side.
+
+### SQL draft review status
+
+The draft is not ready to become a migration. The next review must explicitly resolve the assessment/attempt relationship invariant, validate function ownership and ACLs after rename/wrapper creation, confirm that `learning_private` is not exposed through the Supabase Data API, and test the compatibility wrapper against every existing start caller. No SQL was applied and no tests were executed in this follow-up.
