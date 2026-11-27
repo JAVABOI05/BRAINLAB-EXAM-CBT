@@ -16,8 +16,8 @@ const validConfig = {
 
 function config(value: unknown) {
   const result = validateCandidateIdentityConfig(value);
-  assert.equal(result.ok, true);
   if (!result.ok) throw new Error(result.error);
+  assert.equal(result.ok, true);
   return result.value;
 }
 
