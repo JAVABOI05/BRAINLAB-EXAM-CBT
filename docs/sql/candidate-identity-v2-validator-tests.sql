@@ -3,10 +3,10 @@
 -- full RPC atomicity/concurrency tests require isolated Auth + assessment fixtures.
 
 begin;
-select plan(12);
+select plan(14);
 
 select ok(
-  private.is_valid_candidate_identity_config(null),
+  learning_private.is_valid_candidate_identity_config(null),
   'NULL identity config preserves legacy behaviour'
 );
 
@@ -33,12 +33,19 @@ select ok(
 );
 
 select ok(
-  not private.is_valid_candidate_identity_config('{"version":1,"fields":{"full_name":"hidden"}}'::jsonb),
+  not learning_private.is_valid_candidate_identity_config('{"version":1,"fields":{"full_name":"hidden"}}'::jsonb),
   'requires at least one visible identity field'
 );
 
+select ok(
+  not learning_private.is_valid_candidate_identity_config(
+    jsonb_build_object('version', 1, 'fields', jsonb_build_object('full_name', repeat('x', 2050)))
+  ),
+  'rejects oversized identity policies'
+);
+
 select is(
-  private.normalize_candidate_identity(
+  learning_private.normalize_candidate_identity(
     '{"version":1,"fields":{"full_name":"required","email":"optional"}}'::jsonb,
     '{"full_name":"  Ada   Lovelace ","email":" ADA@EXAMPLE.COM "}'::jsonb
   )->>'full_name',
@@ -92,6 +99,16 @@ select throws_ok(
   'P0001',
   'candidate_identity_fields_invalid',
   'rejects unknown submitted fields'
+);
+
+select throws_ok(
+  $select learning_private.normalize_candidate_identity(
+    '{"version":1,"fields":{"full_name":"required"}}'::jsonb,
+    jsonb_build_object('full_name', repeat('A', 4100))
+  )$,
+  'P0001',
+  'candidate_identity_fields_invalid',
+  'rejects oversized candidate identity payloads'
 );
 
 select * from finish();
