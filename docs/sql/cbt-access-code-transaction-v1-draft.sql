@@ -205,7 +205,10 @@ begin
   returning id into v_session_id;
 
   if v_mode = 'normal' then
-    v_used_by := v_name || ' (' || v_phone || ')';
+    v_used_by := case
+      when v_phone <> '08000000000' then v_name || ' (' || v_phone || ')'
+      else v_name
+    end;
 
     update public.access_codes
     set is_used = true,
