@@ -50,3 +50,23 @@ Production's `access_codes` table does not have `cohort_assessment_id` or `used_
 ## Current decision
 
 No SQL migration has been generated or applied yet. This document is a dependency/release manifest, not executable SQL. Staging remains the source reference; production remains untouched.
+
+
+## Additional source-database findings (27 Nov 2026)
+
+A direct read-only inspection of the staging function definitions, policies, triggers, and grants identified further production compatibility/security blockers:
+
+- The current `_paper_json(bigint[])` function reads `questions.topic`, `questions.subtopic`, and `questions.is_archived`, in addition to the media columns listed above. Production lacks these columns too. The compatibility migration must account for every referenced column or refactor the helper to use only columns present in production. Do not add columns merely by guess; compare the complete staging question schema and application contracts.
+- `start_organisation_assessment` invokes `redeem_learning_access_code` for a scoped assessment code. That generic redemption function first checks the legacy global `access_codes` table and may route matching codes into `redeem_plan_voucher`; its membership path also writes `user_subscriptions`. This creates cross-product side effects and a legacy-code collision risk for an assessment-only operation. The production release should use a dedicated assessment-code redemption routine (or a carefully isolated shared primitive) that validates the exact assessment scope and does not invoke plan-voucher/subscription logic.
+- The assessment attempt trigger records selected question IDs into `question_exposure_history` using `record_learning_attempt_question_exposure()`. The table and trigger function are a required dependency when retaining unseen-question selection. The trigger function is SECURITY DEFINER with a pinned search_path; its EXECUTE privilege is currently restricted to postgres/service_role, as expected for a trigger-only function.
+- Staging has RLS enabled on the assessment tables. The `learning_practice_attempts` table has no direct client table grants in the inspected grant set and no row policies; its access is intended through authenticated, ownership-checking SECURITY DEFINER RPCs. Preserve that narrow access model rather than adding broad table grants.
+- `learning_assessments` currently grants anon SELECT at the table level, while the inspected policies target authenticated users. Verify the effective anonymous read behaviour and the public assessment discovery flow before reproducing grants. Do not blindly copy the staging grant.
+- `learning_can_manage_all()` currently has anon EXECUTE in staging, whereas `learning_can_manage_organisation()` is authenticated/service_role only. Do not reproduce anonymous EXECUTE for the admin helper. Any new admin helper must have explicit least-privilege grants and a reviewed call graph.
+
+### Required redesign before SQL generation
+
+1. Replace the generic redemption call in the assessment start path with assessment-only scoped redemption; no plan-voucher fallback and no subscription mutation.
+2. Reconcile all question columns used by both `start_organisation_assessment` and `_paper_json` against production. Current missing set includes question/topic metadata, archive flag, and media URL/alt fields.
+3. Extract the exact exposure-history table, index, RLS, and trigger definitions; verify trigger behaviour for custom-builder/CSV question IDs versus legacy question-bank IDs before enabling it for all attempt types.
+4. Reconstruct RLS and grants for the exact assessment tables from live catalog data, not from historical migration assumptions. In particular, validate anonymous published-assessment discovery separately from admin management.
+5. Check `redeem_plan_voucher`, `user_subscriptions`, and `audit_logs` dependencies only if the final assessment-only routine still needs them; avoid importing the generic voucher path into assessment code.
