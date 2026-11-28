@@ -251,3 +251,38 @@ The tutor assignment dashboard previously queried `assignment_submissions` and j
 A further audit found that the tutor assignment listing treated every `teacher` role as globally privileged, exposing assignments and submission counts beyond that tutor's own work. It now lists all assignments only to platform admins; other tutors are restricted to assignments whose `tutor_id` is their own.
 
 Assignment creation also previously accepted any course ID when the caller had a membership in any subject. It now verifies that the caller owns the selected course or has an explicit tutor membership for that course's subject. Platform admins retain global access. The course's subject is authoritative, and the automatically generated course-feed announcement now includes the required `course_id`.
+
+
+## 8 November 2026 — legacy recording access and deletion follow-up
+
+A read-only inspection of the linked staging database and current recording routes found:
+
+- The private `live-class-recordings` bucket accepts WebM/MP4/QuickTime video. Uploads depend on server-minted signed upload tokens; playback/download URLs are minted server-side after authorization.
+- The staging `class_recordings` SELECT policy allows authenticated reads of visible, ready rows without independently checking course enrolment or attendance. Server API filtering is narrower, but direct authenticated PostgREST queries can bypass those API checks and read row metadata.
+- The Classroom Library previously deleted `class_recordings` rows directly from the browser. That bypassed server ownership checks and did not remove the private Storage object, leaving a potential orphaned video.
+- The staging query returned no grouped recording rows. This does not establish that production has no recordings.
+
+Code-only remediation on `fix/recording-library-delete`:
+
+- Scheduled-class upload-token creation and recording metadata saves require verified classroom staff plus class-management authorization.
+- Studio visibility changes verify the recording creator and ownership of the linked Studio lesson.
+- The Studio upload-token route strips the Bearer scheme correctly before server-side authorization.
+- Recording deletion now uses a server endpoint. It checks the assigned class tutor, Studio lesson owner, or platform admin; removes the private Storage object; and then deletes its metadata. If Storage removal fails, the metadata row is retained. A rare database-delete failure after successful Storage removal can leave a metadata row pointing to a missing object; this is reported explicitly rather than silently claiming success.
+- The Classroom Library no longer performs direct client-side deletes against `class_recordings`.
+
+Database remediation remains pending review and explicit approval. Align direct table SELECT with the intended API model: creator/assigned tutor/platform admin, explicitly public published replays, and enrolled-only published replays only for the relevant active course enrolment or verified attendance. No database migrations, RLS policies, Storage buckets, objects, or production deployments were changed as part of this follow-up.
+
+
+### Additional staging policy detail (read-only verification)
+
+The current staging policies on `class_recordings` are:
+
+- `class_recordings_select_visible_or_owner`: permits any authenticated user to select a row when `is_visible_to_students = true` and `processing_status = 'ready'`, or when the caller is the creator, scheduled-class tutor, or platform admin.
+- `class_recordings_tutor_manage`: grants row management to the creator, scheduled-class tutor, or platform admin.
+- Separate INSERT and UPDATE policies also exist.
+
+The SELECT predicate does not check `access_policy`, course enrolment, or recorded attendance. This is a confirmed direct-table metadata exposure in the inspected staging project. The API's stricter visibility filtering does not protect direct PostgREST reads.
+
+The relevant staging schema contains `class_recordings.class_id/course_id/lesson_id/created_by/storage_path/access_policy/is_visible_to_students/processing_status`, `course_enrollments(course_id,user_id,status,expires_at)`, and `class_attendance_records(class_id,user_id,attendance_status)`. A future RLS policy can therefore express the intended public/enrolled-only/attended visibility rules, but it must be tested against production policy definitions and all client-side consumers before rollout.
+
+The secure delete endpoint additionally validates a non-admin caller's object path prefix: scheduled-class recordings must be under `{class_id}/{user_id}/`; Studio recordings must be under `studio-lessons/{user_id}/`. This prevents an otherwise authorized tutor from using a manipulated metadata row to remove another tutor's object.
